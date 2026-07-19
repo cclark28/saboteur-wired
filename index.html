@@ -942,7 +942,7 @@ function App() {
     if (meta && meta.isInfoPage) { setView({ page: 'info' }); return; }
     setView({ page: section });
   };
-  const goContact = () => setView({ page: 'contact' });
+  const goContact = () => setView({ page: 'info' });
   const goTag = (tag) => setView({ page: 'tag', tag });
   const back = () => {
     if (view.page === 'item') setView({ page: view.from || 'home' });

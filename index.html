@@ -60,6 +60,11 @@ async function fetchSanityBundle() {
       "infoMediaMime": infoMedia.asset->mimeType,
       socialLinks
     },
+    "footer": *[_type == "footer"][0]{
+      logoSubhead, copyright, nextLocation, nextTimezone, localLabel,
+      siteMapLinks[]{ label, linkType, sectionSlug, url },
+      socialLinks[]{ label, url }
+    },
     "tags": *[_type == "tag"] | order(title asc) { title, "slug": slug.current }
   }`);
   const res = await fetch(`${SANITY_API}?query=${query}`);
@@ -414,21 +419,35 @@ function InfiniteGrid({ baseItems, onOpen }) {
 const SHOW_MARQUEE = true; // toggle from Sanity CMS
 const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · ®SABOTEUR.ONE — ';
 
-function Footer({ onContact, onTag, onHome }) {
+function Footer({ footer, onContact, onTag, onHome, onSection }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  const f = footer || {};
+  const subhead = f.logoSubhead || 'Experimental creative house';
+  const copyright = f.copyright || '© 2026 ®Saboteur LLC — All rights reserved';
+  const localLabel = f.localLabel || 'Indianapolis, Indiana';
+  const nextLocation = f.nextLocation || 'Budapest';
+  const nextTimezone = f.nextTimezone || 'Europe/Budapest';
+  const siteMap = Array.isArray(f.siteMapLinks) ? f.siteMapLinks : [];
+  const socials = Array.isArray(f.socialLinks) ? f.socialLinks : [];
+
   const localStr = time.toLocaleTimeString('en-US', {
     timeZone: 'America/Indiana/Indianapolis',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
   });
-  const nextStr = time.toLocaleTimeString('en-US', {
-    timeZone: 'Europe/Budapest',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  });
+  let nextStr = '';
+  try {
+    nextStr = time.toLocaleTimeString('en-US', {
+      timeZone: nextTimezone,
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+  } catch (e) {
+    nextStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
 
   const colLabel = {
     fontFamily: 'var(--font-family-mono)',
@@ -449,6 +468,17 @@ function Footer({ onContact, onTag, onHome }) {
     textAlign: 'left',
     display: 'block',
     marginBottom: 12,
+    textDecoration: 'none',
+  };
+
+  const handleMapClick = (item) => {
+    if (!item) return;
+    const t = item.linkType;
+    if (t === 'home' && onHome) onHome();
+    else if (t === 'contact' && onContact) onContact();
+    else if (t === 'info' && onSection) onSection('info');
+    else if (t === 'section' && item.sectionSlug && onSection) onSection(item.sectionSlug);
+    else if (t === 'external' && item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -487,12 +517,8 @@ function Footer({ onContact, onTag, onHome }) {
             <button type="button" onClick={onHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-label="Home">
               <Logo size={72} onClick={onHome} />
             </button>
-            <div style={{ marginTop: 12, fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', lineHeight: 1.4 }}>
-              Experimental creative house
-            </div>
-            <div style={{ marginTop: 20, fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', lineHeight: 1.5 }}>
-              © 2026 ®Saboteur LLC — All rights reserved
-            </div>
+            <div style={{ marginTop: 12, fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', lineHeight: 1.4 }}>{subhead}</div>
+            <div style={{ marginTop: 20, fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', lineHeight: 1.5 }}>{copyright}</div>
           </div>
 
           <div style={{ paddingLeft: 24, paddingRight: 24, borderLeft: '1px solid var(--color-stroke)' }}>
@@ -501,21 +527,32 @@ function Footer({ onContact, onTag, onHome }) {
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
             >Contact</button>
+            {socials.map((s, i) => (
+              <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={linkBtn}
+                onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+              >{s.label}</a>
+            ))}
           </div>
 
           <div style={{ paddingLeft: 24, paddingRight: 24, borderLeft: '1px solid var(--color-stroke)' }}>
             <div style={colLabel}>Site map</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)' }}>
-              Add links in Sanity → Footer
-            </div>
+            {siteMap.length === 0 ? (
+              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)' }}>Add links in Sanity → Footer</div>
+            ) : siteMap.map((item, i) => (
+              <button key={i} type="button" onClick={() => handleMapClick(item)} style={linkBtn}
+                onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+              >{item.label}</button>
+            ))}
           </div>
 
           <div style={{ paddingLeft: 24, borderLeft: '1px solid var(--color-stroke)' }}>
             <div style={colLabel}>Local time</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6 }}>{localStr}</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', marginBottom: 16 }}>Indianapolis, Indiana</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', marginBottom: 16 }}>{localLabel}</div>
             <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4 }}>Next: Budapest</div>
+              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4 }}>Next: {nextLocation}</div>
               <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-body-size)', color: 'var(--color-ink)' }}>{nextStr}</div>
             </div>
           </div>
@@ -552,7 +589,7 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 32px', color: 'var(--color-ink)' }}>{title}</h1>
         <MasonryGrid items={items} onOpen={onOpen} />
       </div>
-      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+      <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
     </div>
   );
 }
@@ -592,7 +629,7 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
           )}
         </div>
       </div>
-      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+      <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
     </div>
   );
 }
@@ -675,7 +712,7 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
           </div>
           <MasonryGrid items={more} onOpen={onOpen} />
         </div>
-        <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+        <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
       </div>
       <InfoPanel series={series} onTag={onTag} isMobile={isMobile} />
     </div>
@@ -907,7 +944,7 @@ function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
         }}>Contact</h1>
         <ContactForm />
       </div>
-      <Footer onContact={() => {}} onTag={() => {}} onHome={onHome} />
+      <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
     </div>
   );
 }
@@ -917,6 +954,7 @@ function App() {
   const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS) }));
   const [navSections, setNavSections] = useState([]);
   const [siteSettings, setSiteSettings] = useState(null);
+  const [footerData, setFooterData] = useState(null);
   const [view, setView] = useState({ page: 'home' });
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
@@ -931,6 +969,7 @@ function App() {
         if (cancelled) return;
         const raw = data.assets || [];
         const sectionDocs = data.sections || [];
+        setFooterData(data.footer || null);
         setSiteSettings(data.settings || null);
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);

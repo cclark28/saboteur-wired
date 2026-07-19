@@ -1028,7 +1028,7 @@ function App() {
             const slug = s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-');
             next[slug] = shuffle(series.filter((item) => {
               const ss = item.sections || [];
-              if (!ss.length) return true;
+              if (!ss.length) return false;
               return ss.includes(slug);
             }));
           });

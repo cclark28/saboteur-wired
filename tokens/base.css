@@ -1,0 +1,31 @@
+html {
+  background: var(--color-paper);
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-family-display);
+  font-size: var(--font-body-size);
+  line-height: var(--font-body-leading);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+[data-theme="light"] body,
+:root:not([data-theme="dark"]) body {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/></svg>");
+}
+
+[data-theme="dark"] body { background-image: none; }
+
+* { box-sizing: border-box; }
+
+a {
+  color: var(--color-link);
+  transition: color var(--duration-fast) var(--ease);
+}
+a:hover { color: var(--color-link-hover); }
+
+::selection { background: var(--color-ink); color: var(--color-paper); }

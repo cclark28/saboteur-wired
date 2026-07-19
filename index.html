@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Saboteur — Site Prototype</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  html, body { background: var(--color-paper); }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  [data-theme="dark"] { --logo-filter: invert(1); --back-btn-bg: var(--color-accent); --back-btn-bg-hover: var(--color-accent-hover); }
+  [data-theme="light"] { --back-btn-bg: var(--color-ink); --back-btn-bg-hover: #2A2A2E; }
+  @keyframes searchDropdown { from { opacity: 0; transform: translateY(-6px) scaleY(0.9); } to { opacity: 1; transform: translateY(0) scaleY(1); } }
+  @keyframes footerMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { [style*="footerMarquee"] { animation: none !important; } }
+</style>
+</head>
+<body style="margin:0">
+<div id="root"></div>
+<script type="text/plain" id="app-src">
+const { useState, useEffect } = React;
+
+const SIZES = [
+  { w: 1080, h: 1080 },
+  { w: 1920, h: 1080 },
+  { w: 1350, h: 1080 },
+  { w: 1080, h: 1350 },
+  { w: 1080, h: 1920 },
+];
+
+function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
+
+const NAV_LINKS = ['About', 'Explorations', 'Figure Studies', 'Store'];
+const ALL_TAGS = ['Street', 'Night', '35mm', 'Portrait', 'Studio', 'Texture'];
+
+// ---------- Sanity ----------
+const SANITY_PROJECT = '6td8xalf';
+const SANITY_DATASET = 'production';
+const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
+
+async function fetchSanityAssets() {
+  const query = encodeURIComponent(`*[_type == "asset"] | order(_createdAt desc) {
+    _id, title, headline, subhead, body,
+    "imageUrl": mainImage.asset->url,
+    "galleryUrls": gallery[].asset->url,
+    "tags": tags[]->{ title }
+  }`);
+  const res = await fetch(`${SANITY_API}?query=${query}`);
+  if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
+  const json = await res.json();
+  return json.result || [];
+}
+
+function assetToSeries(asset, index) {
+  const hasInfo = !!(asset.headline || asset.subhead || asset.body || (asset.tags && asset.tags.length));
+  const tags = (asset.tags || []).map(t => t.title).filter(Boolean);
+  const galleryCount = (asset.galleryUrls && asset.galleryUrls.length) ? asset.galleryUrls.length : 1;
+  return {
+    id: asset._id || index,
+    size: randomSize(),
+    hasInfo,
+    headline: asset.headline || null,
+    subhead: asset.subhead || null,
+    body: asset.body || null,
+    tags,
+    gallery: Array.from({ length: Math.max(1, galleryCount) }, () => randomSize()),
+    imageUrl: asset.imageUrl || null,
+    galleryUrls: asset.galleryUrls || [],
+  };
+}
+
+function makeSeries(id, opts = {}) {
+  // Fallback only used if Sanity returns nothing
+  const hasInfo = opts.hasInfo !== undefined ? opts.hasInfo : (id % 3 !== 0);
+  const galleryCount = opts.galleryCount !== undefined ? opts.galleryCount : (1 + (id % 4));
+  return {
+    id,
+    size: randomSize(),
+    hasInfo,
+    headline: hasInfo ? `Study No. ${id + 1}` : null,
+    subhead: hasInfo ? 'Street Photography — Tokyo 2024' : null,
+    body: hasInfo ? 'Shot on 35mm over three nights near Shinjuku station. Part of an ongoing series on transient light and motion in dense urban space.' : null,
+    tags: hasInfo ? ['Street', 'Night', '35mm'] : [],
+    gallery: Array.from({ length: galleryCount }, () => randomSize()),
+    imageUrl: null,
+    galleryUrls: [],
+  };
+}
+
+const HOME_ITEMS = Array.from({ length: 14 }, (_, i) => makeSeries(i));
+const FIGURE_ITEMS = Array.from({ length: 10 }, (_, i) => makeSeries(i + 20, { hasInfo: i % 2 === 0 }));
+
+function Placeholder({ size, label, imageUrl }) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl + '?w=900&auto=format'}
+        alt={label || ''}
+        style={{ width: '100%', aspectRatio: `${size.w} / ${size.h}`, objectFit: 'cover', background: 'var(--color-card)', display: 'block', transition: 'transform var(--duration-normal) var(--ease)' }}
+      />
+    );
+  }
+  return (
+    <div style={{ width: '100%', aspectRatio: `${size.w} / ${size.h}`, background: 'var(--color-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, transition: 'transform var(--duration-normal) var(--ease)' }}>
+      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 11, color: 'var(--color-ink-55)' }}>{size.w} × {size.h}</div>
+      {label && <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 10, color: 'var(--color-ink-55)', opacity: 0.6 }}>{label}</div>}
+    </div>
+  );
+}
+
+function Logo({ size = 160, onClick }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <img
+      src="assets/logo.svg"
+      alt="Saboteur"
+      onClick={onClick ? () => { setPressed(true); setTimeout(() => setPressed(false), 200); onClick(); } : undefined}
+      style={{
+        width: size, display: 'block', cursor: onClick ? 'pointer' : 'default', filter: 'var(--logo-filter, none)',
+        transform: pressed ? 'scale(0.88)' : 'scale(1)', transition: 'transform var(--duration-fast) var(--ease)',
+      }}
+      onMouseEnter={onClick ? (e) => e.currentTarget.style.transform = 'scale(1.05)' : undefined}
+      onMouseLeave={onClick ? (e) => e.currentTarget.style.transform = pressed ? 'scale(0.88)' : 'scale(1)' : undefined}
+    />
+  );
+}
+
+function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, onTag }) {
+  const [scrolled, setScrolled] = useState(!hero);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const matches = ALL_TAGS.filter((t) => t.toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => {
+    if (!hero) return;
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [hero]);
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '20px 48px',
+      background: scrolled ? 'var(--color-paper)' : 'transparent',
+      borderBottom: scrolled ? '1px solid var(--color-stroke)' : '1px solid transparent',
+      transition: 'background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        {(scrolled || !hero) && (
+          <div style={{ width: 90, opacity: scrolled ? 1 : 0, transition: 'opacity var(--duration-fast) var(--ease)' }}>
+            <Logo size={90} onClick={onHome} />
+          </div>
+        )}
+      </div>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'var(--color-card)', borderRadius: 'var(--radius-full)',
+          padding: searchOpen ? '8px 16px' : '8px', overflow: 'hidden',
+          width: searchOpen ? 220 : 36, transition: 'width var(--duration-normal) var(--ease), padding var(--duration-normal) var(--ease)',
+        }}>
+          <button aria-label="Search tags" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, flexShrink: 0 }}>
+            <img src="assets/icons/search.svg" style={{ width: 20, height: 20, filter: 'var(--logo-filter, none)' }} alt="" />
+          </button>
+          {searchOpen && (
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search tags…"
+              style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink)', width: '100%' }}
+            />
+          )}
+        </div>
+        {searchOpen && (
+          <div style={{
+            position: 'absolute', top: '100%', right: 0, marginTop: 8,
+            background: 'var(--color-paper)', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-2)', padding: 12, display: 'flex', flexWrap: 'wrap', gap: 8, width: 260, zIndex: 60,
+            transformOrigin: 'top right', animation: 'searchDropdown var(--duration-normal) var(--ease)',
+          }}>
+            {matches.length ? matches.map((t) => (
+              <a
+                key={t}
+                href="#"
+                onClick={(e) => { e.preventDefault(); onTag && onTag(t); setSearchOpen(false); setQuery(''); }}
+                style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)', padding: '6px 12px', textDecoration: 'none' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; e.currentTarget.style.borderColor = 'var(--color-link)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; e.currentTarget.style.borderColor = 'var(--color-stroke)'; }}
+              >{t}</a>
+            )) : (
+              <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>No tags found</span>
+            )}
+          </div>
+        )}
+        {showBack && (
+          <button onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'} style={{ background: 'var(--back-btn-bg, var(--color-ink))', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', transition: 'background var(--duration-fast) var(--ease)' }}>
+            <img src="assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
+          </button>
+        )}
+        <button aria-label="Toggle dark mode" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>
+          <img src={dark ? 'assets/icons/moon.svg' : 'assets/icons/sun.svg'} style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
+        </button>
+        <button aria-label="Open menu" onClick={onMenu} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0 }}>
+          <img src="assets/icons/menu.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const matches = ALL_TAGS.filter((t) => t.toLowerCase().includes(query.toLowerCase()));
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--color-paper)', display: 'flex', flexDirection: 'column', padding: '20px 48px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ width: 90 }}><Logo size={90} onClick={onHome} /></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <button aria-label="Search tags" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0 }}>
+            <img src="assets/icons/search.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
+          </button>
+          <button aria-label="Close menu" onClick={onClose} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(90deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-normal) var(--ease)' }}>
+            <img src="assets/icons/close.svg" style={{ width: 26, height: 26, filter: 'var(--logo-filter, none)' }} alt="" />
+          </button>
+        </div>
+      </div>
+      <div style={{
+        maxHeight: searchOpen ? 200 : 0, overflow: 'hidden',
+        transition: 'max-height var(--duration-normal) var(--ease)',
+        borderBottom: searchOpen ? '1px solid var(--color-stroke)' : 'none',
+        marginTop: searchOpen ? 20 : 0,
+      }}>
+        <input
+          autoFocus={searchOpen}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search tags…"
+          style={{
+            width: '100%', border: 'none', outline: 'none', background: 'transparent',
+            fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-h3-size)', color: 'var(--color-ink)',
+            padding: '8px 0 16px',
+          }}
+        />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, paddingBottom: 16 }}>
+          {matches.map((t) => (
+            <a
+              key={t}
+              href="#"
+              onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+              style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)', padding: '8px 14px', textDecoration: 'none', transition: 'color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; e.currentTarget.style.borderColor = 'var(--color-link)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; e.currentTarget.style.borderColor = 'var(--color-stroke)'; }}
+            >{t}</a>
+          ))}
+        </div>
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
+        {NAV_LINKS.map((l) => {
+          const key = l.toLowerCase().replace(' ', '-');
+          const isActive = activeSection === key;
+          const disabled = l === 'Store';
+          return (
+            <a
+              key={l}
+              href="#"
+              onClick={(e) => { e.preventDefault(); if (!disabled) onSelect(key); }}
+              style={{
+                fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '5.5rem', lineHeight: 1.15,
+                letterSpacing: '-0.01em', textDecoration: disabled ? 'line-through' : 'none',
+                color: disabled ? 'var(--color-ink-55)' : (isActive ? 'var(--color-accent)' : 'var(--color-ink)'),
+                cursor: disabled ? 'default' : 'pointer',
+                transition: 'color var(--duration-fast) var(--ease)',
+                display: 'flex', alignItems: 'baseline', gap: 16,
+              }}
+              onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.color = 'var(--color-link)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = disabled ? 'var(--color-ink-55)' : (isActive ? 'var(--color-accent)' : 'var(--color-ink)'); }}
+            >
+              {l}
+              {disabled && <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', fontWeight: 400, color: 'var(--color-stroke)', textDecoration: 'none' }}>coming soon</span>}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MasonryGrid({ items, onOpen }) {
+  return (
+    <div style={{ columns: 'clamp(1,4,4) clamp(220px,26vw,320px)', columnGap: 24 }}>
+      {items.map((s) => (
+        <div
+          key={s.id}
+          onClick={() => onOpen(s)}
+          style={{ breakInside: 'avoid', marginBottom: 24, cursor: 'pointer', overflow: 'hidden', borderRadius: 'var(--radius-sm)' }}
+          onMouseEnter={(e) => { e.currentTarget.querySelector('img,div').style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.querySelector('img,div').style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+        >
+          <Placeholder size={s.size} imageUrl={s.imageUrl} label={s.headline || s.subhead || ''} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function useIsMobile(bp) {
+  const [m, setM] = useState(window.innerWidth < bp);
+  useEffect(() => {
+    const onResize = () => setM(window.innerWidth < bp);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [bp]);
+  return m;
+}
+
+function InfiniteGrid({ baseItems, onOpen }) {
+  const [items, setItems] = useState(baseItems);
+  const [loading, setLoading] = useState(false);
+  const sentinelRef = React.useRef(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !loading && items.length < 200) {
+        setLoading(true);
+        setTimeout(() => {
+          setItems((prev) => prev.concat(prev.map((it, i) => makeSeries(it.id + 1000 + i + prev.length))));
+          setLoading(false);
+        }, 400);
+      }
+    }, { rootMargin: '800px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loading, items.length]);
+
+  return (
+    <div>
+      <MasonryGrid items={items} onOpen={onOpen} />
+      <div ref={sentinelRef} style={{ height: 1 }} />
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>Loading more…</div>
+      )}
+    </div>
+  );
+}
+
+const SHOW_MARQUEE = true; // toggle from Sanity CMS
+const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · ®SABOTEUR.ONE — ';
+
+function Footer({ onContact, onTag, onHome }) {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  return (
+    <footer style={{ borderTop: '1px solid var(--color-stroke)', marginTop: 64 }}>
+      {SHOW_MARQUEE && (
+        <div style={{ overflow: 'hidden', padding: '14px 0', borderBottom: '1px solid var(--color-stroke)' }}>
+          <div style={{
+            display: 'flex', whiteSpace: 'nowrap', width: 'max-content',
+            animation: 'footerMarquee 48s linear infinite',
+            fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)',
+            letterSpacing: 'var(--font-label-tracking)', textTransform: 'uppercase', color: 'var(--color-ink)',
+          }}>
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} style={{ paddingRight: 24 }}>{MARQUEE_TEXT}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div style={{ padding: '32px 32px', borderRight: '1px solid var(--color-stroke)' }}>
+          <div style={{ width: 90 }}><Logo size={90} onClick={onHome} /></div>
+        </div>
+        <div style={{ padding: '32px', borderRight: '1px solid var(--color-stroke)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: 'var(--color-ink-55)', textTransform: 'uppercase', letterSpacing: 'var(--font-label-tracking)', marginBottom: 4 }}>Contact</div>
+          <a href="#" onClick={(e) => { e.preventDefault(); onContact && onContact(); }} style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-link)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-ink)'}>Contact</a>
+          <a href="https://www.instagram.com/saboteur.supply/" target="_blank" style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-link)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-ink)'}>Instagram</a>
+          <a href="https://x.com/saboteurcomics" target="_blank" style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-link)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-ink)'}>X</a>
+        </div>
+        <div style={{ padding: '32px', borderRight: '1px solid var(--color-stroke)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: 'var(--color-ink-55)', textTransform: 'uppercase', letterSpacing: 'var(--font-label-tracking)', marginBottom: 4 }}>Site Map</div>
+          {NAV_LINKS.map((l) => {
+            const isStore = l === 'Store';
+            return (
+              <a
+                key={l}
+                href="#"
+                style={{
+                  fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)',
+                  color: isStore ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                  textDecoration: isStore ? 'line-through' : 'none', position: 'relative',
+                }}
+                onMouseEnter={(e) => { if (!isStore) e.currentTarget.style.color = 'var(--color-link)'; else e.currentTarget.title = 'Coming soon'; }}
+                onMouseLeave={(e) => { if (!isStore) e.currentTarget.style.color = 'var(--color-ink)'; }}
+                title={isStore ? 'Coming soon' : undefined}
+              >
+                {isStore ? 'Print Shop' : l}
+              </a>
+            );
+          })}
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: 'var(--color-ink-55)', textTransform: 'uppercase', letterSpacing: 'var(--font-label-tracking)', margin: '20px 0 8px' }}>Tags</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {ALL_TAGS.map((t) => (
+              <a
+                key={t}
+                href="#"
+                onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+                style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-micro-size)', letterSpacing: 'var(--font-micro-tracking)', textTransform: 'uppercase', color: 'var(--color-ink-55)', padding: '6px 12px', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)', textDecoration: 'none', cursor: 'pointer', transition: 'color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)' }}
+                onMouseEnter={(ev) => { ev.currentTarget.style.color = 'var(--color-link)'; ev.currentTarget.style.borderColor = 'var(--color-link)'; }}
+                onMouseLeave={(ev) => { ev.currentTarget.style.color = 'var(--color-ink-55)'; ev.currentTarget.style.borderColor = 'var(--color-stroke)'; }}
+              >{t}</a>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '32px' }}>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: 'var(--color-ink-55)', textTransform: 'uppercase', letterSpacing: 'var(--font-label-tracking)', marginBottom: 4 }}>Local Time</div>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '1.5rem', color: 'var(--color-ink)', fontVariantNumeric: 'tabular-nums', display: 'flex', gap: 2 }}>
+            {timeStr.split('').map((ch, i) => (
+              <span key={i} style={{ display: 'inline-block', animation: 'clockTick 0.4s ease-out', minWidth: ch === ':' ? 8 : undefined }}>{ch}</span>
+            ))}
+          </div>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)', marginTop: 4 }}>Indianapolis, IN</div>
+          <div style={{ marginTop: 16, background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-micro-size)', letterSpacing: 'var(--font-micro-tracking)', textTransform: 'uppercase', color: 'var(--color-ink-55)' }}>Next: Budapest</div>
+          </div>
+        </div>
+      </div>
+      <style>{'@keyframes clockTick{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}'}</style>
+      <div style={{ padding: '16px 32px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-micro-size)', letterSpacing: 'var(--font-micro-tracking)', textTransform: 'uppercase', color: 'var(--color-ink-55)' }}>
+        © 2026 ®Saboteur LLC — All rights reserved
+      </div>
+    </footer>
+  );
+}
+
+function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
+  const [sent, setSent] = useState(false);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  useEffect(() => {
+    if (!sent) return;
+    const t = setTimeout(() => setSent(false), 5000);
+    return () => clearTimeout(t);
+  }, [sent]);
+  return (
+    <div>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} />
+      <div style={{ padding: '160px 48px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 24px', color: 'var(--color-ink)' }}>Contact</h1>
+        <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink-55)', margin: '0 0 32px' }}>
+          Send a message — it routes straight to the studio (via Sanity form submission in production, no public email address shown).
+        </p>
+        {sent ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, animation: 'clockTick 0.4s ease-out' }}>
+            <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '1.75rem', color: 'var(--color-ink)' }}>Thanks for reaching out.</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>We may get back to you. Who knows.</div>
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); setSent(true); }} style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
+            <input placeholder="Name" required style={{ height: 48, padding: '0 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-stroke)', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', background: 'var(--color-paper)', color: 'var(--color-ink)' }} />
+            <input type="email" placeholder="Email" required style={{ height: 48, padding: '0 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-stroke)', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', background: 'var(--color-paper)', color: 'var(--color-ink)' }} />
+            <textarea placeholder="Message" required rows={5} style={{ padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-stroke)', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', background: 'var(--color-paper)', color: 'var(--color-ink)', resize: 'vertical' }} />
+            <button type="submit" style={{ alignSelf: 'center', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '14px 28px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, cursor: 'pointer' }}>Send</button>
+          </form>
+        )}
+      </div>
+      <Footer onContact={onBack ? onBack : undefined} onHome={onHome} />
+    </div>
+  );
+}
+
+function Home({ onMenu, onOpen, onContact, onTag, onHome, items, dark, onToggleDark }) {
+  return (
+    <div>
+      <TopBar onMenu={onMenu} hero onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
+      <div style={{ height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Logo size={220} onClick={onHome} />
+      </div>
+      <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
+        <InfiniteGrid baseItems={items} onOpen={onOpen} />
+      </div>
+    </div>
+  );
+}
+
+function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, onHome, dark, onToggleDark }) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
+    <div>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
+      <div style={{ padding: '120px clamp(16px,4vw,48px) 64px' }}>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 32px', color: 'var(--color-ink)' }}>{title}</h1>
+        <MasonryGrid items={items} onOpen={onOpen} />
+      </div>
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+    </div>
+  );
+}
+
+function About({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark }) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
+    <div>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
+      <div style={{ padding: '160px 48px', maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto', display: 'flex', gap: 64, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 400px', minWidth: 0, maxWidth: 'var(--max-prose)' }}>
+          <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 16px', color: 'var(--color-ink)' }}>About</h1>
+          <h2 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: 'var(--font-h2-size)', margin: '0 0 24px', color: 'var(--color-ink-55)' }}>An experimental art studio.</h2>
+          <p style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink)' }}>
+            ®Saboteur started as a creative outlet for designer and artist Charlie Clark — a way to step outside an endlessly digital world and make things people could wear, hold, and read. Designing graphics and creating comics, books, and shirts became both a passion and a way to bring ideas to life.
+          </p>
+        </div>
+        <div style={{ flex: '1 1 320px', maxWidth: 400 }}>
+          <Placeholder size={{ w: 1080, h: 1350 }} />
+        </div>
+      </div>
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+    </div>
+  );
+}
+
+function GalleryPanel({ series }) {
+  const urls = (series.galleryUrls && series.galleryUrls.length)
+    ? series.galleryUrls
+    : (series.imageUrl ? [series.imageUrl] : []);
+  if (urls.length) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {urls.map((url, i) => (
+          <img key={i} src={url + '?w=1400&auto=format'} alt="" style={{ width: '100%', display: 'block', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {series.gallery.map((size, i) => (
+        <Placeholder key={i} size={size} label={`gallery ${i + 1} of ${series.gallery.length}`} />
+      ))}
+    </div>
+  );
+}
+
+function InfoPanel({ series, onTag, isMobile }) {
+  return (
+    <div style={{
+      position: isMobile ? 'static' : 'sticky', top: 0, height: isMobile ? 'auto' : '100vh', width: isMobile ? '100%' : 380, flexShrink: 0,
+      borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)', borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
+      padding: isMobile ? '32px clamp(16px,4vw,48px)' : '120px 40px 40px',
+      display: 'flex', flexDirection: 'column', gap: 20, overflowY: isMobile ? 'visible' : 'auto',
+    }}>
+      {series.hasInfo ? (
+        <React.Fragment>
+          <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)' }}>{series.headline}</div>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>{series.subhead}</div>
+          <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink)', margin: 0 }}>{series.body}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {series.tags.map((t) => (
+              <a
+                key={t}
+                href="#"
+                onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+                style={{ background: 'var(--color-card)', color: 'var(--color-ink-55)', borderRadius: 'var(--radius-sm)', padding: '8px 14px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', textDecoration: 'none', cursor: 'pointer', transition: 'color var(--duration-fast) var(--ease)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
+              >{t}</a>
+            ))}
+          </div>
+        </React.Fragment>
+      ) : null}
+    </div>
+  );
+}
+
+function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag, onHome, dark, onToggleDark }) {
+  const more = allItems.filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 8);
+  const isMobile = useIsMobile(900);
+  useEffect(() => { window.scrollTo(0, 0); }, [series.id]);
+  return (
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
+        <div style={{ padding: '120px clamp(16px,4vw,48px) 32px' }}>
+          <GalleryPanel series={series} />
+        </div>
+        <div style={{ padding: '0 clamp(16px,4vw,48px) 64px', borderTop: '1px solid var(--color-stroke)', marginTop: 32, paddingTop: 40 }}>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, letterSpacing: 'var(--font-label-tracking)', color: 'var(--color-ink-55)', textTransform: 'uppercase', marginBottom: 16 }}>
+            More from the archive
+          </div>
+          <MasonryGrid items={more} onOpen={onOpen} />
+        </div>
+        <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+      </div>
+      <InfoPanel series={series} onTag={onTag} isMobile={isMobile} />
+    </div>
+  );
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function TypewriterLabel({ text, speed = 60 }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    setI(0);
+    const t = setInterval(() => {
+      setI((prev) => {
+        if (prev >= text.length) { clearInterval(t); return prev; }
+        return prev + 1;
+      });
+    }, speed);
+    return () => clearInterval(t);
+  }, [text, speed]);
+  return <span>{text.slice(0, i)}<span style={{ opacity: i < text.length ? 1 : 0, animation: 'clockTick 0.5s steps(1) infinite' }}>|</span></span>;
+}
+
+const EXIT_GIFS = [
+  'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+  'https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif',
+  'https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif',
+  'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif',
+];
+
+function AgeGate({ onConfirm }) {
+  const [exitGif, setExitGif] = useState(null);
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200, background: 'var(--color-paper)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, padding: 24, textAlign: 'center',
+    }}>
+      <Logo size={140} />
+      <p style={{ maxWidth: 480, fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', lineHeight: 'var(--font-ui-leading)', color: 'var(--color-ink-55)', margin: 0 }}>
+        This site contains mature artistic content, including artistic figure studies, and is intended for viewers 18 years of age or older. By entering, you confirm you are at least 18 and agree to view this content at your own discretion.
+      </p>
+      <div style={{ display: 'flex', gap: 16 }}>
+        <button
+          onClick={onConfirm}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent-hover)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
+          style={{ background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '14px 32px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, cursor: 'pointer', transition: 'background var(--duration-fast) var(--ease)' }}
+        >I am 18 or older — Enter</button>
+        <button
+          onClick={(e) => { e.preventDefault(); setExitGif(true); }}
+          style={{ background: 'var(--color-ink)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '14px 32px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+        >I<TypewriterLabel text={"'m outta here"} /></button>
+      </div>
+      {exitGif && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 210, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          <img src="assets/exit-loser.gif" alt="Loser" style={{ maxWidth: '70vw', maxHeight: '50vh', borderRadius: 'var(--radius-sm)' }} />
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontWeight: 700, fontSize: 'clamp(3rem,8vw,6rem)', color: '#FF3B30', textTransform: 'uppercase', letterSpacing: '-0.02em', animation: 'glitchShake 0.15s infinite' }}>
+            <TypewriterLabel text="loser" speed={120} />
+          </div>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontWeight: 500, fontSize: 'clamp(1.25rem,3vw,2rem)', color: '#F0F0F2', textAlign: 'center', animation: 'clockTick 0.8s ease-out' }}>
+            Get outta here. Leave now.<br />Virus detected.
+          </div>
+          <button
+            onClick={() => setExitGif(null)}
+            style={{ marginTop: 24, background: 'none', border: '1px solid #F0F0F2', color: '#F0F0F2', borderRadius: 'var(--radius-sm)', padding: '10px 24px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', cursor: 'pointer' }}
+          >Back</button>
+        </div>
+      )}
+      <style>{'@keyframes glitchShake{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-1px)}100%{transform:translate(0,0)}}'}</style>
+    </div>
+  );
+}
+
+function App() {
+  const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS), figure: shuffle(FIGURE_ITEMS) }));
+  const [view, setView] = useState({ page: 'home' });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await fetchSanityAssets();
+        if (cancelled) return;
+        if (raw && raw.length) {
+          const series = raw.map((a, i) => assetToSeries(a, i));
+          setItems({ home: shuffle(series), figure: shuffle(series) });
+        }
+      } catch (err) {
+        console.error('Sanity load failed, using placeholders', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const openItem = (series, from) => setView({ page: 'item', series, from: from || view.page });
+  const goHome = () => { setMenuOpen(false); setView({ page: 'home' }); };
+  const openSection = (section) => { setMenuOpen(false); setView({ page: section }); };
+  const goContact = () => setView({ page: 'contact' });
+  const goTag = (tag) => setView({ page: 'tag', tag });
+  const back = () => {
+    if (view.page === 'item') setView({ page: view.from || 'home' });
+    else setView({ page: 'home' });
+  };
+
+  return (
+    <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+      {view.page === 'home' && <Home onMenu={() => setMenuOpen(true)} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'explorations' && <SectionGrid title="Explorations" items={items.home} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'explorations')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'figure-studies' && <SectionGrid title="Figure Studies" items={items.figure} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'figure-studies')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'about' && <About onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={items.home.concat(items.figure).filter((s) => s.tags.includes(view.tag))} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'item' && <SingleItem series={view.series} allItems={view.from === 'figure-studies' ? items.figure : items.home} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {menuOpen && (
+        <FullMenu
+          activeSection={view.page === 'item' ? view.from : view.page}
+          onSelect={openSection}
+          onClose={() => setMenuOpen(false)}
+          onHome={goHome}
+          onTag={(t) => { setMenuOpen(false); goTag(t); }}
+        />
+      )}
+      {!ageVerified && <AgeGate onConfirm={() => setAgeVerified(true)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<script>
+  var src = document.getElementById('app-src').textContent;
+  var out = Babel.transform(src, { presets: [['react', { runtime: 'classic' }]] }).code;
+  (0, eval)(out);
+</script>
+</body>
+</html>

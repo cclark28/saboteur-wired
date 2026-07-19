@@ -1,0 +1,51 @@
+:root {
+  /* Brand / accent */
+  --color-accent: #FF4D00;
+  --color-accent-hover: #E54400;
+
+  /* Interactive */
+  --color-link: #4D80E6;
+  --color-link-hover: #3A6BD4;
+  --color-focus: #4D80E6;
+
+  /* Text */
+  --color-ink: #18181B;
+  --color-ink-55: #86858C;
+
+  /* Surfaces */
+  --color-paper: #FFFFFF;
+  --color-surface: #FAFAFB;
+  --color-card: #ECEBEE;
+  --color-card-hover: #E1E0E4;
+  --color-overlay: rgba(24, 24, 27, 0.6);
+
+  /* Borders */
+  --color-stroke: #E5E4E6;
+
+  /* Status */
+  --color-error: #C4453F;
+  --color-success: #2D8A4E;
+}
+
+[data-theme="dark"] {
+  --color-accent: #FF6119;
+  --color-accent-hover: #FF7940;
+
+  --color-link: #6B9AFF;
+  --color-link-hover: #85ADFF;
+  --color-focus: #6B9AFF;
+
+  --color-ink: #F0F0F2;
+  --color-ink-55: #9E9DA3;
+
+  --color-paper: #111113;
+  --color-surface: #1A1A1E;
+  --color-card: #242428;
+  --color-card-hover: #2E2E33;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+
+  --color-stroke: #2E2E33;
+
+  --color-error: #D4554F;
+  --color-success: #3DA564;
+}

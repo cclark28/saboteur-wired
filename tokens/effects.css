@@ -1,0 +1,30 @@
+:root {
+  --radius-sm: 4px;
+  --radius-full: 9999px;
+
+  --shadow-0: none;
+  --shadow-1: 0 2px 8px rgba(24, 24, 27, 0.08);
+  --shadow-2: 0 8px 24px rgba(24, 24, 27, 0.12);
+  --shadow-3: 0 16px 48px rgba(24, 24, 27, 0.16);
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --ease: ease-out;
+
+  --z-nav: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+}
+
+[data-theme="dark"] {
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+  }
+}

@@ -1,0 +1,19 @@
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 40px;
+  --space-7: 48px;
+  --space-8: 56px;
+  --space-9: 64px;
+
+  --grid-columns: 12;
+  --grid-max-width: 1600px;
+  --grid-gutter: 24px;
+  --grid-gutter-mobile: 16px;
+  --page-margin: 64px;
+  --page-margin-tablet: 24px;
+  --page-margin-mobile: 16px;
+}

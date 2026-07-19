@@ -46,7 +46,7 @@ const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/que
 async function fetchSanityBundle() {
   const query = encodeURIComponent(`{
     "assets": *[_type == "asset"] | order(_createdAt desc) {
-      _id, title, headline, subhead, body,
+      _id, title, headline, subhead, body, showOnHome,
       mainImage{ asset->{ _id, url, metadata{ dimensions } } },
       mainMedia{ asset->{ _id, url, mimeType, originalFilename } },
       "galleryUrls": gallery[].asset->url,
@@ -73,7 +73,8 @@ async function fetchSanityBundle() {
   const res = await fetch(`${SANITY_API}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
   const json = await res.json();
-  return json.result || { assets: [], sections: [], tags: [] };
+  return json.result || { assets: [], showOnHome: asset.showOnHome !== false,
+    sections: [], tags: [] };
 }
 
 function buildImageUrl(mainImage) {
@@ -1020,7 +1021,7 @@ function App() {
         }));
         if (raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i));
-          const next = { home: shuffle(series) };
+          const next = { home: shuffle(series.filter((item) => item.showOnHome !== false)) };
           sectionDocs.forEach((s) => {
             const slug = s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-');
             next[slug] = shuffle(series.filter((item) => {

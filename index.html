@@ -478,12 +478,12 @@ function Footer({ onContact, onTag, onHome }) {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: 'clamp(24px, 4vw, 48px)',
+          gap: 0,
           maxWidth: 1200,
           margin: '0 auto',
           alignItems: 'start',
         }}>
-          <div>
+          <div style={{ paddingRight: 24 }}>
             <button type="button" onClick={onHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-label="Home">
               <Logo size={72} onClick={onHome} />
             </button>
@@ -495,7 +495,7 @@ function Footer({ onContact, onTag, onHome }) {
             </div>
           </div>
 
-          <div>
+          <div style={{ paddingLeft: 24, paddingRight: 24, borderLeft: '1px solid var(--color-stroke)' }}>
             <div style={colLabel}>Contact</div>
             <button type="button" onClick={onContact} style={linkBtn}
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
@@ -503,14 +503,14 @@ function Footer({ onContact, onTag, onHome }) {
             >Contact</button>
           </div>
 
-          <div>
+          <div style={{ paddingLeft: 24, paddingRight: 24, borderLeft: '1px solid var(--color-stroke)' }}>
             <div style={colLabel}>Site map</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)' }}>
               Add links in Sanity → Footer
             </div>
           </div>
 
-          <div>
+          <div style={{ paddingLeft: 24, borderLeft: '1px solid var(--color-stroke)' }}>
             <div style={colLabel}>Local time</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6 }}>{localStr}</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', marginBottom: 16 }}>Indianapolis, Indiana</div>

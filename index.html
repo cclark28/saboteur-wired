@@ -687,34 +687,69 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
 }
 
 function GalleryPanel({ series }) {
-  if (series.videoUrl) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <video src={series.videoUrl} muted playsInline autoPlay loop
-          style={{ width: '25%', maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
-      </div>
-    );
+  const mediaStyle = {
+    width: 'auto',
+    maxWidth: '100%',
+    maxHeight: '70vh',
+    height: 'auto',
+    display: 'block',
+    objectFit: 'contain',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--color-card)',
+  };
+
+  // Collect media: prefer gallery list; else main image; else video
+  const items = [];
+  const seen = new Set();
+  const push = (type, src) => {
+    if (!src || seen.has(src)) return;
+    seen.add(src);
+    items.push({ type, src });
+  };
+
+  if (series.galleryUrls && series.galleryUrls.length) {
+    series.galleryUrls.forEach((u) => {
+      if (/\.(mp4|webm|mov)(\?|$)/i.test(u)) push('video', u);
+      else push('image', u);
+    });
   }
-  const urls = (series.galleryUrls && series.galleryUrls.length)
-    ? series.galleryUrls
-    : (series.imageUrl ? [series.imageUrl] : []);
-  if (urls.length) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        {urls.map((url, i) => (
-          <img key={i} src={url + '?w=1400&auto=format'} alt="" style={{ width: '100%', display: 'block', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
-        ))}
-      </div>
-    );
-  }
+  if (series.imageUrl) push('image', series.imageUrl);
+  if (series.videoUrl) push('video', series.videoUrl);
+
+  if (!items.length) return null;
+
+  const isSingle = items.length === 1;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {series.gallery.map((size, i) => (
-        <Placeholder key={i} size={size} label={`gallery ${i + 1} of ${series.gallery.length}`} />
-      ))}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isSingle ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+        gap: 16,
+        width: '100%',
+        justifyItems: isSingle ? 'center' : 'stretch',
+        alignItems: 'start',
+      }}
+    >
+      {items.map((item, i) =>
+        item.type === 'video' ? (
+          <video
+            key={i}
+            src={item.src}
+            muted
+            playsInline
+            autoPlay
+            loop
+            style={mediaStyle}
+          />
+        ) : (
+          <img key={i} src={item.src} alt="" style={mediaStyle} />
+        )
+      )}
     </div>
   );
 }
+
 
 function InfoPanel({ series, onTag, isMobile }) {
   return (

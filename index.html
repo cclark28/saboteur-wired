@@ -587,8 +587,8 @@ function GalleryPanel({ series }) {
   if (series.videoUrl) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <video src={series.videoUrl} controls playsInline autoPlay loop muted
-          style={{ width: '100%', maxHeight: 'min(70vh, 800px)', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
+        <video src={series.videoUrl} muted playsInline autoPlay loop
+          style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
       </div>
     );
   }

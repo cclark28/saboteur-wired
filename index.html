@@ -34,6 +34,7 @@ function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; 
 
 let NAV_LINKS = [];
 let ALL_TAGS = [];
+let FOOTER_DATA = null;
 let SECTION_META = [];
 
 // ---------- Sanity ----------
@@ -426,7 +427,7 @@ function Footer({ footer, onContact, onTag, onHome, onSection }) {
     return () => clearInterval(t);
   }, []);
 
-  const f = footer || {};
+  const f = footer || FOOTER_DATA || {};
   const subhead = f.logoSubhead || 'Experimental creative house';
   const copyright = f.copyright || '© 2026 ®Saboteur LLC — All rights reserved';
   const localLabel = f.localLabel || 'Indianapolis, Indiana';
@@ -589,7 +590,7 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 32px', color: 'var(--color-ink)' }}>{title}</h1>
         <MasonryGrid items={items} onOpen={onOpen} />
       </div>
-      <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
   );
 }
@@ -629,7 +630,7 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
           )}
         </div>
       </div>
-      <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
   );
 }
@@ -712,7 +713,7 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
           </div>
           <MasonryGrid items={more} onOpen={onOpen} />
         </div>
-        <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
+        <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
       </div>
       <InfoPanel series={series} onTag={onTag} isMobile={isMobile} />
     </div>
@@ -944,7 +945,7 @@ function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
         }}>Contact</h1>
         <ContactForm />
       </div>
-      <Footer footer={footerData} onContact={onContact} onTag={onTag} onHome={onHome} onSection={openSection} />
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
   );
 }
@@ -969,6 +970,7 @@ function App() {
         if (cancelled) return;
         const raw = data.assets || [];
         const sectionDocs = data.sections || [];
+        FOOTER_DATA = data.footer || null;
         setFooterData(data.footer || null);
         setSiteSettings(data.settings || null);
         const tagDocs = data.tags || [];

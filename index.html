@@ -356,11 +356,11 @@ function InfiniteGrid({ baseItems, onOpen }) {
     if (!el) return;
     const io = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !loading && items.length < 200) {
+        const hasReal = items.some((it) => it.imageUrl);
+        if (hasReal) return; // real Sanity assets — do not invent more or show loading
         setLoading(true);
         setTimeout(() => {
           setItems((prev) => {
-            const hasReal = prev.some((it) => it.imageUrl);
-            if (hasReal) return prev;
             const base = prev.length;
             return prev.concat(Array.from({ length: 8 }, (_, i) => makeSeries('more-' + base + '-' + i)));
           });

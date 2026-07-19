@@ -63,6 +63,7 @@ async function fetchSanityBundle() {
       socialLinks
     },
     "footer": *[_type == "footer"][0]{
+      marqueeText,
       logoSubhead, copyright, nextLocation, nextTimezone, localLabel,
       siteMapLinks[]{ label, linkType, sectionSlug, url },
       socialLinks[]{ label, url }
@@ -436,39 +437,37 @@ function Footer({ onContact, onTag, onHome }) {
   const nextTimezone = f.nextTimezone || 'Europe/Budapest';
   const siteMap = Array.isArray(f.siteMapLinks) ? f.siteMapLinks : [];
   const socials = Array.isArray(f.socialLinks) ? f.socialLinks : [];
+  const marquee = (f.marqueeText || '').trim();
 
   const localStr = time.toLocaleTimeString('en-US', {
     timeZone: 'America/Indiana/Indianapolis',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
   });
-  let nextStr = '';
+  let nextStr = '—';
   try {
     nextStr = time.toLocaleTimeString('en-US', {
       timeZone: nextTimezone,
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     });
-  } catch (err) {
-    nextStr = '—';
-  }
+  } catch (err) {}
 
   const colLabel = {
     fontFamily: 'var(--font-family-mono)',
-    fontSize: 'var(--font-label-size)',
+    fontSize: '0.75rem',
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
     color: 'var(--color-ink-55)',
-    margin: '0 0 20px',
+    margin: '0 0 16px',
   };
 
-  // Uniform link rhythm
   const linkStyle = {
-    fontFamily: 'var(--font-family-body)',
-    fontSize: 'var(--font-body-size)',
+    fontFamily: 'var(--font-family-mono)',
+    fontSize: '0.75rem',
     lineHeight: 1.5,
     color: 'var(--color-ink)',
     background: 'none',
     border: 'none',
-    padding: '0 0 12px 0',
+    padding: '0 0 10px 0',
     margin: 0,
     cursor: 'pointer',
     textAlign: 'left',
@@ -478,28 +477,28 @@ function Footer({ onContact, onTag, onHome }) {
   };
 
   const goHome = () => {
-    if (FOOTER_NAV.home) FOOTER_NAV.home();
+    if (FOOTER_NAV && FOOTER_NAV.home) FOOTER_NAV.home();
     else if (onHome) onHome();
   };
-  const goContact = () => {
-    if (FOOTER_NAV.contact) FOOTER_NAV.contact();
+  const goContact = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (FOOTER_NAV && FOOTER_NAV.contact) FOOTER_NAV.contact();
     else if (onContact) onContact();
   };
   const goSection = (slug) => {
-    if (FOOTER_NAV.section) FOOTER_NAV.section(slug);
+    if (FOOTER_NAV && FOOTER_NAV.section) FOOTER_NAV.section(slug);
   };
 
   const onMapClick = (item) => {
     if (!item) return;
     const t = item.linkType;
     if (t === 'home') goHome();
-    else if (t === 'contact') goContact();
-    else if (t === 'info') goSection('info');
-    else if (t === 'section' && item.sectionSlug) goSection(item.sectionSlug);
+    else if (t === 'contact' || t === 'info') goContact();
+    else if (t === 'section' && item.sectionSlug) goSection(String(item.sectionSlug).trim());
     else if (t === 'external' && item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
-  const col = (extra) => Object.assign({
+  const colBox = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -508,32 +507,34 @@ function Footer({ onContact, onTag, onHome }) {
     paddingRight: 24,
     borderLeft: '1px solid var(--color-stroke)',
     boxSizing: 'border-box',
-  }, extra || {});
+  };
 
   return (
     <footer style={{ marginTop: 80, background: 'var(--color-paper)' }}>
-      <div style={{
-        borderTop: '1px solid var(--color-stroke)',
-        borderBottom: '1px solid var(--color-stroke)',
-        overflow: 'hidden',
-        padding: '10px 0',
-      }}>
+      {marquee ? (
         <div style={{
-          display: 'inline-block',
-          whiteSpace: 'nowrap',
-          animation: 'marqueeScroll 40s linear infinite',
-          fontFamily: 'var(--font-family-mono)',
-          fontSize: 'var(--font-label-size)',
-          letterSpacing: '0.04em',
-          color: 'var(--color-ink)',
-          textTransform: 'uppercase',
+          borderTop: '1px solid var(--color-stroke)',
+          borderBottom: '1px solid var(--color-stroke)',
+          overflow: 'hidden',
+          padding: '10px 0',
         }}>
-          EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · ®SABOTEUR.ONE — EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · ®SABOTEUR.ONE —
+          <div style={{
+            display: 'inline-block',
+            whiteSpace: 'nowrap',
+            animation: 'marqueeScroll 40s linear infinite',
+            fontFamily: 'var(--font-family-mono)',
+            fontSize: '0.75rem',
+            letterSpacing: '0.04em',
+            color: 'var(--color-ink)',
+            textTransform: 'uppercase',
+          }}>
+            {marquee} — {marquee} —
+          </div>
+          <style>{'@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}'}</style>
         </div>
-        <style>{'@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}'}</style>
-      </div>
+      ) : null}
 
-      <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px' }}>
+      <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
@@ -542,16 +543,15 @@ function Footer({ onContact, onTag, onHome }) {
           margin: '0 auto',
           alignItems: 'stretch',
         }}>
-          {/* Logo column — no left border */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingRight: 24, minHeight: '100%', boxSizing: 'border-box' }}>
             <button type="button" onClick={goHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginBottom: 12 }} aria-label="Home">
               <Logo size={72} onClick={goHome} />
             </button>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', lineHeight: 1.5, color: 'var(--color-ink-55)', marginBottom: 16 }}>{subhead}</div>
-            <div style={{ marginTop: 'auto', fontFamily: 'var(--font-family-mono)', fontSize: '11px', lineHeight: 1.5, color: 'var(--color-ink-55)' }}>{copyright}</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--color-ink-55)', marginBottom: 16 }}>{subhead}</div>
+            <div style={{ marginTop: 'auto', fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--color-ink-55)' }}>{copyright}</div>
           </div>
 
-          <div style={col()}>
+          <div style={colBox}>
             <div style={colLabel}>Contact</div>
             <button type="button" onClick={goContact} style={linkStyle}
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
@@ -565,10 +565,10 @@ function Footer({ onContact, onTag, onHome }) {
             ))}
           </div>
 
-          <div style={col()}>
+          <div style={colBox}>
             <div style={colLabel}>Site map</div>
             {siteMap.length === 0 ? (
-              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', lineHeight: 1.5 }}>Add links in Sanity → Footer</div>
+              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink-55)', lineHeight: 1.5 }}>Add links in Sanity → Footer</div>
             ) : siteMap.map((item, i) => (
               <button key={i} type="button" onClick={() => onMapClick(item)} style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
@@ -577,13 +577,13 @@ function Footer({ onContact, onTag, onHome }) {
             ))}
           </div>
 
-          <div style={col({ paddingRight: 0 })}>
+          <div style={Object.assign({}, colBox, { paddingRight: 0 })}>
             <div style={colLabel}>Local time</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6, lineHeight: 1.2 }}>{localStr}</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', marginBottom: 16, lineHeight: 1.5 }}>{localLabel}</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink-55)', marginBottom: 16, lineHeight: 1.5 }}>{localLabel}</div>
             <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
               <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Next: {nextLocation}</div>
-              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-body-size)', color: 'var(--color-ink)', lineHeight: 1.5 }}>{nextStr}</div>
+              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{nextStr}</div>
             </div>
           </div>
         </div>
@@ -1049,10 +1049,10 @@ function App() {
     if (meta && meta.isInfoPage) { setView({ page: 'contact' }); return; }
     setView({ page: section });
   };
-  const goContact = () => setView({ page: 'contact' });
+  const goContact = () => { setMenuOpen(false); setView({ page: 'info' }); };
   FOOTER_NAV = {
     home: () => { setMenuOpen(false); setView({ page: 'home' }); },
-    contact: () => setView({ page: 'contact' }),
+    contact: () => { setMenuOpen(false); setView({ page: 'info' }); },
     section: (slug) => openSection(slug),
   };
   const goTag = (tag) => setView({ page: 'tag', tag });

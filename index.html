@@ -45,7 +45,7 @@ const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/que
 
 async function fetchSanityBundle() {
   const query = encodeURIComponent(`{
-    "assets": *[_type == "asset"] | order(_createdAt desc) {
+    "assets": *[_type == "asset"] | order(coalesce(_updatedAt, _createdAt) desc) {
       _id, title, headline, subhead, body, showOnHome,
       mainImage{ asset->{ _id, url, metadata{ dimensions } } },
       mainMedia{ asset->{ _id, url, mimeType, originalFilename } },
@@ -73,8 +73,7 @@ async function fetchSanityBundle() {
   const res = await fetch(`${SANITY_API}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
   const json = await res.json();
-  return json.result || { assets: [], showOnHome: asset.showOnHome !== false,
-    sections: [], tags: [] };
+  return json.result || { assets: [], sections: [], tags: [], settings: null, footer: null };
 }
 
 function buildImageUrl(mainImage) {
@@ -95,38 +94,50 @@ function buildImageUrl(mainImage) {
 
 function assetToSeries(asset, index) {
   const hasInfo = !!(asset.headline || asset.subhead || asset.body || (asset.tags && asset.tags.length));
-  const tags = (asset.tags || []).map(t => t.title).filter(Boolean);
-  const galleryCount = (asset.galleryUrls && asset.galleryUrls.length) ? asset.galleryUrls.length : 1;
-  const imageUrl = buildImageUrl(asset.mainImage);
+  const tags = (asset.tags || []).map((t) => (typeof t === 'string' ? t : t && t.title)).filter(Boolean);
+  const galleryUrls = (asset.galleryUrls || []).filter(Boolean);
+
+  let imageUrl = buildImageUrl(asset.mainImage);
   let videoUrl = null;
+
   if (asset.mainMedia && asset.mainMedia.asset && asset.mainMedia.asset.url) {
     const u = asset.mainMedia.asset.url;
-    const m = (asset.mainMedia.asset.mimeType || '').toLowerCase();
-    if (m.startsWith('video/') || /\.(mp4|webm|mov)(\?|$)/i.test(u)) videoUrl = u;
+    const mime = (asset.mainMedia.asset.mimeType || '').toLowerCase();
+    if (mime.startsWith('video/') || /\.(mp4|webm|mov)(\?|$)/i.test(u)) {
+      videoUrl = u;
+    } else if (!imageUrl) {
+      // image or gif stored in mainMedia
+      imageUrl = u;
+    }
   }
+  if (!imageUrl && !videoUrl && galleryUrls[0]) {
+    imageUrl = galleryUrls[0];
+  }
+
   let size = randomSize();
   const dims = asset.mainImage && asset.mainImage.asset && asset.mainImage.asset.metadata && asset.mainImage.asset.metadata.dimensions;
   if (dims && dims.width && dims.height) size = { w: dims.width, h: dims.height };
-  const sections = (asset.sections || []).map((s) => {
-    if (typeof s === 'string') return s.toLowerCase().replace(/\s+/g, '-');
-    const slug = (s && (s.slug || s.title)) || '';
-    return String(slug).toLowerCase().replace(/\s+/g, '-');
+
+  const sections = (asset.sections || []).map((sec) => {
+    if (!sec) return '';
+    if (typeof sec === 'string') return sec.toLowerCase().replace(/\s+/g, '-');
+    return String(sec.slug || sec.title || '').toLowerCase().replace(/\s+/g, '-');
   }).filter(Boolean);
 
   return {
     id: asset._id || ('asset-' + index),
     size,
     hasInfo,
-    headline: asset.headline || null,
+    headline: asset.headline || asset.title || null,
     subhead: asset.subhead || null,
     body: asset.body || null,
     tags,
     sections,
     showOnHome: asset.showOnHome !== false,
-    gallery: Array.from({ length: Math.max(1, galleryCount) }, () => randomSize()),
+    gallery: Array.from({ length: Math.max(1, galleryUrls.length || 1) }, () => randomSize()),
     imageUrl,
     videoUrl,
-    galleryUrls: (asset.galleryUrls || []).filter(Boolean),
+    galleryUrls,
   };
 }
 

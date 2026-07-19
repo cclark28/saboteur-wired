@@ -1055,7 +1055,7 @@ function App() {
     contact: () => { setMenuOpen(false); setView({ page: 'info' }); },
     section: (slug) => openSection(slug),
   };
-  const goTag = (tag) => setView({ page: 'tag', tag });
+  const goTag = (tag) => { setMenuOpen(false); setView({ page: 'tag', tag }); window.scrollTo(0, 0); };
   const back = () => {
     if (view.page === 'item') setView({ page: view.from || 'home' });
     else setView({ page: 'home' });
@@ -1068,7 +1068,10 @@ function App() {
       
       {view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={items.home.concat(items.figure).filter((s) => s.tags.includes(view.tag))} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={(items.home || []).filter((s) => {
+        const tags = (s.tags || []).map((t) => String(typeof t === 'string' ? t : (t && t.title) || '').toLowerCase());
+        return tags.includes(String(view.tag || '').toLowerCase());
+      })} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'item' && <SingleItem series={view.series} allItems={view.from === 'figure-studies' ? items.figure : items.home} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {menuOpen && (
         <FullMenu

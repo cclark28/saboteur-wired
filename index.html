@@ -756,19 +756,29 @@ function App() {
     let cancelled = false;
     (async () => {
       try {
-        const raw = await fetchSanityBundle();
+        const data = await fetchSanityBundle();
         if (cancelled) return;
-        if (raw && raw.length) {
+        const raw = data.assets || [];
+        const sectionDocs = data.sections || [];
+        const tagDocs = data.tags || [];
+        ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
+        NAV_LINKS = [...sectionDocs.map((s) => s.title), 'About', 'Store'];
+        setNavSections(sectionDocs.map((s) => ({
+          title: s.title,
+          slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
+        })));
+        if (raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i));
-          const withSections = series.map((s, i) => ({
-            ...s,
-            sections: (raw[i] && raw[i].sections) || s.sections || [],
-          }));
-          setItems({
-            home: shuffle(withSections.filter((s) => !s.sections.length || s.sections.includes('home'))),
-            figure: shuffle(withSections.filter((s) => s.sections && s.sections.includes('figure-studies'))),
-            explorations: shuffle(withSections.filter((s) => s.sections && s.sections.includes('explorations'))),
+          const next = { home: shuffle(series) };
+          sectionDocs.forEach((s) => {
+            const slug = s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-');
+            next[slug] = shuffle(series.filter((item) => {
+              const ss = item.sections || [];
+              if (!ss.length) return true;
+              return ss.includes(slug);
+            }));
           });
+          setItems(next);
         }
       } catch (err) {
         console.error('Sanity load failed, using placeholders', err);

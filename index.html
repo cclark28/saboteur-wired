@@ -32,7 +32,7 @@ const SIZES = [
 
 function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
 
-let NAV_LINKS = ['About', 'Store'];
+let NAV_LINKS = [];
 let ALL_TAGS = [];
 let SECTION_META = [];
 
@@ -762,7 +762,7 @@ function App() {
         const sectionDocs = data.sections || [];
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
-        NAV_LINKS = [...sectionDocs.map((s) => s.title), 'About', 'Store'];
+        NAV_LINKS = sectionDocs.map((s) => s.title);
         setNavSections(sectionDocs.map((s) => ({
           title: s.title,
           slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),

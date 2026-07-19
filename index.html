@@ -505,39 +505,20 @@ function Footer({ onContact, onTag, onHome }) {
 }
 
 function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
-  const [sent, setSent] = useState(false);
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  useEffect(() => {
-    if (!sent) return;
-    const t = setTimeout(() => setSent(false), 5000);
-    return () => clearTimeout(t);
-  }, [sent]);
   return (
     <div>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} />
-      <div style={{ padding: '160px 48px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
-        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 24px', color: 'var(--color-ink)' }}>Contact</h1>
-        <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink-55)', margin: '0 0 32px' }}>
-          Send a message — it routes straight to the studio (via Sanity form submission in production, no public email address shown).
-        </p>
-        {sent ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, animation: 'clockTick 0.4s ease-out' }}>
-            <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '1.75rem', color: 'var(--color-ink)' }}>Thanks for reaching out.</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>We may get back to you. Who knows.</div>
-          </div>
-        ) : (
-          <form onSubmit={(e) => { e.preventDefault(); setSent(true); }} style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
-            <input placeholder="Name" required style={{ height: 48, padding: '0 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-stroke)', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', background: 'var(--color-paper)', color: 'var(--color-ink)' }} />
-            <input type="email" placeholder="Email" required style={{ height: 48, padding: '0 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-stroke)', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', background: 'var(--color-paper)', color: 'var(--color-ink)' }} />
-            <textarea placeholder="Message" required rows={5} style={{ padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-stroke)', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', background: 'var(--color-paper)', color: 'var(--color-ink)', resize: 'vertical' }} />
-            <button type="submit" style={{ alignSelf: 'center', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '14px 28px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, cursor: 'pointer' }}>Send</button>
-          </form>
-        )}
+      <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '120px 24px 64px' }}>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', textAlign: 'center' }}>Contact</h1>
+        <ContactForm />
       </div>
-      <Footer onContact={onBack ? onBack : undefined} onHome={onHome} />
+      <Footer onContact={() => {}} onTag={() => {}} onHome={onHome} />
     </div>
   );
 }
+
+
 
 function Home({ onMenu, onOpen, onContact, onTag, onHome, items, dark, onToggleDark }) {
   return (
@@ -942,7 +923,7 @@ function App() {
     if (meta && meta.isInfoPage) { setView({ page: 'info' }); return; }
     setView({ page: section });
   };
-  const goContact = () => setView({ page: 'info' });
+  const goContact = () => setView({ page: 'contact' });
   const goTag = (tag) => setView({ page: 'tag', tag });
   const back = () => {
     if (view.page === 'item') setView({ page: view.from || 'home' });

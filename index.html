@@ -420,7 +420,15 @@ function Footer({ onContact, onTag, onHome }) {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const localStr = time.toLocaleTimeString('en-US', {
+    timeZone: 'America/Indiana/Indianapolis',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+  const nextStr = time.toLocaleTimeString('en-US', {
+    timeZone: 'Europe/Budapest',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
 
   const colLabel = {
     fontFamily: 'var(--font-family-mono)',
@@ -430,7 +438,7 @@ function Footer({ onContact, onTag, onHome }) {
     color: 'var(--color-ink-55)',
     margin: '0 0 16px',
   };
-  const linkStyle = {
+  const linkBtn = {
     fontFamily: 'var(--font-family-body)',
     fontSize: 'var(--font-body-size)',
     color: 'var(--color-ink)',
@@ -444,49 +452,73 @@ function Footer({ onContact, onTag, onHome }) {
   };
 
   return (
-    <footer style={{
-      borderTop: '1px solid var(--color-stroke)',
-      marginTop: 80,
-      padding: '48px clamp(16px, 4vw, 48px) 64px',
-      background: 'var(--color-paper)',
-    }}>
+    <footer style={{ marginTop: 80, background: 'var(--color-paper)' }}>
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: 48,
-        alignItems: 'start',
-        maxWidth: 1200,
-        margin: '0 auto',
+        borderTop: '1px solid var(--color-stroke)',
+        borderBottom: '1px solid var(--color-stroke)',
+        overflow: 'hidden',
+        padding: '10px 0',
       }}>
-        <div>
-          <button type="button" onClick={onHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-label="Home">
-            <Logo size={72} onClick={onHome} />
-          </button>
+        <div style={{
+          display: 'inline-block',
+          whiteSpace: 'nowrap',
+          animation: 'marqueeScroll 40s linear infinite',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: 'var(--font-label-size)',
+          letterSpacing: '0.04em',
+          color: 'var(--color-ink)',
+          textTransform: 'uppercase',
+        }}>
+          EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · ®SABOTEUR.ONE — EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · ®SABOTEUR.ONE —
         </div>
+        <style>{'@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}'}</style>
+      </div>
 
-        <div>
-          <div style={colLabel}>Contact</div>
-          <button type="button" onClick={onContact} style={linkStyle}
-            onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-            onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-          >Contact</button>
-        </div>
+      <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+          gap: 'clamp(24px, 4vw, 48px)',
+          maxWidth: 1200,
+          margin: '0 auto',
+          alignItems: 'start',
+        }}>
+          <div>
+            <button type="button" onClick={onHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-label="Home">
+              <Logo size={72} onClick={onHome} />
+            </button>
+            <div style={{ marginTop: 12, fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', lineHeight: 1.4 }}>
+              Experimental creative house
+            </div>
+            <div style={{ marginTop: 20, fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', lineHeight: 1.5 }}>
+              © 2026 ®Saboteur LLC — All rights reserved
+            </div>
+          </div>
 
-        <div>
-          <div style={colLabel}>Local time</div>
-          <div style={{
-            fontFamily: 'var(--font-family-mono)',
-            fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-            fontWeight: 500,
-            color: 'var(--color-ink)',
-            letterSpacing: '-0.02em',
-            marginBottom: 8,
-          }}>{timeStr}</div>
-          <div style={{
-            fontFamily: 'var(--font-family-mono)',
-            fontSize: 'var(--font-label-size)',
-            color: 'var(--color-ink-55)',
-          }}>Indianapolis, IN</div>
+          <div>
+            <div style={colLabel}>Contact</div>
+            <button type="button" onClick={onContact} style={linkBtn}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+            >Contact</button>
+          </div>
+
+          <div>
+            <div style={colLabel}>Site map</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)' }}>
+              Add links in Sanity → Footer
+            </div>
+          </div>
+
+          <div>
+            <div style={colLabel}>Local time</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6 }}>{localStr}</div>
+            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-ink-55)', marginBottom: 16 }}>Indianapolis, Indiana</div>
+            <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4 }}>Next: Budapest</div>
+              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-body-size)', color: 'var(--color-ink)' }}>{nextStr}</div>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

@@ -98,7 +98,7 @@ function Placeholder({ size, label, imageUrl }) {
       <img
         src={imageUrl + '?w=900&auto=format'}
         alt={label || ''}
-        style={{ width: '100%', aspectRatio: `${size.w} / ${size.h}`, objectFit: 'cover', background: 'var(--color-card)', display: 'block', transition: 'transform var(--duration-normal) var(--ease)' }}
+        style={{ width: '100%', height: 'auto', display: 'block', background: 'var(--color-card)', transition: 'transform var(--duration-normal) var(--ease)' }}
       />
     );
   }

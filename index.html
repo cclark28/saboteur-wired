@@ -567,6 +567,118 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
   );
 }
 
+
+function ContactForm() {
+  const [status, setStatus] = useState('idle'); // idle | sending | success | error
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (status === 'sending') return;
+    setStatus('sending');
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: '8fb4c260-014b-491e-bb90-e6cb6e25ca52',
+          subject: 'Saboteur site — contact',
+          from_name: name,
+          name,
+          email,
+          message,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatus('success');
+        setName('');
+        setEmail('');
+        setMessage('');
+        setTimeout(() => setStatus('idle'), 5000);
+      } else {
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 5000);
+      }
+    } catch (err) {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 5000);
+    }
+  };
+
+  const field = {
+    width: '100%',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-family-body)',
+    fontSize: 'var(--font-body-size)',
+    color: 'var(--color-ink)',
+    background: 'var(--color-paper)',
+    border: '1px solid var(--color-stroke)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '12px 14px',
+    outline: 'none',
+  };
+  const label = {
+    fontFamily: 'var(--font-family-mono)',
+    fontSize: 'var(--font-label-size)',
+    color: 'var(--color-ink-55)',
+    display: 'block',
+    marginBottom: 6,
+  };
+
+  if (status === 'success') {
+    return (
+      <div style={{
+        marginTop: 40,
+        padding: '20px 0',
+        fontFamily: 'var(--font-family-mono)',
+        fontSize: 'var(--font-body-size)',
+        color: 'var(--color-ink)',
+        lineHeight: 1.5,
+      }}>
+        Thanks for reaching out. We may get back to you. Who knows.
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 420 }}>
+      <div>
+        <label style={label}>Name</label>
+        <input required value={name} onChange={(e) => setName(e.target.value)} style={field} />
+      </div>
+      <div>
+        <label style={label}>Email</label>
+        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={field} />
+      </div>
+      <div>
+        <label style={label}>Message</label>
+        <textarea required rows={5} value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...field, resize: 'vertical' }} />
+      </div>
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        style={{
+          alignSelf: 'flex-start',
+          background: 'var(--color-ink)',
+          color: 'var(--color-paper)',
+          border: 'none',
+          borderRadius: 'var(--radius-sm)',
+          padding: '12px 24px',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: 'var(--font-label-size)',
+          fontWeight: 500,
+          cursor: status === 'sending' ? 'wait' : 'pointer',
+        }}
+      >
+        {status === 'sending' ? 'Sending…' : status === 'error' ? 'Try again' : 'Send'}
+      </button>
+    </form>
+  );
+}
+
 function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark, settings }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const s = settings || {};
@@ -587,6 +699,7 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
           {paragraphs.map((p, i) => (
             <p key={i} style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink)', margin: '0 0 1.25em' }}>{p}</p>
           ))}
+          <ContactForm />
         </div>
         <div style={{ flex: '1 1 320px', maxWidth: 400 }}>
           {mediaUrl && isVideo ? (

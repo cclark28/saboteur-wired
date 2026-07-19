@@ -687,7 +687,7 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
 }
 
 function GalleryPanel({ series }) {
-  const [orient, setOrient] = useState({}); // src -> 'landscape' | 'portrait'
+  const [meta, setMeta] = useState({}); // src -> { w, h, orient }
 
   const items = [];
   const seen = new Set();
@@ -698,7 +698,7 @@ function GalleryPanel({ series }) {
   };
   if (series.galleryUrls && series.galleryUrls.length) {
     series.galleryUrls.forEach((u) => {
-      if (/\.(mp4|webm|mov)(\?|$)/i.test(u)) push('video', u);
+      if (/\.(mp4|webm|mov)(\?|$)/i.test(String(u))) push('video', u);
       else push('image', u);
     });
   }
@@ -706,89 +706,96 @@ function GalleryPanel({ series }) {
   if (series.videoUrl) push('video', series.videoUrl);
   if (!items.length) return null;
 
-  const mark = (src, w, h) => {
+  const setDims = (src, w, h) => {
     if (!w || !h) return;
-    const o = w >= h ? 'landscape' : 'portrait';
-    setOrient((prev) => (prev[src] === o ? prev : { ...prev, [src]: o }));
+    const orient = w >= h ? 'landscape' : 'portrait';
+    setMeta((prev) => {
+      if (prev[src] && prev[src].w === w && prev[src].h === h) return prev;
+      return { ...prev, [src]: { w, h, orient } };
+    });
   };
 
-  // Prefer known dims from series.size for main image
   useEffect(() => {
     if (series.imageUrl && series.size && series.size.w && series.size.h) {
-      mark(series.imageUrl, series.size.w, series.size.h);
+      setDims(series.imageUrl, series.size.w, series.size.h);
     }
   }, [series.imageUrl, series.size]);
 
   const isSingle = items.length === 1;
-  const orientations = items.map((it) => orient[it.src] || null);
-  const allKnown = orientations.every(Boolean);
-  const allPortrait = allKnown && orientations.every((o) => o === 'portrait');
-  const singleLandscape = isSingle && orientations[0] === 'landscape';
-  const singlePortrait = isSingle && orientations[0] === 'portrait';
-  const twoPortraitSideBySide = items.length >= 2 && allPortrait;
+  const singleOrient = isSingle && meta[items[0].src] ? meta[items[0].src].orient : null;
 
-  const useTwoCol = twoPortraitSideBySide;
+  // Bento: 2-col dense grid. Landscapes span full width when not alone in a tight pair.
+  const cellStyle = (src) => {
+    const o = meta[src] && meta[src].orient;
+    const span2 = !isSingle && o === 'landscape';
+    return {
+      gridColumn: span2 ? '1 / -1' : 'auto',
+      margin: 0,
+      padding: 0,
+      minWidth: 0,
+    };
+  };
 
-  const mediaBase = {
-    height: 'auto',
-    display: 'block',
-    objectFit: 'contain',
-    borderRadius: 'var(--radius-sm)',
-    background: 'transparent',
-    maxHeight: '70vh',
+  const mediaStyle = (src) => {
+    const o = meta[src] && meta[src].orient;
+    const singlePortrait = isSingle && o === 'portrait';
+    const singleLandscape = isSingle && o === 'landscape';
+    return {
+      width: singlePortrait ? 'auto' : '100%',
+      maxWidth: singlePortrait ? 'min(100%, 400px)' : '100%',
+      maxHeight: isSingle ? '72vh' : '56vh',
+      height: 'auto',
+      display: 'block',
+      objectFit: 'contain',
+      background: 'transparent',
+      borderRadius: '2px',
+    };
   };
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: useTwoCol ? 'repeat(2, minmax(0, 1fr))' : '1fr',
-        gap: 16,
+        gridTemplateColumns: isSingle ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+        gap: 12,
         width: '100%',
-        justifyItems: singlePortrait ? 'center' : 'stretch',
+        justifyItems: isSingle && singleOrient === 'portrait' ? 'center' : 'stretch',
         alignItems: 'start',
+        alignContent: 'start',
       }}
     >
-      {items.map((item, i) => {
-        const isLand = orient[item.src] === 'landscape';
-        const isPort = orient[item.src] === 'portrait';
-        const style = Object.assign({}, mediaBase, {
-          width: singlePortrait ? 'auto' : '100%',
-          maxWidth: singlePortrait ? 'min(100%, 420px)' : '100%',
-        });
-        if (item.type === 'video') {
-          return (
+      {items.map((item, i) => (
+        <div key={item.src || i} style={cellStyle(item.src)}>
+          {item.type === 'video' ? (
             <video
-              key={i}
               src={item.src}
               muted
               playsInline
               autoPlay
               loop
-              style={style}
+              style={mediaStyle(item.src)}
               onLoadedMetadata={(e) => {
                 const v = e.currentTarget;
-                mark(item.src, v.videoWidth, v.videoHeight);
+                setDims(item.src, v.videoWidth, v.videoHeight);
               }}
             />
-          );
-        }
-        return (
-          <img
-            key={i}
-            src={item.src}
-            alt=""
-            style={style}
-            onLoad={(e) => {
-              const img = e.currentTarget;
-              mark(item.src, img.naturalWidth, img.naturalHeight);
-            }}
-          />
-        );
-      })}
+          ) : (
+            <img
+              src={item.src}
+              alt=""
+              style={mediaStyle(item.src)}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                setDims(item.src, img.naturalWidth, img.naturalHeight);
+              }}
+            />
+          )}
+        </div>
+      ))}
     </div>
   );
 }
+
 
 
 

@@ -107,6 +107,12 @@ function assetToSeries(asset, index) {
   let size = randomSize();
   const dims = asset.mainImage && asset.mainImage.asset && asset.mainImage.asset.metadata && asset.mainImage.asset.metadata.dimensions;
   if (dims && dims.width && dims.height) size = { w: dims.width, h: dims.height };
+  const sections = (asset.sections || []).map((s) => {
+    if (typeof s === 'string') return s.toLowerCase().replace(/\s+/g, '-');
+    const slug = (s && (s.slug || s.title)) || '';
+    return String(slug).toLowerCase().replace(/\s+/g, '-');
+  }).filter(Boolean);
+
   return {
     id: asset._id || ('asset-' + index),
     size,
@@ -115,6 +121,8 @@ function assetToSeries(asset, index) {
     subhead: asset.subhead || null,
     body: asset.body || null,
     tags,
+    sections,
+    showOnHome: asset.showOnHome !== false,
     gallery: Array.from({ length: Math.max(1, galleryCount) }, () => randomSize()),
     imageUrl,
     videoUrl,

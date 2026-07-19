@@ -774,6 +774,12 @@ function App() {
           comingSoon: !!s.comingSoon,
           isAbout: !!s.isAbout,
         }));
+        SECTION_META = sectionDocs.map((s) => ({
+          title: s.title,
+          slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
+          comingSoon: !!s.comingSoon,
+          isAbout: !!s.isAbout,
+        }));
         setNavSections(sectionDocs.map((s) => ({
           title: s.title,
           slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),

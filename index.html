@@ -43,7 +43,7 @@ const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/que
 async function fetchSanityAssets() {
   const query = encodeURIComponent(`*[_type == "asset"] | order(_createdAt desc) {
     _id, title, headline, subhead, body,
-    mainImage{ asset->{ _id, url, metadata{ dimensions } } },
+    mainImage{ asset->{ _id, url, metadata{ dimensions } } }, mainMedia{ asset->{ _id, url, mimeType } },
     "galleryUrls": gallery[].asset->url,
     sections, "tags": tags[]->{ title }
   }`);
@@ -112,11 +112,17 @@ function makeSeries(id, opts = {}) {
 const HOME_ITEMS = Array.from({ length: 14 }, (_, i) => makeSeries(i));
 const FIGURE_ITEMS = Array.from({ length: 10 }, (_, i) => makeSeries(i + 20, { hasInfo: i % 2 === 0 }));
 
-function Placeholder({ size, label, imageUrl }) {
+function Placeholder({ size, label, imageUrl, videoUrl }) {
+  if (videoUrl) {
+    return (
+      <video src={videoUrl} muted playsInline autoPlay loop
+        style={{ width: '100%', height: 'auto', display: 'block', background: 'var(--color-card)' }} />
+    );
+  }
   if (imageUrl) {
     return (
       <img
-        src={imageUrl + '?w=900&auto=format'}
+        src={imageUrl + (imageUrl.includes('cdn.sanity.io') ? '?w=900&auto=format' : '')}
         alt={label || ''}
         style={{ width: '100%', height: 'auto', display: 'block', background: 'var(--color-card)', transition: 'transform var(--duration-normal) var(--ease)' }}
       />
@@ -322,7 +328,7 @@ function MasonryGrid({ items, onOpen }) {
           onMouseEnter={(e) => { e.currentTarget.querySelector('img,div').style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}
           onMouseLeave={(e) => { e.currentTarget.querySelector('img,div').style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
         >
-          <Placeholder size={s.size} imageUrl={s.imageUrl} label={s.headline || s.subhead || ''} />
+          <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.headline || s.subhead || ''} />
         </div>
       ))}
     </div>

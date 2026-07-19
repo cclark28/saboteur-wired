@@ -45,7 +45,7 @@ async function fetchSanityAssets() {
     _id, title, headline, subhead, body,
     mainImage{ asset->{ _id, url, metadata{ dimensions } } },
     "galleryUrls": gallery[].asset->url,
-    "tags": tags[]->{ title }
+    sections, "tags": tags[]->{ title }
   }`);
   const res = await fetch(`${SANITY_API}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
@@ -729,7 +729,15 @@ function App() {
         if (cancelled) return;
         if (raw && raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i));
-          setItems({ home: shuffle(series), figure: shuffle(series) });
+          const withSections = series.map((s, i) => ({
+            ...s,
+            sections: (raw[i] && raw[i].sections) || s.sections || [],
+          }));
+          setItems({
+            home: shuffle(withSections.filter((s) => !s.sections.length || s.sections.includes('home'))),
+            figure: shuffle(withSections.filter((s) => s.sections && s.sections.includes('figure-studies'))),
+            explorations: shuffle(withSections.filter((s) => s.sections && s.sections.includes('explorations'))),
+          });
         }
       } catch (err) {
         console.error('Sanity load failed, using placeholders', err);
@@ -753,7 +761,7 @@ function App() {
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
       {view.page === 'home' && <Home onMenu={() => setMenuOpen(true)} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'explorations' && <SectionGrid title="Explorations" items={items.home} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'explorations')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'explorations' && <SectionGrid title="Explorations" items={items.explorations || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'explorations')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'figure-studies' && <SectionGrid title="Figure Studies" items={items.figure} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'figure-studies')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'about' && <About onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}

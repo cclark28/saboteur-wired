@@ -52,7 +52,13 @@ async function fetchSanityBundle() {
       "sections": sections[]->{ title, "slug": slug.current }
     },
     "sections": *[_type == "section" && showInNav != false] | order(sortOrder asc) {
-      title, "slug": slug.current, sortOrder
+      title, "slug": slug.current, sortOrder, comingSoon, isInfoPage, isAbout
+    },
+    "settings": *[_type == "siteSettings"][0]{
+      infoHeadline, infoSubhead, infoParagraphs,
+      "infoMediaUrl": infoMedia.asset->url,
+      "infoMediaMime": infoMedia.asset->mimeType,
+      socialLinks
     },
     "tags": *[_type == "tag"] | order(title asc) { title, "slug": slug.current }
   }`);
@@ -561,21 +567,35 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
   );
 }
 
-function About({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark }) {
+function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark, settings }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
+  const s = settings || {};
+  const headline = s.infoHeadline || s.aboutHeadline || 'Info/Contact';
+  const subhead = s.infoSubhead || s.aboutSubhead || '';
+  const paragraphs = Array.isArray(s.infoParagraphs) ? s.infoParagraphs.filter(Boolean) : (s.aboutBody ? [s.aboutBody] : []);
+  const mediaUrl = s.infoMediaUrl || s.aboutImageUrl || null;
+  const mime = (s.infoMediaMime || '').toLowerCase();
+  const isVideo = mediaUrl && (mime.startsWith('video/') || /\.(mp4|webm|mov)(\?|$)/i.test(mediaUrl));
+  const isGif = mediaUrl && (mime === 'image/gif' || /\.gif(\?|$)/i.test(mediaUrl));
   return (
     <div>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
-      <div style={{ padding: '160px 48px', maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto', display: 'flex', gap: 64, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ padding: '160px 48px', maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto', display: 'flex', gap: 64, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 400px', minWidth: 0, maxWidth: 'var(--max-prose)' }}>
-          <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 16px', color: 'var(--color-ink)' }}>About</h1>
-          <h2 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: 'var(--font-h2-size)', margin: '0 0 24px', color: 'var(--color-ink-55)' }}>An experimental art studio.</h2>
-          <p style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink)' }}>
-            ®Saboteur started as a creative outlet for designer and artist Charlie Clark — a way to step outside an endlessly digital world and make things people could wear, hold, and read. Designing graphics and creating comics, books, and shirts became both a passion and a way to bring ideas to life.
-          </p>
+          <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 16px', color: 'var(--color-ink)' }}>{headline}</h1>
+          {subhead ? <h2 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: 'var(--font-h2-size)', margin: '0 0 24px', color: 'var(--color-ink-55)' }}>{subhead}</h2> : null}
+          {paragraphs.map((p, i) => (
+            <p key={i} style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink)', margin: '0 0 1.25em' }}>{p}</p>
+          ))}
         </div>
         <div style={{ flex: '1 1 320px', maxWidth: 400 }}>
-          <Placeholder size={{ w: 1080, h: 1350 }} />
+          {mediaUrl && isVideo ? (
+            <video src={mediaUrl} muted playsInline autoPlay loop style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-sm)' }} />
+          ) : mediaUrl ? (
+            <img src={mediaUrl} alt="" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-sm)' }} />
+          ) : (
+            <Placeholder size={{ w: 1080, h: 1350 }} />
+          )}
         </div>
       </div>
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
@@ -746,6 +766,7 @@ function AgeGate({ onConfirm }) {
 function App() {
   const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS) }));
   const [navSections, setNavSections] = useState([]);
+  const [siteSettings, setSiteSettings] = useState(null);
   const [view, setView] = useState({ page: 'home' });
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
@@ -763,10 +784,19 @@ function App() {
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
         NAV_LINKS = sectionDocs.map((s) => s.title);
+        setSiteSettings(data.settings || null);
         setNavSections(sectionDocs.map((s) => ({
           title: s.title,
           slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
+          comingSoon: !!s.comingSoon,
+          isInfoPage: !!(s.isInfoPage || s.isAbout),
         })));
+        SECTION_META = sectionDocs.map((s) => ({
+          title: s.title,
+          slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
+          comingSoon: !!s.comingSoon,
+          isInfoPage: !!(s.isInfoPage || s.isAbout),
+        }));
         if (raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i));
           const next = { home: shuffle(series) };
@@ -791,7 +821,13 @@ function App() {
 
   const openItem = (series, from) => setView({ page: 'item', series, from: from || view.page });
   const goHome = () => { setMenuOpen(false); setView({ page: 'home' }); };
-  const openSection = (section) => { setMenuOpen(false); setView({ page: section }); };
+  const openSection = (section) => {
+    const meta = (SECTION_META || []).find((s) => s.slug === section || (s.title || '').toLowerCase().replace(/\s+/g, '-') === section);
+    if (meta && meta.comingSoon) return;
+    setMenuOpen(false);
+    if (meta && meta.isInfoPage) { setView({ page: 'info' }); return; }
+    setView({ page: section });
+  };
   const goContact = () => setView({ page: 'contact' });
   const goTag = (tag) => setView({ page: 'tag', tag });
   const back = () => {
@@ -802,9 +838,9 @@ function App() {
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
       {view.page === 'home' && <Home onMenu={() => setMenuOpen(true)} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {navSections.map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />))}
+      {navSections.filter((sec) => !sec.isInfoPage).map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />))}
       
-      {view.page === 'about' && <About onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={items.home.concat(items.figure).filter((s) => s.tags.includes(view.tag))} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'item' && <SingleItem series={view.series} allItems={view.from === 'figure-studies' ? items.figure : items.home} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}

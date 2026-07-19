@@ -781,6 +781,7 @@ function App() {
         if (cancelled) return;
         const raw = data.assets || [];
         const sectionDocs = data.sections || [];
+        setSiteSettings(data.settings || null);
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
         NAV_LINKS = sectionDocs.map((s) => s.title);

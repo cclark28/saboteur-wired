@@ -687,18 +687,8 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
 }
 
 function GalleryPanel({ series }) {
-  const mediaStyle = {
-    width: 'auto',
-    maxWidth: '100%',
-    maxHeight: '70vh',
-    height: 'auto',
-    display: 'block',
-    objectFit: 'contain',
-    borderRadius: 'var(--radius-sm)',
-    background: 'var(--color-card)',
-  };
+  const [orient, setOrient] = useState({}); // src -> 'landscape' | 'portrait'
 
-  // Collect media: prefer gallery list; else main image; else video
   const items = [];
   const seen = new Set();
   const push = (type, src) => {
@@ -706,7 +696,6 @@ function GalleryPanel({ series }) {
     seen.add(src);
     items.push({ type, src });
   };
-
   if (series.galleryUrls && series.galleryUrls.length) {
     series.galleryUrls.forEach((u) => {
       if (/\.(mp4|webm|mov)(\?|$)/i.test(u)) push('video', u);
@@ -715,40 +704,92 @@ function GalleryPanel({ series }) {
   }
   if (series.imageUrl) push('image', series.imageUrl);
   if (series.videoUrl) push('video', series.videoUrl);
-
   if (!items.length) return null;
 
+  const mark = (src, w, h) => {
+    if (!w || !h) return;
+    const o = w >= h ? 'landscape' : 'portrait';
+    setOrient((prev) => (prev[src] === o ? prev : { ...prev, [src]: o }));
+  };
+
+  // Prefer known dims from series.size for main image
+  useEffect(() => {
+    if (series.imageUrl && series.size && series.size.w && series.size.h) {
+      mark(series.imageUrl, series.size.w, series.size.h);
+    }
+  }, [series.imageUrl, series.size]);
+
   const isSingle = items.length === 1;
+  const orientations = items.map((it) => orient[it.src] || null);
+  const allKnown = orientations.every(Boolean);
+  const allPortrait = allKnown && orientations.every((o) => o === 'portrait');
+  const singleLandscape = isSingle && orientations[0] === 'landscape';
+  const singlePortrait = isSingle && orientations[0] === 'portrait';
+  const twoPortraitSideBySide = items.length >= 2 && allPortrait;
+
+  const useTwoCol = twoPortraitSideBySide;
+
+  const mediaBase = {
+    height: 'auto',
+    display: 'block',
+    objectFit: 'contain',
+    borderRadius: 'var(--radius-sm)',
+    background: 'transparent',
+    maxHeight: '70vh',
+  };
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: isSingle ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+        gridTemplateColumns: useTwoCol ? 'repeat(2, minmax(0, 1fr))' : '1fr',
         gap: 16,
         width: '100%',
-        justifyItems: isSingle ? 'center' : 'stretch',
+        justifyItems: singlePortrait ? 'center' : 'stretch',
         alignItems: 'start',
       }}
     >
-      {items.map((item, i) =>
-        item.type === 'video' ? (
-          <video
+      {items.map((item, i) => {
+        const isLand = orient[item.src] === 'landscape';
+        const isPort = orient[item.src] === 'portrait';
+        const style = Object.assign({}, mediaBase, {
+          width: singlePortrait ? 'auto' : '100%',
+          maxWidth: singlePortrait ? 'min(100%, 420px)' : '100%',
+        });
+        if (item.type === 'video') {
+          return (
+            <video
+              key={i}
+              src={item.src}
+              muted
+              playsInline
+              autoPlay
+              loop
+              style={style}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                mark(item.src, v.videoWidth, v.videoHeight);
+              }}
+            />
+          );
+        }
+        return (
+          <img
             key={i}
             src={item.src}
-            muted
-            playsInline
-            autoPlay
-            loop
-            style={mediaStyle}
+            alt=""
+            style={style}
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              mark(item.src, img.naturalWidth, img.naturalHeight);
+            }}
           />
-        ) : (
-          <img key={i} src={item.src} alt="" style={mediaStyle} />
-        )
-      )}
+        );
+      })}
     </div>
   );
 }
+
 
 
 function InfoPanel({ series, onTag, isMobile }) {

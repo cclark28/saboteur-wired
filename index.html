@@ -314,17 +314,17 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
               onClick={(e) => { e.preventDefault(); if (!disabled) onSelect(key); }}
               style={{
                 fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '5.5rem', lineHeight: 1.15,
-                letterSpacing: '-0.01em', textDecoration: disabled ? 'line-through' : 'none',
-                color: disabled ? 'var(--color-ink-55)' : (isActive ? 'var(--color-accent)' : 'var(--color-ink)'),
+                letterSpacing: '-0.01em', textDecoration: 'none',
+                color: disabled ? '#ECEBEE' : (isActive ? 'var(--color-accent)' : 'var(--color-ink)'),
                 cursor: disabled ? 'default' : 'pointer',
                 transition: 'color var(--duration-fast) var(--ease)',
                 display: 'flex', alignItems: 'baseline', gap: 16,
               }}
-              onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.color = 'var(--color-link)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = disabled ? 'var(--color-ink-55)' : (isActive ? 'var(--color-accent)' : 'var(--color-ink)'); }}
+              onMouseEnter={(e) => { if (disabled) { e.currentTarget.textContent = 'Coming soon'; } else { e.currentTarget.style.color = 'var(--color-link)'; } }}
+              onMouseLeave={(e) => { if (disabled) { e.currentTarget.textContent = l; e.currentTarget.style.color = '#ECEBEE'; } else { e.currentTarget.style.color = isActive ? 'var(--color-accent)' : 'var(--color-ink)'; } }}
             >
               {l}
-              {disabled && <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', fontWeight: 400, color: 'var(--color-stroke)', textDecoration: 'none' }}>coming soon</span>}
+              
             </a>
           );
         })}

@@ -337,8 +337,8 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
                 transition: 'color var(--duration-fast) var(--ease)',
                 display: 'flex', alignItems: 'baseline', gap: 16,
               }}
-              onMouseEnter={(e) => { const el = e.currentTarget; if (!el) return; if (disabled) { el.textContent = 'Coming soon'; } else { el.style.color = 'var(--color-link)'; } }}
-              onMouseLeave={(e) => { const el = e.currentTarget; if (!el) return; if (disabled) { el.textContent = l; el.style.color = '#ECEBEE'; } else { el.style.color = isActive ? 'var(--color-accent)' : 'var(--color-ink)'; } }}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (!el) return; if (disabled) { el.setAttribute('data-hover', '1'); } else { el.style.color = 'var(--color-link)'; } }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (!el) return; if (disabled) { el.removeAttribute('data-hover'); el.style.color = '#ECEBEE'; } else { el.style.color = isActive ? 'var(--color-accent)' : 'var(--color-ink)'; } }}
             >
               {l}
               
@@ -1027,9 +1027,17 @@ function App() {
           sectionDocs.forEach((s) => {
             const slug = s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-');
             next[slug] = shuffle(series.filter((item) => {
-              const ss = item.sections || [];
+              const ss = (item.sections || []).map((x) => {
+                if (typeof x === 'string') return x.toLowerCase().replace(/\s+/g, '-');
+                if (x && typeof x === 'object') {
+                  const s = x.slug || x.title || '';
+                  return String(s).toLowerCase().replace(/\s+/g, '-');
+                }
+                return '';
+              }).filter(Boolean);
               if (!ss.length) return false;
-              return ss.includes(slug);
+              const titleSlug = (s.title || '').toLowerCase().replace(/\s+/g, '-');
+              return ss.includes(slug) || ss.includes(titleSlug);
             }));
           });
           setItems(next);
@@ -1046,11 +1054,21 @@ function App() {
   const openItem = (series, from) => setView({ page: 'item', series, from: from || view.page });
   const goHome = () => { setMenuOpen(false); setView({ page: 'home' }); };
   const openSection = (section) => {
-    const meta = (SECTION_META || []).find((s) => s.slug === section || (s.title || '').toLowerCase().replace(/\s+/g, '-') === section);
+    const raw = String(section || '').trim();
+    const slug = raw.toLowerCase().replace(/\s+/g, '-');
+    const meta = (SECTION_META || []).find((s) =>
+      s.slug === raw || s.slug === slug ||
+      (s.title || '').toLowerCase().replace(/\s+/g, '-') === slug
+    );
     if (meta && meta.comingSoon) return;
     setMenuOpen(false);
-    if (meta && meta.isInfoPage) { setView({ page: 'contact' }); return; }
-    setView({ page: section });
+    if (meta && (meta.isInfoPage || meta.isAbout) || slug === 'info' || slug === 'info-contact') {
+      setView({ page: 'info' });
+      window.scrollTo(0, 0);
+      return;
+    }
+    setView({ page: (meta && meta.slug) ? meta.slug : slug });
+    window.scrollTo(0, 0);
   };
   const goContact = () => { setMenuOpen(false); setView({ page: 'info' }); };
   FOOTER_NAV = {

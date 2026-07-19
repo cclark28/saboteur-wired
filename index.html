@@ -344,6 +344,13 @@ function InfiniteGrid({ baseItems, onOpen }) {
   const [loading, setLoading] = useState(false);
   const sentinelRef = React.useRef(null);
 
+  // Sync when Sanity data arrives
+  useEffect(() => {
+    if (baseItems && baseItems.length) {
+      setItems(baseItems);
+    }
+  }, [baseItems]);
+
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;

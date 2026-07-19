@@ -74,6 +74,12 @@ function assetToSeries(asset, index) {
   const tags = (asset.tags || []).map(t => t.title).filter(Boolean);
   const galleryCount = (asset.galleryUrls && asset.galleryUrls.length) ? asset.galleryUrls.length : 1;
   const imageUrl = buildImageUrl(asset.mainImage);
+  let videoUrl = null;
+  if (asset.mainMedia && asset.mainMedia.asset && asset.mainMedia.asset.url) {
+    const u = asset.mainMedia.asset.url;
+    const m = (asset.mainMedia.asset.mimeType || '').toLowerCase();
+    if (m.startsWith('video/') || /\.(mp4|webm|mov)(\?|$)/i.test(u)) videoUrl = u;
+  }
   let size = randomSize();
   const dims = asset.mainImage && asset.mainImage.asset && asset.mainImage.asset.metadata && asset.mainImage.asset.metadata.dimensions;
   if (dims && dims.width && dims.height) size = { w: dims.width, h: dims.height };
@@ -87,6 +93,7 @@ function assetToSeries(asset, index) {
     tags,
     gallery: Array.from({ length: Math.max(1, galleryCount) }, () => randomSize()),
     imageUrl,
+    videoUrl,
     galleryUrls: (asset.galleryUrls || []).filter(Boolean),
   };
 }
@@ -568,6 +575,14 @@ function About({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark })
 }
 
 function GalleryPanel({ series }) {
+  if (series.videoUrl) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <video src={series.videoUrl} controls playsInline autoPlay loop muted
+          style={{ width: '100%', display: 'block', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
+      </div>
+    );
+  }
   const urls = (series.galleryUrls && series.galleryUrls.length)
     ? series.galleryUrls
     : (series.imageUrl ? [series.imageUrl] : []);

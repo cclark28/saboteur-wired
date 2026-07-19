@@ -144,6 +144,8 @@ const HOME_ITEMS = Array.from({ length: 14 }, (_, i) => makeSeries(i));
 const FIGURE_ITEMS = Array.from({ length: 10 }, (_, i) => makeSeries(i + 20, { hasInfo: i % 2 === 0 }));
 
 function Placeholder({ size, label, imageUrl, videoUrl }) {
+  if (!imageUrl && !videoUrl) return null;
+
   if (videoUrl) {
     return (
       <video src={videoUrl} muted playsInline autoPlay loop
@@ -982,7 +984,7 @@ function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
 
 
 function App() {
-  const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS) }));
+  const [items, setItems] = useState(() => ({ home: [] }));
   const [navSections, setNavSections] = useState([]);
   const [siteSettings, setSiteSettings] = useState(null);
   const [footerData, setFooterData] = useState(null);
@@ -1020,7 +1022,7 @@ function App() {
           isInfoPage: !!(s.isInfoPage || s.isAbout),
         }));
         if (raw.length) {
-          const series = raw.map((a, i) => assetToSeries(a, i));
+          const series = raw.map((a, i) => assetToSeries(a, i)).filter((s) => s.imageUrl || s.videoUrl || (s.galleryUrls && s.galleryUrls.length));
           const next = { home: shuffle(series.filter((item) => item.showOnHome !== false)) };
           sectionDocs.forEach((s) => {
             const slug = s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-');

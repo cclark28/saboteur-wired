@@ -32,25 +32,34 @@ const SIZES = [
 
 function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
 
-const NAV_LINKS = ['About', 'Explorations', 'Figure Studies', 'Store'];
-const ALL_TAGS = ['Street', 'Night', '35mm', 'Portrait', 'Studio', 'Texture'];
+let NAV_LINKS = ['About', 'Store'];
+let ALL_TAGS = [];
+let SECTION_META = [];
 
 // ---------- Sanity ----------
 const SANITY_PROJECT = '6td8xalf';
 const SANITY_DATASET = 'production';
 const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
 
-async function fetchSanityAssets() {
-  const query = encodeURIComponent(`*[_type == "asset"] | order(_createdAt desc) {
-    _id, title, headline, subhead, body,
-    mainImage{ asset->{ _id, url, metadata{ dimensions } } }, mainMedia{ asset->{ _id, url, mimeType } },
-    "galleryUrls": gallery[].asset->url,
-    sections, "tags": tags[]->{ title }
+async function fetchSanityBundle() {
+  const query = encodeURIComponent(`{
+    "assets": *[_type == "asset"] | order(_createdAt desc) {
+      _id, title, headline, subhead, body,
+      mainImage{ asset->{ _id, url, metadata{ dimensions } } },
+      mainMedia{ asset->{ _id, url, mimeType, originalFilename } },
+      "galleryUrls": gallery[].asset->url,
+      "tags": tags[]->{ title, "slug": slug.current },
+      "sections": sections[]->{ title, "slug": slug.current }
+    },
+    "sections": *[_type == "section" && showInNav != false] | order(sortOrder asc) {
+      title, "slug": slug.current, sortOrder
+    },
+    "tags": *[_type == "tag"] | order(title asc) { title, "slug": slug.current }
   }`);
   const res = await fetch(`${SANITY_API}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
   const json = await res.json();
-  return json.result || [];
+  return json.result || { assets: [], sections: [], tags: [] };
 }
 
 function buildImageUrl(mainImage) {
@@ -295,7 +304,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
         {NAV_LINKS.map((l) => {
-          const key = l.toLowerCase().replace(' ', '-');
+          const key = l.toLowerCase().replace(/\s+/g, '-');
           const isActive = activeSection === key;
           const disabled = l === 'Store';
           return (
@@ -579,7 +588,7 @@ function GalleryPanel({ series }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <video src={series.videoUrl} controls playsInline autoPlay loop muted
-          style={{ width: '100%', display: 'block', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
+          style={{ width: '100%', maxHeight: 'min(70vh, 800px)', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
       </div>
     );
   }
@@ -735,7 +744,8 @@ function AgeGate({ onConfirm }) {
 }
 
 function App() {
-  const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS), figure: shuffle(FIGURE_ITEMS) }));
+  const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS) }));
+  const [navSections, setNavSections] = useState([]);
   const [view, setView] = useState({ page: 'home' });
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
@@ -746,7 +756,7 @@ function App() {
     let cancelled = false;
     (async () => {
       try {
-        const raw = await fetchSanityAssets();
+        const raw = await fetchSanityBundle();
         if (cancelled) return;
         if (raw && raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i));
@@ -782,8 +792,8 @@ function App() {
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
       {view.page === 'home' && <Home onMenu={() => setMenuOpen(true)} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'explorations' && <SectionGrid title="Explorations" items={items.explorations || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'explorations')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'figure-studies' && <SectionGrid title="Figure Studies" items={items.figure} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'figure-studies')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {navSections.map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />))}
+      
       {view.page === 'about' && <About onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={items.home.concat(items.figure).filter((s) => s.tags.includes(view.tag))} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}

@@ -326,8 +326,8 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
                 transition: 'color var(--duration-fast) var(--ease)',
                 display: 'flex', alignItems: 'baseline', gap: 16,
               }}
-              onMouseEnter={(e) => { if (disabled) { e.currentTarget.textContent = 'Coming soon'; } else { e.currentTarget.style.color = 'var(--color-link)'; } }}
-              onMouseLeave={(e) => { if (disabled) { e.currentTarget.textContent = l; e.currentTarget.style.color = '#ECEBEE'; } else { e.currentTarget.style.color = isActive ? 'var(--color-accent)' : 'var(--color-ink)'; } }}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (!el) return; if (disabled) { el.textContent = 'Coming soon'; } else { el.style.color = 'var(--color-link)'; } }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (!el) return; if (disabled) { el.textContent = l; el.style.color = '#ECEBEE'; } else { el.style.color = isActive ? 'var(--color-accent)' : 'var(--color-ink)'; } }}
             >
               {l}
               
@@ -461,8 +461,8 @@ function Footer({ onContact, onTag, onHome }) {
                   color: isStore ? 'var(--color-ink-55)' : 'var(--color-ink)',
                   textDecoration: isStore ? 'line-through' : 'none', position: 'relative',
                 }}
-                onMouseEnter={(e) => { if (!isStore) e.currentTarget.style.color = 'var(--color-link)'; else e.currentTarget.title = 'Coming soon'; }}
-                onMouseLeave={(e) => { if (!isStore) e.currentTarget.style.color = 'var(--color-ink)'; }}
+                onMouseEnter={(e) => { const el = e.currentTarget; if (!el) return; if (!isStore) el.style.color = 'var(--color-link)'; else el.title = 'Coming soon'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget; if (!el) return; if (!isStore) el.style.color = 'var(--color-ink)'; }}
                 title={isStore ? 'Coming soon' : undefined}
               >
                 {isStore ? 'Print Shop' : l}

@@ -32,7 +32,7 @@ const SIZES = [
 
 function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
 
-let NAV_LINKS = [];
+let NAV_LINKS = ['About', 'Store'];
 let ALL_TAGS = [];
 let SECTION_META = [];
 
@@ -52,12 +52,7 @@ async function fetchSanityBundle() {
       "sections": sections[]->{ title, "slug": slug.current }
     },
     "sections": *[_type == "section" && showInNav != false] | order(sortOrder asc) {
-      title, "slug": slug.current, sortOrder, comingSoon, isAbout
-    },
-    "settings": *[_type == "siteSettings"][0]{
-      aboutHeadline, aboutSubhead, aboutBody,
-      "aboutImageUrl": aboutImage.asset->url,
-      socialLinks
+      title, "slug": slug.current, sortOrder
     },
     "tags": *[_type == "tag"] | order(title asc) { title, "slug": slug.current }
   }`);
@@ -311,7 +306,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
         {NAV_LINKS.map((l) => {
           const key = l.toLowerCase().replace(/\s+/g, '-');
           const isActive = activeSection === key;
-          const meta = (SECTION_META || []).find((s) => s.title === l); const disabled = !!(meta && meta.comingSoon);
+          const disabled = l === 'Store';
           return (
             <a
               key={l}
@@ -450,21 +445,21 @@ function Footer({ onContact, onTag, onHome }) {
         <div style={{ padding: '32px', borderRight: '1px solid var(--color-stroke)', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: 'var(--color-ink-55)', textTransform: 'uppercase', letterSpacing: 'var(--font-label-tracking)', marginBottom: 4 }}>Site Map</div>
           {NAV_LINKS.map((l) => {
-            const meta = (SECTION_META || []).find((s) => s.title === l); const isSoon = !!(meta && meta.comingSoon);
+            const isStore = l === 'Store';
             return (
               <a
                 key={l}
                 href="#"
                 style={{
                   fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)',
-                  color: isSoon ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                  textDecoration: 'none' : 'none', position: 'relative',
+                  color: isStore ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                  textDecoration: isStore ? 'line-through' : 'none', position: 'relative',
                 }}
-                onMouseEnter={(e) => { if (!isSoon) e.currentTarget.style.color = 'var(--color-link)'; else e.currentTarget.textContent = 'Coming soon'; }}
-                onMouseLeave={(e) => { if (!isSoon) e.currentTarget.style.color = 'var(--color-ink)'; else e.currentTarget.textContent = l; }}
-                title={isSoon ? 'Coming soon' : undefined}
+                onMouseEnter={(e) => { if (!isStore) e.currentTarget.style.color = 'var(--color-link)'; else e.currentTarget.title = 'Coming soon'; }}
+                onMouseLeave={(e) => { if (!isStore) e.currentTarget.style.color = 'var(--color-ink)'; }}
+                title={isStore ? 'Coming soon' : undefined}
               >
-                {l}
+                {isStore ? 'Print Shop' : l}
               </a>
             );
           })}
@@ -592,8 +587,8 @@ function GalleryPanel({ series }) {
   if (series.videoUrl) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <video src={series.videoUrl} muted playsInline autoPlay loop
-          style={{ width: '100%', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
+        <video src={series.videoUrl} controls playsInline autoPlay loop muted
+          style={{ width: '100%', maxHeight: 'min(70vh, 800px)', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: 'var(--radius-sm)', background: 'var(--color-card)' }} />
       </div>
     );
   }
@@ -767,24 +762,10 @@ function App() {
         const sectionDocs = data.sections || [];
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
-        NAV_LINKS = sectionDocs.map((s) => s.title);
-        SECTION_META = sectionDocs.map((s) => ({
-          title: s.title,
-          slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
-          comingSoon: !!s.comingSoon,
-          isAbout: !!s.isAbout,
-        }));
-        SECTION_META = sectionDocs.map((s) => ({
-          title: s.title,
-          slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
-          comingSoon: !!s.comingSoon,
-          isAbout: !!s.isAbout,
-        }));
+        NAV_LINKS = [...sectionDocs.map((s) => s.title), 'About', 'Store'];
         setNavSections(sectionDocs.map((s) => ({
           title: s.title,
           slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
-          comingSoon: !!s.comingSoon,
-          isAbout: !!s.isAbout,
         })));
         if (raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i));
@@ -810,13 +791,7 @@ function App() {
 
   const openItem = (series, from) => setView({ page: 'item', series, from: from || view.page });
   const goHome = () => { setMenuOpen(false); setView({ page: 'home' }); };
-  const openSection = (section) => {
-    const meta = (SECTION_META || []).find((s) => s.slug === section || s.title.toLowerCase().replace(/\s+/g, '-') === section);
-    if (meta && meta.comingSoon) return;
-    setMenuOpen(false);
-    if (meta && meta.isAbout) setView({ page: 'about' });
-    else setView({ page: section });
-  };
+  const openSection = (section) => { setMenuOpen(false); setView({ page: section }); };
   const goContact = () => setView({ page: 'contact' });
   const goTag = (tag) => setView({ page: 'tag', tag });
   const back = () => {

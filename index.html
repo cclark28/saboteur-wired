@@ -504,19 +504,7 @@ function Footer({ onContact, onTag, onHome }) {
   );
 }
 
-function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-  return (
-    <div>
-      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} />
-      <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '120px 24px 64px' }}>
-        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', textAlign: 'center' }}>Contact</h1>
-        <ContactForm />
-      </div>
-      <Footer onContact={() => {}} onTag={() => {}} onHome={onHome} />
-    </div>
-  );
-}
+
 
 
 
@@ -549,116 +537,7 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
 }
 
 
-function ContactForm() {
-  const [status, setStatus] = useState('idle'); // idle | sending | success | error
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (status === 'sending') return;
-    setStatus('sending');
-    try {
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: '8fb4c260-014b-491e-bb90-e6cb6e25ca52',
-          subject: 'Saboteur site — contact',
-          from_name: name,
-          name,
-          email,
-          message,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatus('success');
-        setName('');
-        setEmail('');
-        setMessage('');
-        setTimeout(() => setStatus('idle'), 5000);
-      } else {
-        setStatus('error');
-        setTimeout(() => setStatus('idle'), 5000);
-      }
-    } catch (err) {
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 5000);
-    }
-  };
-
-  const field = {
-    width: '100%',
-    boxSizing: 'border-box',
-    fontFamily: 'var(--font-family-body)',
-    fontSize: 'var(--font-body-size)',
-    color: 'var(--color-ink)',
-    background: 'var(--color-paper)',
-    border: '1px solid var(--color-stroke)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '12px 14px',
-    outline: 'none',
-  };
-  const label = {
-    fontFamily: 'var(--font-family-mono)',
-    fontSize: 'var(--font-label-size)',
-    color: 'var(--color-ink-55)',
-    display: 'block',
-    marginBottom: 6,
-  };
-
-  if (status === 'success') {
-    return (
-      <div style={{
-        marginTop: 40,
-        padding: '20px 0',
-        fontFamily: 'var(--font-family-mono)',
-        fontSize: 'var(--font-body-size)',
-        color: 'var(--color-ink)',
-        lineHeight: 1.5,
-      }}>
-        Thanks for reaching out. We may get back to you. Who knows.
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={onSubmit} style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 420 }}>
-      <div>
-        <label style={label}>Name</label>
-        <input required value={name} onChange={(e) => setName(e.target.value)} style={field} />
-      </div>
-      <div>
-        <label style={label}>Email</label>
-        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={field} />
-      </div>
-      <div>
-        <label style={label}>Message</label>
-        <textarea required rows={5} value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...field, resize: 'vertical' }} />
-      </div>
-      <button
-        type="submit"
-        disabled={status === 'sending'}
-        style={{
-          alignSelf: 'flex-start',
-          background: 'var(--color-ink)',
-          color: 'var(--color-paper)',
-          border: 'none',
-          borderRadius: 'var(--radius-sm)',
-          padding: '12px 24px',
-          fontFamily: 'var(--font-family-mono)',
-          fontSize: 'var(--font-label-size)',
-          fontWeight: 500,
-          cursor: status === 'sending' ? 'wait' : 'pointer',
-        }}
-      >
-        {status === 'sending' ? 'Sending…' : status === 'error' ? 'Try again' : 'Send'}
-      </button>
-    </form>
-  );
-}
 
 function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark, settings }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
@@ -857,6 +736,162 @@ function AgeGate({ onConfirm }) {
   );
 }
 
+
+function ContactForm() {
+  const [status, setStatus] = useState('idle');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (status === 'sending') return;
+    setStatus('sending');
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: '8fb4c260-014b-491e-bb90-e6cb6e25ca52',
+          subject: 'Saboteur site — contact',
+          from_name: name,
+          name: name,
+          email: email,
+          message: message,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setStatus('success');
+        setName('');
+        setEmail('');
+        setMessage('');
+        setTimeout(() => setStatus('idle'), 5000);
+      } else {
+        console.error('Web3Forms error', data);
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 5000);
+      }
+    } catch (err) {
+      console.error('Web3Forms fetch failed', err);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 5000);
+    }
+  };
+
+  const fieldStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-family-body)',
+    fontSize: '16px',
+    lineHeight: 1.4,
+    color: 'var(--color-ink)',
+    background: 'var(--color-paper)',
+    border: '1px solid var(--color-stroke)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '14px 16px',
+    outline: 'none',
+  };
+
+  const labelStyle = {
+    fontFamily: 'var(--font-family-mono)',
+    fontSize: 'var(--font-label-size)',
+    color: 'var(--color-ink-55)',
+    display: 'block',
+    marginBottom: 8,
+  };
+
+  if (status === 'success') {
+    return (
+      <div style={{
+        width: '100%',
+        maxWidth: 480,
+        padding: '24px 0',
+        fontFamily: 'var(--font-family-mono)',
+        fontSize: 'var(--font-body-size)',
+        color: 'var(--color-ink)',
+        lineHeight: 1.6,
+        textAlign: 'center',
+      }}>
+        Thanks for reaching out. We may get back to you. Who knows.
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ width: '100%' }}>
+        <label style={labelStyle}>Name</label>
+        <input required name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} style={fieldStyle} />
+      </div>
+      <div style={{ width: '100%' }}>
+        <label style={labelStyle}>Email</label>
+        <input required type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
+      </div>
+      <div style={{ width: '100%' }}>
+        <label style={labelStyle}>Message</label>
+        <textarea required name="message" rows={6} value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...fieldStyle, resize: 'vertical', minHeight: 140 }} />
+      </div>
+      {status === 'error' && (
+        <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-accent)' }}>
+          Something went wrong. Try again.
+        </div>
+      )}
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        style={{
+          alignSelf: 'center',
+          minWidth: 140,
+          background: 'var(--color-accent)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 'var(--radius-sm)',
+          padding: '14px 36px',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: 'var(--font-label-size)',
+          fontWeight: 500,
+          cursor: status === 'sending' ? 'wait' : 'pointer',
+          opacity: status === 'sending' ? 0.7 : 1,
+        }}
+      >
+        {status === 'sending' ? 'Sending…' : 'Send'}
+      </button>
+    </form>
+  );
+}
+
+
+function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark }) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  return (
+    <div>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} />
+      <div style={{
+        minHeight: 'calc(100vh - 160px)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '120px clamp(20px, 5vw, 48px) 80px',
+        boxSizing: 'border-box',
+      }}>
+        <h1 style={{
+          fontFamily: 'var(--font-family-display)',
+          fontWeight: 700,
+          fontSize: 'var(--font-h1-size)',
+          margin: '0 0 48px',
+          color: 'var(--color-ink)',
+          textAlign: 'center',
+        }}>Contact</h1>
+        <ContactForm />
+      </div>
+      <Footer onContact={() => {}} onTag={() => {}} onHome={onHome} />
+    </div>
+  );
+}
+
+
 function App() {
   const [items, setItems] = useState(() => ({ home: shuffle(HOME_ITEMS) }));
   const [navSections, setNavSections] = useState([]);
@@ -920,7 +955,7 @@ function App() {
     const meta = (SECTION_META || []).find((s) => s.slug === section || (s.title || '').toLowerCase().replace(/\s+/g, '-') === section);
     if (meta && meta.comingSoon) return;
     setMenuOpen(false);
-    if (meta && meta.isInfoPage) { setView({ page: 'info' }); return; }
+    if (meta && meta.isInfoPage) { setView({ page: 'contact' }); return; }
     setView({ page: section });
   };
   const goContact = () => setView({ page: 'contact' });

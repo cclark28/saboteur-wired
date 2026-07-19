@@ -43,7 +43,7 @@ const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/que
 async function fetchSanityAssets() {
   const query = encodeURIComponent(`*[_type == "asset"] | order(_createdAt desc) {
     _id, title, headline, subhead, body,
-    "imageUrl": mainImage.asset->url,
+    mainImage{ asset->{ _id, url, metadata{ dimensions } } },
     "galleryUrls": gallery[].asset->url,
     "tags": tags[]->{ title }
   }`);
@@ -53,21 +53,41 @@ async function fetchSanityAssets() {
   return json.result || [];
 }
 
+function buildImageUrl(mainImage) {
+  if (!mainImage || !mainImage.asset) return null;
+  if (mainImage.asset.url) return mainImage.asset.url;
+  const id = mainImage.asset._id || '';
+  if (id.startsWith('image-')) {
+    const rest = id.replace(/^image-/, '');
+    const lastDash = rest.lastIndexOf('-');
+    if (lastDash > 0) {
+      const format = rest.slice(lastDash + 1);
+      const withoutFormat = rest.slice(0, lastDash);
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${withoutFormat}.${format}`;
+    }
+  }
+  return null;
+}
+
 function assetToSeries(asset, index) {
   const hasInfo = !!(asset.headline || asset.subhead || asset.body || (asset.tags && asset.tags.length));
   const tags = (asset.tags || []).map(t => t.title).filter(Boolean);
   const galleryCount = (asset.galleryUrls && asset.galleryUrls.length) ? asset.galleryUrls.length : 1;
+  const imageUrl = buildImageUrl(asset.mainImage);
+  let size = randomSize();
+  const dims = asset.mainImage && asset.mainImage.asset && asset.mainImage.asset.metadata && asset.mainImage.asset.metadata.dimensions;
+  if (dims && dims.width && dims.height) size = { w: dims.width, h: dims.height };
   return {
-    id: asset._id || index,
-    size: randomSize(),
+    id: asset._id || ('asset-' + index),
+    size,
     hasInfo,
     headline: asset.headline || null,
     subhead: asset.subhead || null,
     body: asset.body || null,
     tags,
     gallery: Array.from({ length: Math.max(1, galleryCount) }, () => randomSize()),
-    imageUrl: asset.imageUrl || null,
-    galleryUrls: asset.galleryUrls || [],
+    imageUrl,
+    galleryUrls: (asset.galleryUrls || []).filter(Boolean),
   };
 }
 
@@ -331,7 +351,12 @@ function InfiniteGrid({ baseItems, onOpen }) {
       if (entries[0].isIntersecting && !loading && items.length < 200) {
         setLoading(true);
         setTimeout(() => {
-          setItems((prev) => prev.concat(prev.map((it, i) => makeSeries(it.id + 1000 + i + prev.length))));
+          setItems((prev) => {
+            const hasReal = prev.some((it) => it.imageUrl);
+            if (hasReal) return prev;
+            const base = prev.length;
+            return prev.concat(Array.from({ length: 8 }, (_, i) => makeSeries('more-' + base + '-' + i)));
+          });
           setLoading(false);
         }, 400);
       }

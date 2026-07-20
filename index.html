@@ -805,35 +805,86 @@ function GalleryPanel({ series }) {
 
 
 function InfoPanel({ series, onTag, isMobile }) {
+  const links = Array.isArray(series.projectLinks) ? series.projectLinks : [];
+
+  const linkStyle = {
+    fontFamily: 'var(--font-family-mono)',
+    fontSize: '0.75rem',
+    color: 'var(--color-ink)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    textDecoration: 'none',
+    padding: '4px 0',
+  };
+
+  const arrow = ' ↗';
+
   return (
-    <div style={{
-      position: isMobile ? 'static' : 'sticky', top: 0, height: isMobile ? 'auto' : '100vh', width: isMobile ? '100%' : 380, flexShrink: 0,
-      borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)', borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
-      padding: isMobile ? '32px clamp(16px,4vw,48px)' : '120px 40px 40px',
-      display: 'flex', flexDirection: 'column', gap: 20, overflowY: isMobile ? 'visible' : 'auto',
-    }}>
-      {series.hasInfo ? (
-        <React.Fragment>
-          <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)' }}>{series.headline}</div>
-          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>{series.subhead}</div>
-          <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink)', margin: 0 }}>{series.body}</p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {series.tags.map((t) => (
-              <a
-                key={t}
-                href="#"
-                onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
-                style={{ background: 'var(--color-card)', color: 'var(--color-ink-55)', borderRadius: 'var(--radius-sm)', padding: '8px 14px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', textDecoration: 'none', cursor: 'pointer', transition: 'color var(--duration-fast) var(--ease)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
-              >{t}</a>
-            ))}
-          </div>
-        </React.Fragment>
-      ) : null}
+    <div style={{ padding: 0, marginTop: 24 }}>
+      {series.headline && (
+        <h2 style={{ fontFamily: 'var(--font-family-display)', fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)', margin: '0 0 8px' }}>
+          {series.headline}
+        </h2>
+      )}
+      {series.subhead && (
+        <p style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink-75)', margin: '0 0 24px' }}>
+          {series.subhead}
+        </p>
+      )}
+      {series.body && (
+        <div style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink)', marginBottom: 24 }}>
+          {series.body}
+        </div>
+      )}
+
+      {links.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          {links.map((link, i) => (
+            <a
+              key={i}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={linkStyle}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+            >
+              {link.label}{arrow}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {series.tags && series.tags.length > 0 && (
+        <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {series.tags.map((t, i) => (
+            <button
+              key={i}
+              onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+              style={{
+                fontFamily: 'var(--font-family-mono)',
+                fontSize: '0.75rem',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                padding: '6px 12px',
+                border: '1px solid var(--color-stroke)',
+                background: 'var(--color-paper)',
+                borderRadius: 999,
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.borderColor = 'var(--color-ink)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.borderColor = 'var(--color-stroke)'; }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag, onHome, dark, onToggleDark }) {
   const more = allItems.filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 8);

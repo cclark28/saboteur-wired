@@ -752,6 +752,7 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
 
 function GalleryPanel({ series }) {
   const [meta, setMeta] = useState({});
+  const isMobile = useIsMobile(900);
 
   const items = [];
   const seen = new Set();
@@ -785,24 +786,33 @@ function GalleryPanel({ series }) {
     }
   }, [series.imageUrl, series.size]);
 
+  // Desktop: up to 2 columns for multiple images. Mobile: single stack.
+  const multi = items.length > 1 && !isMobile;
+
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{
+      width: '100%',
+      display: multi ? 'grid' : 'flex',
+      gridTemplateColumns: multi ? '1fr 1fr' : undefined,
+      flexDirection: multi ? undefined : 'column',
+      gap: 20,
+    }}>
       {items.map((item, i) => {
         const orient = meta[item.src] ? meta[item.src].orient : null;
         const isPort = orient === 'portrait';
         const style = {
-          width: isPort ? 'auto' : '100%',
-          maxWidth: isPort ? 'min(100%, 420px)' : '100%',
+          width: '100%',
+          maxWidth: (!multi && isPort) ? 'min(100%, 420px)' : '100%',
           maxHeight: '72vh',
           height: 'auto',
           display: 'block',
           objectFit: 'contain',
           background: 'transparent',
           borderRadius: '2px',
-          margin: isPort ? '0 auto' : '0',
+          margin: (!multi && isPort) ? '0 auto' : '0',
         };
         return (
-          <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
+          <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: (!multi && isPort) ? 'center' : 'stretch' }}>
             {item.type === 'video' ? (
               <video
                 src={item.src}
@@ -829,106 +839,108 @@ function GalleryPanel({ series }) {
 }
 
 
-function InfoPanel({ series, onTag, isMobile }) {
-  return (
-    <div style={{
-      position: isMobile ? 'static' : 'sticky',
-      top: 0,
-      height: isMobile ? 'auto' : '100vh',
-      width: isMobile ? '100%' : 380,
-      flexShrink: 0,
-      borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)',
-      borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
-      padding: isMobile ? '32px 16px' : '120px 40px 40px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 20,
-      overflowY: isMobile ? 'visible' : 'auto',
-      background: 'var(--color-paper)',
-    }}>
-      {series.hasInfo ? (
-        <React.Fragment>
-          <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)' }}>{series.headline}</div>
-          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>{series.subhead}</div>
-          {series.body && (
-            <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink)', margin: 0 }}>{series.body}</p>
-          )}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {(series.tags || []).map((t) => (
-              <a
-                key={t}
-                href="#"
-                onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
-                style={{
-                  background: 'var(--color-card)',
-                  color: 'var(--color-ink-55)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '8px 14px',
-                  fontFamily: 'var(--font-family-mono)',
-                  fontSize: 'var(--font-ui-size)',
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  transition: 'color var(--duration-fast) var(--ease)',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
-              >{t}</a>
-            ))}
-          </div>
-        </React.Fragment>
-      ) : null}
-    </div>
-  );
-}
-
 function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag, onHome, dark, onToggleDark }) {
-  const more = allItems.filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 8);
+  const more = (allItems || []).filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 9);
   const isMobile = useIsMobile(900);
   useEffect(() => { window.scrollTo(0, 0); }, [series.id]);
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
-      minHeight: '100vh',
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
-        <div style={{ padding: isMobile ? '100px 16px 24px' : '120px clamp(16px,4vw,48px) 32px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
+
+      {/* PROJECT BLOCK – gallery + sidebar, sidebar stops with the photos */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        paddingTop: isMobile ? 88 : 100,
+        borderBottom: '1px solid var(--color-stroke)',
+      }}>
+        <div style={{
+          flex: 1,
+          minWidth: 0,
+          padding: isMobile ? '16px 16px 32px' : '24px clamp(16px,4vw,48px) 48px',
+        }}>
           <GalleryPanel series={series} />
         </div>
 
-        {isMobile && (
-          <div style={{ padding: '0 16px 32px' }}>
-            <InfoPanel series={series} onTag={onTag} isMobile={true} />
-          </div>
-        )}
-
         <div style={{
-          padding: isMobile ? '0 16px 64px' : '0 clamp(16px,4vw,48px) 64px',
-          borderTop: '1px solid var(--color-stroke)',
-          marginTop: 24,
-          paddingTop: 40,
+          width: isMobile ? '100%' : 340,
+          flexShrink: 0,
+          borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)',
+          borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
+          padding: isMobile ? '28px 16px 40px' : '24px 36px 48px',
+          boxSizing: 'border-box',
         }}>
-          <div style={{
-            fontFamily: 'var(--font-family-mono)',
-            fontSize: 'var(--font-label-size)',
-            fontWeight: 500,
-            letterSpacing: 'var(--font-label-tracking)',
-            color: 'var(--color-ink-55)',
-            textTransform: 'uppercase',
-            marginBottom: 16,
-          }}>
-            More from the archive
-          </div>
-          <MasonryGrid items={more} onOpen={onOpen} dense />
+          {series.headline && (
+            <div style={{
+              fontFamily: 'var(--font-family-display)',
+              fontWeight: 700,
+              fontSize: 'var(--font-h2-size)',
+              color: 'var(--color-ink)',
+              marginBottom: 8,
+            }}>{series.headline}</div>
+          )}
+          {series.subhead && (
+            <div style={{
+              fontFamily: 'var(--font-family-mono)',
+              fontSize: 'var(--font-ui-size)',
+              color: 'var(--color-ink-55)',
+              marginBottom: 20,
+            }}>{series.subhead}</div>
+          )}
+          {series.body && (
+            <p style={{
+              fontSize: 'var(--font-body-sm-size)',
+              lineHeight: 'var(--font-body-sm-leading)',
+              color: 'var(--color-ink)',
+              margin: '0 0 24px',
+            }}>{series.body}</p>
+          )}
+          {(series.tags || []).length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {series.tags.map((t) => (
+                <a
+                  key={t}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+                  style={{
+                    background: 'var(--color-card)',
+                    color: 'var(--color-ink-55)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 14px',
+                    fontFamily: 'var(--font-family-mono)',
+                    fontSize: 'var(--font-ui-size)',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
+                >{t}</a>
+              ))}
+            </div>
+          )}
         </div>
-        <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
       </div>
 
-      {!isMobile && (
-        <InfoPanel series={series} onTag={onTag} isMobile={false} />
-      )}
+      {/* ARCHIVE – full width, same as homepage */}
+      <div style={{
+        padding: isMobile ? '40px 16px 64px' : '48px clamp(16px,4vw,48px) 80px',
+      }}>
+        <div style={{
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: 'var(--font-label-size)',
+          fontWeight: 500,
+          letterSpacing: 'var(--font-label-tracking)',
+          color: 'var(--color-ink-55)',
+          textTransform: 'uppercase',
+          marginBottom: 20,
+        }}>
+          More from the archive
+        </div>
+        <MasonryGrid items={more} onOpen={onOpen} />
+      </div>
+
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
   );
 }
@@ -1393,7 +1405,7 @@ const [ageVerified, setAgeVerified] = useState(() => {
         const tags = (s.tags || []).map((t) => String(typeof t === 'string' ? t : (t && t.title) || '').toLowerCase());
         return tags.includes(String(view.tag || '').toLowerCase());
       })} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'item' && <SingleItem series={view.series} allItems={view.from === 'figure-studies' ? items.figure : items.home} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
       {menuOpen && (
         <FullMenu
           activeSection={view.page === 'item' ? view.from : view.page}

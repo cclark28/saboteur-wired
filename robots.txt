@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block only studio and API routes if they ever appear
+Disallow: /studio
+Disallow: /api/
+
+Sitemap: https://saboteur.one/sitemap.xml

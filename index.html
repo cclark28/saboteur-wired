@@ -2,7 +2,21 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Saboteur — Site Prototype</title>
+<title>Saboteur</title>
+<link rel="icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg">
+<meta name="theme-color" content="#111113">
+<meta name="description" content="®Saboteur — experimental art studio. Photography, textures, and figure studies.">
+<meta name="author" content="Charlie Clark / ®Saboteur">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="®Saboteur">
+<meta property="og:title" content="®Saboteur">
+<meta property="og:description" content="Experimental art studio. Photography, textures, and figure studies.">
+<meta property="og:url" content="https://saboteur.one">
+<meta property="og:image" content="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="®Saboteur">
+<meta name="twitter:description" content="Experimental art studio. Photography, textures, and figure studies.">
 <link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -16,6 +30,28 @@
   @keyframes footerMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) { [style*="footerMarquee"] { animation: none !important; } }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "®Saboteur",
+  "url": "https://saboteur.one",
+  "description": "Experimental art studio. Photography, textures, and figure studies.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "®Saboteur",
+    "url": "https://saboteur.one",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg"
+    },
+    "sameAs": [
+      "https://www.instagram.com/saboteur.supply/",
+      "https://x.com/saboteurcomics"
+    ]
+  }
+}
+</script>
 </head>
 <body style="margin:0">
 <div id="root"></div>
@@ -68,7 +104,15 @@ async function fetchSanityBundle() {
       siteMapLinks[]{ label, linkType, sectionSlug, url },
       socialLinks[]{ label, url }
     },
-    "tags": *[_type == "tag"] | order(title asc) { title, "slug": slug.current }
+    "tags": *[_type == "tag"] | order(title asc) { title, "slug": slug.current },
+    "ageGate": *[_type == "ageGate"][0]{
+      entryMessages,
+      enterButtonLabel,
+      exitButtonLabel,
+      exitMessages,
+      exitTitles,
+      "exitGifUrls": exitGifs[].asset->url
+    }
   }`);
   const res = await fetch(`${SANITY_API}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
@@ -892,42 +936,152 @@ const EXIT_GIFS = [
   'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif',
 ];
 
-function AgeGate({ onConfirm }) {
-  const [exitGif, setExitGif] = useState(null);
+function AgeGate({ onConfirm, data }) {
+  const [showExit, setShowExit] = useState(false);
+
+  const entryMessage = React.useMemo(() => {
+    const list = (data && data.entryMessages) || [];
+    return list.length ? list[Math.floor(Math.random() * list.length)] : 'This site contains mature artistic content and is intended for viewers 18 years of age or older.';
+  }, [data]);
+
+  const exitMessage = React.useMemo(() => {
+    const list = (data && data.exitMessages) || [];
+    return list.length ? list[Math.floor(Math.random() * list.length)] : 'Get outta here. Leave now.';
+  }, [data]);
+
+  const exitTitle = React.useMemo(() => {
+    const list = (data && data.exitTitles) || [];
+    return list.length ? list[Math.floor(Math.random() * list.length)] : 'LOSER';
+  }, [data]);
+
+  const exitGif = React.useMemo(() => {
+    const list = (data && data.exitGifUrls) || [];
+    return list.length ? list[Math.floor(Math.random() * list.length)] : null;
+  }, [data]);
+
+  const enterLabel = (data && data.enterButtonLabel) || 'I am 18 or over';
+  const exitLabel = (data && data.exitButtonLabel) || "I'm outta here";
+
+  const btnBase = {
+    border: 'none',
+    borderRadius: 'var(--radius-sm)',
+    padding: '14px 28px',
+    fontFamily: 'var(--font-family-mono)',
+    fontSize: 'var(--font-label-size)',
+    fontWeight: 500,
+    cursor: 'pointer',
+    minHeight: 48,
+    transition: 'background var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease)',
+  };
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200, background: 'var(--color-paper)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, padding: 24, textAlign: 'center',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 40, padding: '32px 24px', textAlign: 'center',
     }}>
       <Logo size={140} />
-      <p style={{ maxWidth: 480, fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', lineHeight: 'var(--font-ui-leading)', color: 'var(--color-ink-55)', margin: 0 }}>
-        This site contains mature artistic content, including artistic figure studies, and is intended for viewers 18 years of age or older. By entering, you confirm you are at least 18 and agree to view this content at your own discretion.
+
+      <p style={{
+        maxWidth: '42ch',
+        fontFamily: 'var(--font-family-mono)',
+        fontSize: 'var(--font-ui-size)',
+        lineHeight: 1.55,
+        color: 'var(--color-ink-55)',
+        margin: 0,
+        textWrap: 'pretty',
+      }}>
+        {entryMessage}
       </p>
-      <div style={{ display: 'flex', gap: 16 }}>
+
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
           onClick={onConfirm}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent-hover)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
-          style={{ background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '14px 32px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, cursor: 'pointer', transition: 'background var(--duration-fast) var(--ease)' }}
-        >I am 18 or older — Enter</button>
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-accent-hover)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-accent)'; e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.96)'; }}
+          onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          style={{ ...btnBase, background: 'var(--color-accent)', color: '#fff' }}
+        >
+          {enterLabel}
+        </button>
+
         <button
-          onClick={(e) => { e.preventDefault(); setExitGif(true); }}
-          style={{ background: 'var(--color-ink)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '14px 32px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-        >I<TypewriterLabel text={"'m outta here"} /></button>
+          onClick={() => setShowExit(true)}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#2A2A2E'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-ink)'; e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.96)'; }}
+          onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          style={{ ...btnBase, background: 'var(--color-ink)', color: '#fff' }}
+        >
+          {exitLabel}
+        </button>
       </div>
-      {exitGif && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 210, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/exit-loser.gif" alt="Loser" style={{ maxWidth: '70vw', maxHeight: '50vh', borderRadius: 'var(--radius-sm)' }} />
-          <div style={{ fontFamily: 'var(--font-family-mono)', fontWeight: 700, fontSize: 'clamp(3rem,8vw,6rem)', color: '#FF3B30', textTransform: 'uppercase', letterSpacing: '-0.02em', animation: 'glitchShake 0.15s infinite' }}>
-            <TypewriterLabel text="loser" speed={120} />
+
+      {showExit && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 210, background: '#000',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 20, padding: 24,
+        }}>
+          {exitGif && (
+            <img
+              src={exitGif}
+              alt=""
+              style={{
+                maxWidth: 'min(70vw, 420px)',
+                maxHeight: '42vh',
+                borderRadius: 'var(--radius-sm)',
+                objectFit: 'contain',
+                outline: '1px solid rgba(255,255,255,0.08)',
+                outlineOffset: '-1px',
+              }}
+            />
+          )}
+          <div style={{
+            fontFamily: 'var(--font-family-mono)',
+            fontWeight: 700,
+            fontSize: 'clamp(2.4rem, 7vw, 5.5rem)',
+            color: '#FF3B30',
+            textTransform: 'uppercase',
+            letterSpacing: '-0.03em',
+            animation: 'glitchShake 0.15s infinite',
+          }}>
+            {exitTitle}
           </div>
-          <div style={{ fontFamily: 'var(--font-family-mono)', fontWeight: 500, fontSize: 'clamp(1.25rem,3vw,2rem)', color: '#F0F0F2', textAlign: 'center', animation: 'clockTick 0.8s ease-out' }}>
-            Get outta here. Leave now.<br />Virus detected.
+          <div style={{
+            fontFamily: 'var(--font-family-mono)',
+            fontWeight: 500,
+            fontSize: 'clamp(1.05rem, 2.6vw, 1.6rem)',
+            color: '#F0F0F2',
+            textAlign: 'center',
+            maxWidth: '36ch',
+            lineHeight: 1.45,
+            textWrap: 'pretty',
+          }}>
+            {exitMessage}
           </div>
           <button
-            onClick={() => setExitGif(null)}
-            style={{ marginTop: 24, background: 'none', border: '1px solid #F0F0F2', color: '#F0F0F2', borderRadius: 'var(--radius-sm)', padding: '10px 24px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', cursor: 'pointer' }}
-          >Back</button>
+            onClick={() => setShowExit(false)}
+            onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.96)'; }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            style={{
+              marginTop: 20,
+              background: 'none',
+              border: '1px solid rgba(240,240,242,0.5)',
+              color: '#F0F0F2',
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 22px',
+              fontFamily: 'var(--font-family-mono)',
+              fontSize: 'var(--font-ui-size)',
+              cursor: 'pointer',
+              minHeight: 44,
+              transition: 'transform var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)',
+            }}
+          >
+            Back
+          </button>
         </div>
       )}
       <style>{'@keyframes glitchShake{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-1px)}100%{transform:translate(0,0)}}'}</style>
@@ -1099,7 +1253,14 @@ function App() {
   const [view, setView] = useState({ page: 'home' });
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
-  const [ageVerified, setAgeVerified] = useState(false);
+const [ageVerified, setAgeVerified] = useState(() => {
+  try {
+    return localStorage.getItem('saboteur-age-verified') === 'true';
+  } catch {
+    return false;
+  }
+});
+  const [ageGateData, setAgeGateData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -1113,10 +1274,12 @@ function App() {
         FOOTER_DATA = data.footer || null;
         setFooterData(data.footer || null);
         setSiteSettings(data.settings || null);
+        
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
         NAV_LINKS = sectionDocs.map((s) => s.title);
         setSiteSettings(data.settings || null);
+        setAgeGateData(data.ageGate || null);
         setNavSections(sectionDocs.map((s) => ({
           title: s.title,
           slug: s.slug || (s.title || '').toLowerCase().replace(/\s+/g, '-'),
@@ -1211,7 +1374,17 @@ function App() {
           onTag={(t) => { setMenuOpen(false); goTag(t); }}
         />
       )}
-      {!ageVerified && <AgeGate onConfirm={() => setAgeVerified(true)} />}
+  {!ageVerified && (
+  <AgeGate
+    onConfirm={() => {
+      try {
+        localStorage.setItem('saboteur-age-verified', 'true');
+      } catch {}
+      setAgeVerified(true);
+    }}
+    data={ageGateData}
+  />
+)}
     </div>
   );
 }

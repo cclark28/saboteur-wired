@@ -416,7 +416,6 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
 
 function MasonryGrid({ items, onOpen }) {
   const isMobile = useIsMobile(700);
-
   return (
     <div style={{
       columns: isMobile ? '1' : 'clamp(2, 3, 4) clamp(220px, 26vw, 320px)',
@@ -582,12 +581,13 @@ function Footer({ onContact, onTag, onHome }) {
   };
 
 const colBox = {
-  display: 'flex',
-  flexDirection: 'column',
-  padding: '28px 0',
-  borderBottom: '1px solid var(--color-stroke)',
-  boxSizing: 'border-box',
-};
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '0 24px 28px',
+    borderLeft: '1px solid var(--color-stroke)',
+    boxSizing: 'border-box',
+    minHeight: '100%',
+  };
 
   return (
     <footer style={{ marginTop: 80, background: 'var(--color-paper)' }}>
@@ -616,11 +616,12 @@ const colBox = {
 
       <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
        <div style={{
-  display: 'flex',
-  flexDirection: 'column',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
   gap: 0,
   maxWidth: 1200,
   margin: '0 auto',
+  alignItems: 'stretch',
 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingRight: 24, minHeight: '100%', boxSizing: 'border-box' }}>
             <button type="button" onClick={goHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginBottom: 12 }} aria-label="Home">
@@ -822,29 +823,47 @@ function GalleryPanel({ series }) {
 }
 
 
-
-
-
 function InfoPanel({ series, onTag, isMobile }) {
   return (
     <div style={{
-      position: isMobile ? 'static' : 'sticky', top: 0, height: isMobile ? 'auto' : '100vh', width: isMobile ? '100%' : 380, flexShrink: 0,
-      borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)', borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
-      padding: isMobile ? '32px clamp(16px,4vw,48px)' : '120px 40px 40px',
-      display: 'flex', flexDirection: 'column', gap: 20, overflowY: isMobile ? 'visible' : 'auto',
+      position: isMobile ? 'static' : 'sticky',
+      top: 0,
+      height: isMobile ? 'auto' : '100vh',
+      width: isMobile ? '100%' : 380,
+      flexShrink: 0,
+      borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)',
+      borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
+      padding: isMobile ? '32px 16px' : '120px 40px 40px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20,
+      overflowY: isMobile ? 'visible' : 'auto',
+      background: 'var(--color-paper)',
     }}>
       {series.hasInfo ? (
         <React.Fragment>
           <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)' }}>{series.headline}</div>
           <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>{series.subhead}</div>
-          <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink)', margin: 0 }}>{series.body}</p>
+          {series.body && (
+            <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink)', margin: 0 }}>{series.body}</p>
+          )}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {series.tags.map((t) => (
+            {(series.tags || []).map((t) => (
               <a
                 key={t}
                 href="#"
                 onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
-                style={{ background: 'var(--color-card)', color: 'var(--color-ink-55)', borderRadius: 'var(--radius-sm)', padding: '8px 14px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', textDecoration: 'none', cursor: 'pointer', transition: 'color var(--duration-fast) var(--ease)' }}
+                style={{
+                  background: 'var(--color-card)',
+                  color: 'var(--color-ink-55)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '8px 14px',
+                  fontFamily: 'var(--font-family-mono)',
+                  fontSize: 'var(--font-ui-size)',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'color var(--duration-fast) var(--ease)',
+                }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
               >{t}</a>
@@ -855,7 +874,6 @@ function InfoPanel({ series, onTag, isMobile }) {
     </div>
   );
 }
-
 
 function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag, onHome, dark, onToggleDark }) {
   const more = allItems.filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 8);
@@ -868,17 +886,14 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
       flexDirection: isMobile ? 'column' : 'row',
       minHeight: '100vh',
     }}>
-      {/* Left / main column */}
-      <div style={{ flex: 1, minWidth: 0, order: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
-        
         <div style={{ padding: isMobile ? '100px 16px 24px' : '120px clamp(16px,4vw,48px) 32px' }}>
           <GalleryPanel series={series} />
         </div>
 
-        {/* On mobile the InfoPanel sits here, directly under the gallery */}
         {isMobile && (
-          <div style={{ padding: '0 16px 40px' }}>
+          <div style={{ padding: '0 16px 32px' }}>
             <InfoPanel series={series} onTag={onTag} isMobile={true} />
           </div>
         )}
@@ -902,11 +917,9 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
           </div>
           <MasonryGrid items={more} onOpen={onOpen} />
         </div>
-
         <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
       </div>
 
-      {/* Desktop-only sticky InfoPanel */}
       {!isMobile && (
         <InfoPanel series={series} onTag={onTag} isMobile={false} />
       )}

@@ -776,7 +776,6 @@ function GalleryPanel({ series }) {
     }
   }, [series.imageUrl, series.size]);
 
-  // Always single column – no double column for multiple verticals
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {items.map((item, i) => {
@@ -795,54 +794,6 @@ function GalleryPanel({ series }) {
         };
         return (
           <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
-            {item.type === 'video' ? (
-              <video
-                src={item.src}
-                muted
-                playsInline
-                autoPlay
-                loop
-                style={style}
-                onLoadedMetadata={(e) => setDims(item.src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
-              />
-            ) : (
-              <img
-                src={item.src}
-                alt=""
-                style={style}
-                onLoad={(e) => setDims(item.src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-  return (
-    <div
-      style={{
-        columnCount: 2,
-        columnGap: 20,
-        width: '100%',
-      }}
-    >
-      {items.map((item, i) => {
-        const style = {
-          width: '100%',
-          height: 'auto',
-          display: 'block',
-          objectFit: 'contain',
-          background: 'transparent',
-          borderRadius: '2px',
-          marginBottom: 20,
-          breakInside: 'avoid',
-          pageBreakInside: 'avoid',
-          maxHeight: '70vh',
-        };
-        return (
-          <div key={item.src || i} style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: 0 }}>
             {item.type === 'video' ? (
               <video
                 src={item.src}

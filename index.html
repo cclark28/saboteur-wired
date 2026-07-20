@@ -582,7 +582,8 @@ function Footer({ onContact, onTag, onHome }) {
 const colBox = {
   display: 'flex',
   flexDirection: 'column',
-  padding: '0 0 32px 0',
+  padding: '28px 0',
+  borderBottom: '1px solid var(--color-stroke)',
   boxSizing: 'border-box',
 };
 
@@ -612,14 +613,13 @@ const colBox = {
       ) : null}
 
       <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: 0,
-          maxWidth: 1200,
-          margin: '0 auto',
-          alignItems: 'stretch',
-        }}>
+       <div style={{
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 0,
+  maxWidth: 1200,
+  margin: '0 auto',
+}}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingRight: 24, minHeight: '100%', boxSizing: 'border-box' }}>
             <button type="button" onClick={goHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginBottom: 12 }} aria-label="Home">
               <Logo size={72} onClick={goHome} />
@@ -776,36 +776,49 @@ function GalleryPanel({ series }) {
     }
   }, [series.imageUrl, series.size]);
 
-  const isSingle = items.length === 1;
-  const singleOrient = isSingle && meta[items[0].src] ? meta[items[0].src].orient : null;
-
-  // Masonry via CSS columns — no hollow 2-col grid
-  if (isSingle) {
-    const isPort = singleOrient === 'portrait';
-    const style = {
-      width: isPort ? 'auto' : '100%',
-      maxWidth: isPort ? 'min(100%, 420px)' : '100%',
-      maxHeight: '72vh',
-      height: 'auto',
-      display: 'block',
-      objectFit: 'contain',
-      background: 'transparent',
-      borderRadius: '2px',
-      margin: isPort ? '0 auto' : '0',
-    };
-    const item = items[0];
-    return (
-      <div style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
-        {item.type === 'video' ? (
-          <video src={item.src} muted playsInline autoPlay loop style={style}
-            onLoadedMetadata={(e) => setDims(item.src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)} />
-        ) : (
-          <img src={item.src} alt="" style={style}
-            onLoad={(e) => setDims(item.src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)} />
-        )}
-      </div>
-    );
-  }
+  // Always single column – no double column for multiple verticals
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {items.map((item, i) => {
+        const orient = meta[item.src] ? meta[item.src].orient : null;
+        const isPort = orient === 'portrait';
+        const style = {
+          width: isPort ? 'auto' : '100%',
+          maxWidth: isPort ? 'min(100%, 420px)' : '100%',
+          maxHeight: '72vh',
+          height: 'auto',
+          display: 'block',
+          objectFit: 'contain',
+          background: 'transparent',
+          borderRadius: '2px',
+          margin: isPort ? '0 auto' : '0',
+        };
+        return (
+          <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
+            {item.type === 'video' ? (
+              <video
+                src={item.src}
+                muted
+                playsInline
+                autoPlay
+                loop
+                style={style}
+                onLoadedMetadata={(e) => setDims(item.src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
+              />
+            ) : (
+              <img
+                src={item.src}
+                alt=""
+                style={style}
+                onLoad={(e) => setDims(item.src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
   return (
     <div

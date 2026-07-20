@@ -415,10 +415,12 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
 }
 
 function MasonryGrid({ items, onOpen }) {
+  const isMobile = useIsMobile(700);
+
   return (
     <div style={{
-      columns: '1',
-      columnGap: 16,
+      columns: isMobile ? '1' : 'clamp(2, 3, 4) clamp(220px, 26vw, 320px)',
+      columnGap: isMobile ? 16 : 24,
     }}>
       {items.map((s) => (
         <div
@@ -426,7 +428,7 @@ function MasonryGrid({ items, onOpen }) {
           onClick={() => onOpen(s)}
           style={{
             breakInside: 'avoid',
-            marginBottom: 16,
+            marginBottom: isMobile ? 16 : 24,
             cursor: 'pointer',
             overflow: 'hidden',
           }}

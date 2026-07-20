@@ -192,7 +192,7 @@ function Logo({ size = 160, onClick }) {
   const [pressed, setPressed] = useState(false);
   return (
     <img
-      src="assets/logo.svg"
+      src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg"
       alt="Saboteur"
       onClick={onClick ? () => { setPressed(true); setTimeout(() => setPressed(false), 200); onClick(); } : undefined}
       style={{
@@ -242,7 +242,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
           width: searchOpen ? 220 : 36, transition: 'width var(--duration-normal) var(--ease), padding var(--duration-normal) var(--ease)',
         }}>
           <button aria-label="Search tags" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, flexShrink: 0 }}>
-            <img src="assets/icons/search.svg" style={{ width: 20, height: 20, filter: 'var(--logo-filter, none)' }} alt="" />
+            <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/search.svg" style={{ width: 20, height: 20, filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
           {searchOpen && (
             <input
@@ -277,14 +277,14 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
         )}
         {showBack && (
           <button onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'} style={{ background: 'var(--back-btn-bg, var(--color-ink))', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', transition: 'background var(--duration-fast) var(--ease)' }}>
-            <img src="assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
+            <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
           </button>
         )}
         <button aria-label="Toggle dark mode" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>
-          <img src={dark ? 'assets/icons/moon.svg' : 'assets/icons/sun.svg'} style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
+          <img src={dark ? 'https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/moon.svg' : 'https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/sun.svg'} style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
         </button>
         <button aria-label="Open menu" onClick={onMenu} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0 }}>
-          <img src="assets/icons/menu.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
+          <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/menu.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
         </button>
       </div>
     </div>
@@ -301,10 +301,10 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
         <div style={{ width: 90 }}><Logo size={90} onClick={onHome} /></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <button aria-label="Search tags" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0 }}>
-            <img src="assets/icons/search.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
+            <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/search.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
           <button aria-label="Close menu" onClick={onClose} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(90deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-normal) var(--ease)' }}>
-            <img src="assets/icons/close.svg" style={{ width: 26, height: 26, filter: 'var(--logo-filter, none)' }} alt="" />
+            <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/close.svg" style={{ width: 26, height: 26, filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
         </div>
       </div>
@@ -805,82 +805,32 @@ function GalleryPanel({ series }) {
 
 
 function InfoPanel({ series, onTag, isMobile }) {
-  const links = Array.isArray(series.projectLinks) ? series.projectLinks : [];
-
-  const linkStyle = {
-    fontFamily: 'var(--font-family-mono)',
-    fontSize: '0.75rem',
-    color: 'var(--color-ink)',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    textDecoration: 'none',
-    padding: '4px 0',
-  };
-
-  const arrow = ' ↗';
-
   return (
-    <div style={{ padding: 0, marginTop: 24 }}>
-      {series.headline && (
-        <h2 style={{ fontFamily: 'var(--font-family-display)', fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)', margin: '0 0 8px' }}>
-          {series.headline}
-        </h2>
-      )}
-      {series.subhead && (
-        <p style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink-75)', margin: '0 0 24px' }}>
-          {series.subhead}
-        </p>
-      )}
-      {series.body && (
-        <div style={{ fontSize: 'var(--font-body-size)', lineHeight: 'var(--font-body-leading)', color: 'var(--color-ink)', marginBottom: 24 }}>
-          {series.body}
-        </div>
-      )}
-
-      {links.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          {links.map((link, i) => (
-            <a
-              key={i}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={linkStyle}
-              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-            >
-              {link.label}{arrow}
-            </a>
-          ))}
-        </div>
-      )}
-
-      {series.tags && series.tags.length > 0 && (
-        <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {series.tags.map((t, i) => (
-            <button
-              key={i}
-              onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
-              style={{
-                fontFamily: 'var(--font-family-mono)',
-                fontSize: '0.75rem',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                padding: '6px 12px',
-                border: '1px solid var(--color-stroke)',
-                background: 'var(--color-paper)',
-                borderRadius: 999,
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.borderColor = 'var(--color-ink)'; }}
-              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.borderColor = 'var(--color-stroke)'; }}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
+    <div style={{
+      position: isMobile ? 'static' : 'sticky', top: 0, height: isMobile ? 'auto' : '100vh', width: isMobile ? '100%' : 380, flexShrink: 0,
+      borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)', borderTop: isMobile ? '1px solid var(--color-stroke)' : 'none',
+      padding: isMobile ? '32px clamp(16px,4vw,48px)' : '120px 40px 40px',
+      display: 'flex', flexDirection: 'column', gap: 20, overflowY: isMobile ? 'visible' : 'auto',
+    }}>
+      {series.hasInfo ? (
+        <React.Fragment>
+          <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)' }}>{series.headline}</div>
+          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>{series.subhead}</div>
+          <p style={{ fontSize: 'var(--font-body-sm-size)', lineHeight: 'var(--font-body-sm-leading)', color: 'var(--color-ink)', margin: 0 }}>{series.body}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {series.tags.map((t) => (
+              <a
+                key={t}
+                href="#"
+                onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+                style={{ background: 'var(--color-card)', color: 'var(--color-ink-55)', borderRadius: 'var(--radius-sm)', padding: '8px 14px', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', textDecoration: 'none', cursor: 'pointer', transition: 'color var(--duration-fast) var(--ease)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
+              >{t}</a>
+            ))}
+          </div>
+        </React.Fragment>
+      ) : null}
     </div>
   );
 }
@@ -967,7 +917,7 @@ function AgeGate({ onConfirm }) {
       </div>
       {exitGif && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 210, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <img src="assets/exit-loser.gif" alt="Loser" style={{ maxWidth: '70vw', maxHeight: '50vh', borderRadius: 'var(--radius-sm)' }} />
+          <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/exit-loser.gif" alt="Loser" style={{ maxWidth: '70vw', maxHeight: '50vh', borderRadius: 'var(--radius-sm)' }} />
           <div style={{ fontFamily: 'var(--font-family-mono)', fontWeight: 700, fontSize: 'clamp(3rem,8vw,6rem)', color: '#FF3B30', textTransform: 'uppercase', letterSpacing: '-0.02em', animation: 'glitchShake 0.15s infinite' }}>
             <TypewriterLabel text="loser" speed={120} />
           </div>

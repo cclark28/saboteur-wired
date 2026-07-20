@@ -5,6 +5,7 @@
 <title>Saboteur</title>
 <link rel="icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#111113">
 <meta name="description" content="®Saboteur — experimental art studio. Photography, textures, and figure studies.">
 <meta name="author" content="Charlie Clark / ®Saboteur">
@@ -266,7 +267,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '20px 48px',
+    padding: '16px clamp(16px, 4vw, 48px)',
       background: scrolled ? 'var(--color-paper)' : 'transparent',
       borderBottom: scrolled ? '1px solid var(--color-stroke)' : '1px solid transparent',
       transition: 'background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)',
@@ -340,7 +341,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
   const [query, setQuery] = useState('');
   const matches = ALL_TAGS.filter((t) => t.toLowerCase().includes(query.toLowerCase()));
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--color-paper)', display: 'flex', flexDirection: 'column', padding: '20px 48px' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--color-paper)', display: 'flex', flexDirection: 'column', padding: '16px clamp(16px, 4vw, 48px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ width: 90 }}><Logo size={90} onClick={onHome} /></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -415,14 +416,28 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
 
 function MasonryGrid({ items, onOpen }) {
   return (
-    <div style={{ columns: 'clamp(1,4,4) clamp(220px,26vw,320px)', columnGap: 24 }}>
+    <div style={{
+      columns: '1',
+      columnGap: 16,
+    }}>
       {items.map((s) => (
         <div
           key={s.id}
           onClick={() => onOpen(s)}
-          style={{ breakInside: 'avoid', marginBottom: 24, cursor: 'pointer', overflow: 'hidden', borderRadius: 'var(--radius-sm)' }}
-          onMouseEnter={(e) => { e.currentTarget.querySelector('img,div').style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.querySelector('img,div').style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+          style={{
+            breakInside: 'avoid',
+            marginBottom: 16,
+            cursor: 'pointer',
+            overflow: 'hidden',
+          }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget.querySelector('img,div');
+            if (el) el.style.transform = 'scale(1.03)';
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget.querySelector('img,div');
+            if (el) el.style.transform = 'scale(1)';
+          }}
         >
           <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.headline || s.subhead || ''} />
         </div>
@@ -884,22 +899,55 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
   const more = allItems.filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 8);
   const isMobile = useIsMobile(900);
   useEffect(() => { window.scrollTo(0, 0); }, [series.id]);
+
   return (
-    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      minHeight: '100vh',
+    }}>
+      {/* Left / main column */}
+      <div style={{ flex: 1, minWidth: 0, order: 1 }}>
         <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} />
-        <div style={{ padding: '120px clamp(16px,4vw,48px) 32px' }}>
+        
+        <div style={{ padding: isMobile ? '100px 16px 24px' : '120px clamp(16px,4vw,48px) 32px' }}>
           <GalleryPanel series={series} />
         </div>
-        <div style={{ padding: '0 clamp(16px,4vw,48px) 64px', borderTop: '1px solid var(--color-stroke)', marginTop: 32, paddingTop: 40 }}>
-          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, letterSpacing: 'var(--font-label-tracking)', color: 'var(--color-ink-55)', textTransform: 'uppercase', marginBottom: 16 }}>
+
+        {/* On mobile the InfoPanel sits here, directly under the gallery */}
+        {isMobile && (
+          <div style={{ padding: '0 16px 40px' }}>
+            <InfoPanel series={series} onTag={onTag} isMobile={true} />
+          </div>
+        )}
+
+        <div style={{
+          padding: isMobile ? '0 16px 64px' : '0 clamp(16px,4vw,48px) 64px',
+          borderTop: '1px solid var(--color-stroke)',
+          marginTop: 24,
+          paddingTop: 40,
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-family-mono)',
+            fontSize: 'var(--font-label-size)',
+            fontWeight: 500,
+            letterSpacing: 'var(--font-label-tracking)',
+            color: 'var(--color-ink-55)',
+            textTransform: 'uppercase',
+            marginBottom: 16,
+          }}>
             More from the archive
           </div>
           <MasonryGrid items={more} onOpen={onOpen} />
         </div>
+
         <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
       </div>
-      <InfoPanel series={series} onTag={onTag} isMobile={isMobile} />
+
+      {/* Desktop-only sticky InfoPanel */}
+      {!isMobile && (
+        <InfoPanel series={series} onTag={onTag} isMobile={false} />
+      )}
     </div>
   );
 }

@@ -394,7 +394,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
               href="#"
               onClick={(e) => { e.preventDefault(); if (!disabled) onSelect(key); }}
               style={{
-                fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '5.5rem', lineHeight: 1.15,
+                fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: 'clamp(2.4rem, 9vw, 5.5rem)', lineHeight: 1.15,
                 letterSpacing: '-0.01em', textDecoration: 'none',
                 color: disabled ? '#ECEBEE' : (isActive ? 'var(--color-accent)' : 'var(--color-ink)'),
                 cursor: disabled ? 'default' : 'pointer',

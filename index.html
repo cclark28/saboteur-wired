@@ -29,7 +29,41 @@
   [data-theme="light"] { --back-btn-bg: var(--color-ink); --back-btn-bg-hover: #2A2A2E; }
   @keyframes searchDropdown { from { opacity: 0; transform: translateY(-6px) scaleY(0.9); } to { opacity: 1; transform: translateY(0) scaleY(1); } }
   @keyframes footerMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-  @media (prefers-reduced-motion: reduce) { [style*="footerMarquee"] { animation: none !important; } }
+
+  /* Elevation-based focus (design system: no colored rings) */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-1, 0 2px 8px rgba(24,24,27,0.12));
+  }
+  [data-theme="dark"] button:focus-visible,
+  [data-theme="dark"] a:focus-visible,
+  [data-theme="dark"] [role="button"]:focus-visible,
+  [data-theme="dark"] input:focus-visible,
+  [data-theme="dark"] textarea:focus-visible {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  /* Ensure icon-only buttons meet 48px touch target */
+  .icon-btn {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [style*="footerMarquee"] { animation: none !important; }
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -83,7 +117,7 @@ const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/que
 async function fetchSanityBundle() {
   const query = encodeURIComponent(`{
     "assets": *[_type == "asset"] | order(coalesce(_updatedAt, _createdAt) desc) {
-      _id, title, headline, subhead, body, showOnHome,
+      _id, title, headline, subhead, body, showOnHome, soldOut,
       mainImage{ asset->{ _id, url, metadata{ dimensions } } },
       mainMedia{ asset->{ _id, url, mimeType, originalFilename } },
       "galleryUrls": gallery[].asset->url,
@@ -179,6 +213,7 @@ function assetToSeries(asset, index) {
     tags,
     sections,
     showOnHome: asset.showOnHome !== false,
+    soldOut: !!asset.soldOut,
     gallery: Array.from({ length: Math.max(1, galleryUrls.length || 1) }, () => randomSize()),
     imageUrl,
     videoUrl,
@@ -286,7 +321,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
           padding: searchOpen ? '8px 16px' : '8px', overflow: 'hidden',
           width: searchOpen ? 220 : 36, transition: 'width var(--duration-normal) var(--ease), padding var(--duration-normal) var(--ease)',
         }}>
-          <button aria-label="Search tags" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, flexShrink: 0 }}>
+          <button aria-label="Search tags" className="icon-btn" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, flexShrink: 0 }}>
             <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/search.svg" style={{ width: 20, height: 20, filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
           {searchOpen && (
@@ -325,10 +360,10 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
             <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
           </button>
         )}
-        <button aria-label="Toggle dark mode" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>
+        <button aria-label="Toggle dark mode" className="icon-btn" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>
           <img src={dark ? 'https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/moon.svg' : 'https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/sun.svg'} style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
         </button>
-        <button aria-label="Open menu" onClick={onMenu} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0 }}>
+        <button aria-label="Open menu" className="icon-btn" onClick={onMenu} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0 }}>
           <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/menu.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
         </button>
       </div>
@@ -340,15 +375,27 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const matches = ALL_TAGS.filter((t) => t.toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    // Move focus to the close button area for keyboard users
+    const closeBtn = document.querySelector('[aria-label="Close menu"]');
+    if (closeBtn) closeBtn.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--color-paper)', display: 'flex', flexDirection: 'column', padding: '16px clamp(16px, 4vw, 48px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ width: 90 }}><Logo size={90} onClick={onHome} /></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button aria-label="Search tags" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0 }}>
+          <button aria-label="Search tags" className="icon-btn" onClick={() => setSearchOpen((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0 }}>
             <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/search.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
-          <button aria-label="Close menu" onClick={onClose} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(90deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-normal) var(--ease)' }}>
+          <button aria-label="Close menu" className="icon-btn" onClick={onClose} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(90deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-normal) var(--ease)' }}>
             <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/close.svg" style={{ width: 26, height: 26, filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
         </div>
@@ -427,28 +474,59 @@ function MasonryGrid({ items, onOpen, dense = false }) {
       columns,
       columnGap: isMobile ? 16 : 24,
     }}>
-      {items.map((s) => (
-        <div
-          key={s.id}
-          onClick={() => onOpen(s)}
-          style={{
-            breakInside: 'avoid',
-            marginBottom: isMobile ? 16 : 24,
-            cursor: 'pointer',
-            overflow: 'hidden',
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget.querySelector('img,div');
-            if (el) el.style.transform = 'scale(1.03)';
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget.querySelector('img,div');
-            if (el) el.style.transform = 'scale(1)';
-          }}
-        >
-          <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.headline || s.subhead || ''} />
-        </div>
-      ))}
+      {items.map((s) => {
+        const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
+        const showSoldOut = s.soldOut && isStoreItem;
+        return (
+          <div
+            key={s.id}
+            onClick={() => onOpen(s)}
+            style={{
+              breakInside: 'avoid',
+              marginBottom: isMobile ? 16 : 24,
+              cursor: 'pointer',
+              overflow: 'hidden',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget.querySelector('img,div');
+              if (el) el.style.transform = 'scale(1.03)';
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget.querySelector('img,div');
+              if (el) el.style.transform = 'scale(1)';
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.headline || s.subhead || ''} />
+              {showSoldOut && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    fontFamily: 'var(--font-family-mono)',
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    padding: '7px 12px',
+                    borderRadius: 9999,
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    zIndex: 2,
+                    background: 'var(--color-accent)',
+                    color: '#18181B',
+                  }}
+                >
+                  Sold out
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -980,6 +1058,16 @@ const EXIT_GIFS = [
 function AgeGate({ onConfirm, data }) {
   const [showExit, setShowExit] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        if (showExit) setShowExit(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showExit]);
+
   const entryMessage = React.useMemo(() => {
     const list = (data && data.entryMessages) || [];
     return list.length ? list[Math.floor(Math.random() * list.length)] : 'This site contains mature artistic content and is intended for viewers 18 years of age or older.';
@@ -1293,16 +1381,66 @@ function App() {
   const [footerData, setFooterData] = useState(null);
   const [view, setView] = useState({ page: 'home' });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-const [ageVerified, setAgeVerified] = useState(() => {
-  try {
-    return localStorage.getItem('saboteur-age-verified') === 'true';
-  } catch {
-    return false;
-  }
-});
+  const [dark, setDark] = useState(() => {
+    try {
+      const saved = localStorage.getItem('saboteur-theme');
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
+  });
+  const [ageVerified, setAgeVerified] = useState(() => {
+    try {
+      return localStorage.getItem('saboteur-age-verified') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [ageGateData, setAgeGateData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const toggleDark = React.useCallback(() => {
+    setDark((d) => {
+      const next = !d;
+      try {
+        localStorage.setItem('saboteur-theme', next ? 'dark' : 'light');
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // --- History API layer (keeps browser Back inside the site) ---
+  const navigate = React.useCallback((nextView, { replace = false } = {}) => {
+    setView(nextView);
+    try {
+      const method = replace ? 'replaceState' : 'pushState';
+      window.history[method](nextView, '', window.location.pathname + window.location.search);
+    } catch (e) {
+      // Safari private mode / older browsers — fail silently, UI still works
+    }
+  }, []);
+
+  // Initial history entry + popstate listener
+  useEffect(() => {
+    try {
+      // Seed the first entry so the first Back has something to land on
+      window.history.replaceState({ page: 'home' }, '', window.location.pathname + window.location.search);
+    } catch (e) {}
+
+    const onPop = (e) => {
+      if (e.state && e.state.page) {
+        setView(e.state);
+        window.scrollTo(0, 0);
+      } else {
+        setView({ page: 'home' });
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1315,11 +1453,10 @@ const [ageVerified, setAgeVerified] = useState(() => {
         FOOTER_DATA = data.footer || null;
         setFooterData(data.footer || null);
         setSiteSettings(data.settings || null);
-        
+
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
         NAV_LINKS = sectionDocs.map((s) => s.title);
-        setSiteSettings(data.settings || null);
         setAgeGateData(data.ageGate || null);
         setNavSections(sectionDocs.map((s) => ({
           title: s.title,
@@ -1363,8 +1500,8 @@ const [ageVerified, setAgeVerified] = useState(() => {
     return () => { cancelled = true; };
   }, []);
 
-  const openItem = (series, from) => setView({ page: 'item', series, from: from || view.page });
-  const goHome = () => { setMenuOpen(false); setView({ page: 'home' }); };
+  const openItem = (series, from) => navigate({ page: 'item', series, from: from || view.page });
+  const goHome = () => { setMenuOpen(false); navigate({ page: 'home' }); };
   const openSection = (section) => {
     const raw = String(section || '').trim();
     const slug = raw.toLowerCase().replace(/\s+/g, '-');
@@ -1375,37 +1512,41 @@ const [ageVerified, setAgeVerified] = useState(() => {
     if (meta && meta.comingSoon) return;
     setMenuOpen(false);
     if (meta && (meta.isInfoPage || meta.isAbout) || slug === 'info' || slug === 'info-contact') {
-      setView({ page: 'info' });
+      navigate({ page: 'info' });
       window.scrollTo(0, 0);
       return;
     }
-    setView({ page: (meta && meta.slug) ? meta.slug : slug });
+    navigate({ page: (meta && meta.slug) ? meta.slug : slug });
     window.scrollTo(0, 0);
   };
-  const goContact = () => { setMenuOpen(false); setView({ page: 'info' }); };
+  const goContact = () => { setMenuOpen(false); navigate({ page: 'info' }); };
   FOOTER_NAV = {
-    home: () => { setMenuOpen(false); setView({ page: 'home' }); },
-    contact: () => { setMenuOpen(false); setView({ page: 'info' }); },
+    home: () => { setMenuOpen(false); navigate({ page: 'home' }); },
+    contact: () => { setMenuOpen(false); navigate({ page: 'info' }); },
     section: (slug) => openSection(slug),
   };
-  const goTag = (tag) => { setMenuOpen(false); setView({ page: 'tag', tag }); window.scrollTo(0, 0); };
+  const goTag = (tag) => { setMenuOpen(false); navigate({ page: 'tag', tag }); window.scrollTo(0, 0); };
+  // UI Back button uses the real browser history so the stack stays consistent
   const back = () => {
-    if (view.page === 'item') setView({ page: view.from || 'home' });
-    else setView({ page: 'home' });
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      navigate({ page: 'home' }, { replace: true });
+    }
   };
 
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
-      {view.page === 'home' && <Home onMenu={() => setMenuOpen(true)} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {navSections.filter((sec) => !sec.isInfoPage).map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />))}
+      {view.page === 'home' && <Home onMenu={() => setMenuOpen(true)} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={toggleDark} />}
+      {navSections.filter((sec) => !sec.isInfoPage).map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} />))}
       
-      {view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      {view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => setMenuOpen(true)} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} />}
+      {view.page === 'contact' && <ContactPage onMenu={() => setMenuOpen(true)} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={toggleDark} />}
       {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={(items.home || []).filter((s) => {
         const tags = (s.tags || []).map((t) => String(typeof t === 'string' ? t : (t && t.title) || '').toLowerCase());
         return tags.includes(String(view.tag || '').toLowerCase());
-      })} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
-      {view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={() => setDark((d) => !d)} />}
+      })} onMenu={() => setMenuOpen(true)} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} />}
+      {view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => setMenuOpen(true)} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} />}
       {menuOpen && (
         <FullMenu
           activeSection={view.page === 'item' ? view.from : view.page}
@@ -1422,6 +1563,8 @@ const [ageVerified, setAgeVerified] = useState(() => {
         localStorage.setItem('saboteur-age-verified', 'true');
       } catch {}
       setAgeVerified(true);
+      // Replace the current history entry so the age gate itself is never in the stack
+      navigate({ page: 'home' }, { replace: true });
     }}
     data={ageGateData}
   />

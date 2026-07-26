@@ -517,7 +517,7 @@ function Placeholder({ size, label, imageUrl, videoUrl }) {
   if (videoUrl) {
     return wrap(
       <video src={videoUrl} muted playsInline autoPlay loop
-        style={{ width: '100%', height: 'auto', display: 'block', background: 'var(--color-card)' }} />
+        style={{ width: '100%', height: 'auto', display: 'block', background: 'transparent' }} />
     );
   }
   if (imageUrl) {
@@ -525,12 +525,12 @@ function Placeholder({ size, label, imageUrl, videoUrl }) {
       <img
         src={imageUrl + (imageUrl.includes('cdn.sanity.io') ? '?w=900&auto=format' : '')}
         alt={label || ''}
-        style={{ width: '100%', height: 'auto', display: 'block', background: 'var(--color-card)' }}
+        style={{ width: '100%', height: 'auto', display: 'block', background: 'transparent' }}
       />
     );
   }
   return wrap(
-    <div style={{ width: '100%', aspectRatio: `${size.w} / ${size.h}`, background: 'var(--color-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4 }}>
+    <div style={{ width: '100%', aspectRatio: `${size.w} / ${size.h}`, background: 'var(--color-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4 }}>
       <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 11, color: 'var(--color-ink-55)' }}>{size.w} × {size.h}</div>
       {label && <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 10, color: 'var(--color-ink-55)', opacity: 0.6 }}>{label}</div>}
     </div>
@@ -740,7 +740,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
   return (
     <div style={{
       columns,
-      columnGap: isMobile ? 16 : 24,
+      columnGap: isMobile ? 20 : 32,
     }}>
       {items.map((s) => {
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
@@ -751,7 +751,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             onClick={() => onOpen(s)}
             style={{
               breakInside: 'avoid',
-              marginBottom: isMobile ? 16 : 24,
+              marginBottom: isMobile ? 20 : 32,
               cursor: 'pointer',
               overflow: 'hidden',
             }}
@@ -1176,7 +1176,7 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
-            gap: '40px 28px',
+            gap: '48px 32px',
           }}>
             {list.map((p) => {
               const img = productImageUrl(p);
@@ -1192,12 +1192,12 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
                   }}
                 >
                   <div style={{
-                    width: '100%', aspectRatio: '4 / 5', background: 'var(--color-card, #ECEBEE)',
+                    width: '100%', aspectRatio: '4 / 5', background: 'var(--color-paper)',
                     borderRadius: 'var(--radius-sm, 4px)', overflow: 'hidden', position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {img ? (
-                      <img src={img + (img.includes('cdn.sanity.io') ? '?w=800&h=1000&fit=crop&auto=format' : '')} alt={p.title || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <img src={img + (img.includes('cdn.sanity.io') ? '?w=800&h=1000&fit=crop&auto=format' : '')} alt={p.title || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent' }} />
                     ) : (
                       <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase', padding: 16, textAlign: 'center' }}>
                         {p.title || 'Product'}
@@ -1223,13 +1223,17 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
 }
 
 
-function ProductDetail({ product, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onAddToCart }) {
+function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onAddToCart, onOpenProduct }) {
   useEffect(() => { window.scrollTo(0, 0); }, [product && product._id]);
   const isMobile = useIsMobile(900);
   const p = product || {};
   const imgs = (p.imageUrls && p.imageUrls.length)
     ? p.imageUrls.filter(Boolean)
     : (productImageUrl(p) ? [productImageUrl(p)] : []);
+  // Related: store products only — same category first, then others
+  const sameCat = (allProducts || []).filter((x) => x && x._id && x._id !== p._id && x.enabled !== false && x.category && p.category && x.category === p.category);
+  const others = (allProducts || []).filter((x) => x && x._id && x._id !== p._id && x.enabled !== false && (!p.category || x.category !== p.category));
+  const relatedProducts = sameCat.concat(others).slice(0, 8);
   const price = formatPrice(p.priceCents, p.fulfillmentType);
   const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category || '';
   const isFree = p.fulfillmentType === 'free_digital' || !p.priceCents;
@@ -1304,31 +1308,51 @@ function ProductDetail({ product, onMenu, onBack, onHome, onContact, onTag, dark
         paddingTop: isMobile ? 88 : 100,
         borderBottom: '1px solid var(--color-stroke)',
       }}>
-        {/* Images */}
+        {/* Images — centered like editorial project view, no grey plate */}
         <div style={{
           flex: 1,
           minWidth: 0,
           padding: isMobile ? '24px 20px 40px' : '32px clamp(24px,5vw,64px) 64px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}>
           {imgs.length === 0 ? (
             <div style={{
-              width: '100%', aspectRatio: '4 / 5', maxWidth: 560,
-              background: 'var(--color-card)', borderRadius: 'var(--radius-sm)',
+              width: '100%', aspectRatio: '4 / 5', maxWidth: 420,
+              background: 'var(--color-paper)', borderRadius: '2px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'var(--font-family-mono)', fontSize: 13, color: 'var(--color-ink-55)',
               letterSpacing: '0.04em', textTransform: 'uppercase',
             }}>{p.title || 'Product'}</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 560 }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: isMobile ? 24 : 32,
+              width: '100%',
+              maxWidth: 560,
+              alignItems: 'center',
+            }}>
               {imgs.map((src, i) => (
                 <div key={i} style={{
-                  width: '100%', aspectRatio: i === 0 ? '4 / 5' : undefined,
-                  background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', overflow: 'hidden',
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
                 }}>
                   <img
                     src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
                     alt={p.title ? `${p.title}${i > 0 ? ` — ${i + 1}` : ''}` : ''}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    style={{
+                      width: '100%',
+                      maxWidth: 'min(100%, 420px)',
+                      maxHeight: '72vh',
+                      height: 'auto',
+                      display: 'block',
+                      objectFit: 'contain',
+                      background: 'transparent',
+                      borderRadius: '2px',
+                    }}
                   />
                 </div>
               ))}
@@ -1530,6 +1554,63 @@ function ProductDetail({ product, onMenu, onBack, onHome, onContact, onTag, dark
           ) : null}
         </div>
       </div>
+
+      {/* Related store products only */}
+      {relatedProducts.length > 0 ? (
+        <div style={{
+          padding: isMobile ? '40px 20px 64px' : '48px clamp(24px,5vw,64px) 80px',
+          borderTop: '1px solid var(--color-stroke)',
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-family-mono)',
+            fontSize: 'var(--font-label-size)',
+            fontWeight: 500,
+            letterSpacing: 'var(--font-label-tracking)',
+            color: 'var(--color-ink-55)',
+            textTransform: 'uppercase',
+            marginBottom: 24,
+          }}>
+            More from the store
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))',
+            gap: '40px 28px',
+          }}>
+            {relatedProducts.map((rp) => {
+              const img = productImageUrl(rp);
+              const rpPrice = formatPrice(rp.priceCents, rp.fulfillmentType);
+              return (
+                <button
+                  key={rp._id || rp.slug}
+                  type="button"
+                  onClick={() => onOpenProduct && onOpenProduct(rp)}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+                    display: 'flex', flexDirection: 'column', gap: 12,
+                  }}
+                >
+                  <div style={{
+                    width: '100%', aspectRatio: '4 / 5', background: 'var(--color-paper)',
+                    borderRadius: '2px', overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {img ? (
+                      <img
+                        src={img + (img.includes('cdn.sanity.io') ? '?w=600&h=750&fit=crop&auto=format' : '')}
+                        alt={rp.title || ''}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent' }}
+                      />
+                    ) : null}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '15px', color: 'var(--color-ink)', lineHeight: 1.3 }}>{rp.title}</div>
+                  <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)' }}>{rpPrice}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
@@ -1968,7 +2049,7 @@ function GalleryPanel({ series }) {
       display: multi ? 'grid' : 'flex',
       gridTemplateColumns: multi ? '1fr 1fr' : undefined,
       flexDirection: multi ? undefined : 'column',
-      gap: 20,
+      gap: isMobile ? 20 : 28,
     }}>
       {items.map((item, i) => {
         const orient = meta[item.src] ? meta[item.src].orient : null;
@@ -3041,6 +3122,7 @@ function App() {
       {view.page === 'product' && view.product && (
         <ProductDetail
           product={view.product}
+          allProducts={products}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}
           onHome={goHome}
@@ -3053,6 +3135,7 @@ function App() {
           cartOpen={cartOpen}
           menuOpen={menuOpen}
           onAddToCart={addToCart}
+          onOpenProduct={(p) => { navigate({ page: 'product', product: p }); window.scrollTo(0, 0); }}
         />
       )}
       

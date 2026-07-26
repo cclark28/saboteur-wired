@@ -1678,7 +1678,7 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
   );
 }
 
-function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping }) {
+function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping, onUpdateQty, onRemoveLine }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
@@ -1720,6 +1720,7 @@ function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, on
             productId: l.productId,
             variant: l.variant || null,
             fulfillmentType: l.fulfillmentType,
+            digitalFileUrl: l.digitalFileUrl || null,
           })),
           successUrl: successUrl,
           cancelUrl: cancelUrl,
@@ -1781,8 +1782,32 @@ function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, on
                     <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 8 }}>{line.detailsSummary}</div>
                   ) : null
                 )}
-                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '14px', fontWeight: 700, color: 'var(--color-ink)', fontVariantNumeric: 'tabular-nums' }}>
-                  Qty {line.qty || 1} · {(line.priceCents > 0) ? ('$' + ((line.priceCents * (line.qty || 1)) / 100).toFixed(2)) : 'Free'}
+                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '14px', fontWeight: 700, color: 'var(--color-ink)', fontVariantNumeric: 'tabular-nums', marginBottom: 10 }}>
+                  {(line.priceCents > 0) ? ('$' + ((line.priceCents * (line.qty || 1)) / 100).toFixed(2)) : 'Free'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                    <button
+                      type="button"
+                      aria-label="Decrease quantity"
+                      onClick={() => onUpdateQty && onUpdateQty(line.id, (line.qty || 1) - 1)}
+                      style={{ width: 36, height: 36, border: 'none', background: 'var(--color-paper)', color: 'var(--color-ink)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: '16px', lineHeight: 1, padding: 0 }}
+                    >−</button>
+                    <span style={{ minWidth: 36, textAlign: 'center', fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--color-ink)' }}>{line.qty || 1}</span>
+                    <button
+                      type="button"
+                      aria-label="Increase quantity"
+                      onClick={() => onUpdateQty && onUpdateQty(line.id, (line.qty || 1) + 1)}
+                      style={{ width: 36, height: 36, border: 'none', background: 'var(--color-paper)', color: 'var(--color-ink)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: '16px', lineHeight: 1, padding: 0 }}
+                    >+</button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveLine && onRemoveLine(line.id)}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', textDecoration: 'underline' }}
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             </div>
@@ -2858,6 +2883,21 @@ function App() {
       return next;
     });
   }, []);
+
+  const updateCartQty = React.useCallback((lineId, nextQty) => {
+    const q = Math.max(0, Math.min(99, Number(nextQty) || 0));
+    setCart((prev) => {
+      let next;
+      if (q <= 0) {
+        next = prev.filter((l) => l.id !== lineId);
+      } else {
+        next = prev.map((l) => (l.id === lineId ? { ...l, qty: q } : l));
+      }
+      try { localStorage.setItem('saboteur-cart', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   const goHome = () => { setMenuOpen(false); navigate({ page: 'home' }); };
   const openSection = (section) => {
     const raw = String(section || '').trim();
@@ -3065,6 +3105,8 @@ function App() {
           cartOpen={cartOpen}
           menuOpen={menuOpen}
           onContinueShopping={() => { openSection('store'); }}
+          onUpdateQty={updateCartQty}
+          onRemoveLine={removeFromCart}
         />
       )}
       
@@ -3159,16 +3201,44 @@ function App() {
                           {line.detailsSummary ? (
                             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', marginBottom: 4 }}>{line.detailsSummary}</div>
                           ) : null}
-                          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--color-ink)', marginBottom: 8, fontVariantNumeric: 'tabular-nums' }}>
-                            Qty {line.qty || 1}
-                            {(line.priceCents > 0) ? ` · $${((line.priceCents * (line.qty || 1)) / 100).toFixed(2)}` : ' · Free'}
+                          <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--color-ink)', marginBottom: 10, fontVariantNumeric: 'tabular-nums' }}>
+                            {(line.priceCents > 0) ? ('$' + ((line.priceCents * (line.qty || 1)) / 100).toFixed(2)) : 'Free'}
                           </div>
-                          <button
-                            onClick={() => removeFromCart(line.id)}
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', textDecoration: 'underline' }}
-                          >
-                            Remove
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                              <button
+                                type="button"
+                                aria-label="Decrease quantity"
+                                onClick={() => updateCartQty(line.id, (line.qty || 1) - 1)}
+                                style={{
+                                  width: 36, height: 36, border: 'none', background: 'var(--color-paper)',
+                                  color: 'var(--color-ink)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)',
+                                  fontSize: '16px', lineHeight: 1, padding: 0,
+                                }}
+                              >−</button>
+                              <span style={{
+                                minWidth: 36, textAlign: 'center', fontFamily: 'var(--font-family-mono)',
+                                fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--color-ink)',
+                              }}>{line.qty || 1}</span>
+                              <button
+                                type="button"
+                                aria-label="Increase quantity"
+                                onClick={() => updateCartQty(line.id, (line.qty || 1) + 1)}
+                                style={{
+                                  width: 36, height: 36, border: 'none', background: 'var(--color-paper)',
+                                  color: 'var(--color-ink)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)',
+                                  fontSize: '16px', lineHeight: 1, padding: 0,
+                                }}
+                              >+</button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(line.id)}
+                              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', textDecoration: 'underline' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}

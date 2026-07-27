@@ -14,10 +14,10 @@ html,body{margin:0;background:#F5F4F0;min-height:100vh}
 <script>
 (async function () {
   try {
-    var n = 6;
+    var n = 30;
     var parts = [];
     for (var i = 0; i < n; i++) {
-      var r = await fetch('/c' + i + '.txt');
+      var r = await fetch('/p' + i + '.txt');
       if (!r.ok) throw new Error('chunk ' + i);
       parts.push(await r.text());
     }

@@ -224,7 +224,7 @@
     display: block;
     width: 100%;
     height: auto;
-    transition: transform 0.15s ease-out;
+    /* No hover zoom — photography stays still; parallax is scroll-only on desktop */
   }
   /* Grain removed — was causing grey haze on photos */
   /* Desktop-only subtle parallax class */
@@ -778,14 +778,6 @@ function MasonryGrid({ items, onOpen, dense = false }) {
               marginBottom: isMobile ? 20 : 32,
               cursor: 'pointer',
               overflow: 'hidden',
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget.querySelector('img,div');
-              if (el) el.style.transform = 'scale(1.03)';
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget.querySelector('img,div');
-              if (el) el.style.transform = 'scale(1)';
             }}
           >
             <div style={{ position: 'relative' }}>

@@ -417,6 +417,7 @@ async function fetchSanityBundle() {
       stock,
       digitalFileUrl,
       published,
+      soldOut,
       productDetails,
       variants,
       "imageUrl": images[0].asset->url,
@@ -1374,6 +1375,11 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
               const img = productImageUrl(p);
               const price = formatPrice(p.priceCents, p.fulfillmentType);
               const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category;
+              const isSoldOut = p.soldOut === true || p.soldOut === 'true' || (
+                (p.fulfillmentType === 'paid_physical') && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== ''
+              ) || (
+                (p.fulfillmentType === 'paid_physical_variant') && Array.isArray(p.variants) && p.variants.length > 0 && p.variants.every((v) => Number(v && v.stock) === 0)
+              );
               return (
                 <button
                   key={p._id || p.slug}
@@ -1395,12 +1401,47 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
                         {p.title || 'Product'}
                       </span>
                     )}
+                    {isSoldOut && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: 12,
+                          right: 12,
+                          fontFamily: 'var(--font-family-mono)',
+                          fontSize: 11,
+                          fontWeight: 500,
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
+                          padding: '7px 12px',
+                          borderRadius: 9999,
+                          lineHeight: 1,
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                          zIndex: 2,
+                          background: 'var(--color-accent)',
+                          color: '#18181B',
+                        }}
+                      >
+                        Sold out
+                      </span>
+                    )}
                   </div>
                   <div style={{ paddingTop: 2 }}>
-                    <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '16px', color: 'var(--color-ink)', marginBottom: 8, lineHeight: 1.3 }}>{p.title}</div>
+                    <div style={{
+                      fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '16px', marginBottom: 8, lineHeight: 1.3,
+                      color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                      textDecoration: isSoldOut ? 'line-through' : 'none',
+                    }}>{p.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
                       <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{catLabel}</span>
-                      <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)' }}>{price}</span>
+                      <span style={{
+                        fontFamily: 'var(--font-family-mono)',
+                        fontSize: '13px',
+                        fontVariantNumeric: 'tabular-nums',
+                        color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                        textDecoration: isSoldOut ? 'line-through' : 'none',
+                      }}>{price}</span>
                     </div>
                   </div>
                 </button>
@@ -1429,6 +1470,12 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
   const price = formatPrice(p.priceCents, p.fulfillmentType);
   const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category || '';
   const isFree = p.fulfillmentType === 'free_digital' || !p.priceCents;
+  // Top-level soldOut flag, non-variant stock 0, or all size variants at 0
+  const isSoldOut = p.soldOut === true || p.soldOut === 'true' || (
+    (p.fulfillmentType === 'paid_physical') && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== ''
+  ) || (
+    (p.fulfillmentType === 'paid_physical_variant') && Array.isArray(p.variants) && p.variants.length > 0 && p.variants.every((v) => Number(v && v.stock) === 0)
+  );
   const details = p.productDetails || {};
   const detailRows = [
     details.format && { label: 'Format', value: details.format },
@@ -1454,6 +1501,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(dlEmail || '').trim());
 
   const handlePrimary = () => {
+    if (isSoldOut) return;
     if (isFree) {
       if (needsAge && !ageOk) {
         setDlError('Confirm you are 18 or older to continue.');
@@ -1531,13 +1579,14 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
                   width: '100%',
                   display: 'flex',
                   justifyContent: 'center',
+                  position: 'relative',
+                  maxWidth: 'min(100%, 420px)',
                 }}>
                   <img
                     src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
                     alt={p.title ? `${p.title}${i > 0 ? ` — ${i + 1}` : ''}` : ''}
                     style={{
                       width: '100%',
-                      maxWidth: 'min(100%, 420px)',
                       maxHeight: '72vh',
                       height: 'auto',
                       display: 'block',
@@ -1546,6 +1595,31 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
                       borderRadius: '2px',
                     }}
                   />
+                  {isSoldOut ? (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 12,
+                        right: 12,
+                        fontFamily: 'var(--font-family-mono)',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        padding: '7px 12px',
+                        borderRadius: 9999,
+                        lineHeight: 1,
+                        whiteSpace: 'nowrap',
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                        zIndex: 2,
+                        background: 'var(--color-accent)',
+                        color: '#18181B',
+                      }}
+                    >
+                      Sold out
+                    </span>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -1575,13 +1649,19 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
 
           <h1 style={{
             fontFamily: 'var(--font-family-display)', fontWeight: 700,
-            fontSize: 'var(--font-h2-size)', color: 'var(--color-ink)', margin: '0 0 12px', lineHeight: 1.15, letterSpacing: '-0.02em',
+            fontSize: 'var(--font-h2-size)', margin: '0 0 12px', lineHeight: 1.15, letterSpacing: '-0.02em',
+            color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
+            textDecoration: isSoldOut ? 'line-through' : 'none',
           }}>{p.title || 'Untitled'}</h1>
 
           <div style={{
             fontFamily: 'var(--font-family-mono)', fontSize: '15px', fontWeight: 500,
-            color: 'var(--color-ink)', marginBottom: 28, fontVariantNumeric: 'tabular-nums',
-          }}>{price}</div>
+            color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
+            marginBottom: 28, fontVariantNumeric: 'tabular-nums',
+            textDecoration: isSoldOut ? 'line-through' : 'none',
+          }}>
+            {price}
+          </div>
 
           {p.description ? (
             <p style={{
@@ -1619,7 +1699,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
             </p>
           ) : null}
 
-          {needsAge ? (
+          {!isSoldOut && needsAge ? (
             <label style={{
               display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 28, cursor: 'pointer',
               fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.45,
@@ -1633,7 +1713,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
               <span>I confirm I am 18 years of age or older. This product may contain artistic adult content.</span>
             </label>
           ) : null}
-          {needsSize ? (
+          {!isSoldOut && needsSize ? (
             <div style={{ marginBottom: 32 }}>
               <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 14 }}>Size</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -1664,7 +1744,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
             </div>
           ) : null}
 
-          {isFree && (
+          {isFree && !isSoldOut && (
             <div style={{ marginBottom: 20 }}>
               <label style={{
                 display: 'block', fontFamily: 'var(--font-family-mono)', fontSize: '12px',
@@ -1699,26 +1779,26 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
 
           <button
             onClick={handlePrimary}
-            disabled={(isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk) || (needsAge && !ageOk)}
+            disabled={isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)}
             style={{
               width: '100%', minHeight: 48, padding: '14px 28px',
-              background: ((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-card)' : 'var(--color-ink)',
-              color: ((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
+              background: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-card)' : 'var(--color-ink)',
+              color: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
               border: 'none',
               borderRadius: 'var(--radius-sm)',
-              cursor: ((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'not-allowed' : 'pointer',
+              cursor: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
               letterSpacing: '0.02em',
-              opacity: ((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 0.9 : 1,
+              opacity: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 0.9 : 1,
               transition: 'background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease)',
             }}
             onMouseEnter={(e) => {
-              if ((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) return;
+              if (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) return;
               e.currentTarget.style.background = 'var(--color-accent)';
               e.currentTarget.style.color = '#FFFFFF';
             }}
             onMouseLeave={(e) => {
-              if ((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) {
+              if (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) {
                 e.currentTarget.style.background = 'var(--color-card)';
                 e.currentTarget.style.color = 'var(--color-ink-55)';
                 return;
@@ -1726,10 +1806,10 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
               e.currentTarget.style.background = 'var(--color-ink)';
               e.currentTarget.style.color = 'var(--color-paper)';
             }}
-            onMouseDown={(e) => { if (!((isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onMouseDown={(e) => { if (!(isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            {isFree ? (dlDone ? 'Download again' : 'Download') : 'Add to bag'}
+            {isSoldOut ? 'Out of stock' : (isFree ? (dlDone ? 'Download again' : 'Download') : 'Add to bag')}
           </button>
 
           {isFree && dlDone ? (
@@ -1772,6 +1852,11 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
             {relatedProducts.map((rp) => {
               const img = productImageUrl(rp);
               const rpPrice = formatPrice(rp.priceCents, rp.fulfillmentType);
+              const rpSold = rp.soldOut === true || rp.soldOut === 'true' || (
+                (rp.fulfillmentType === 'paid_physical') && Number(rp.stock) === 0 && rp.stock !== null && rp.stock !== undefined && rp.stock !== ''
+              ) || (
+                (rp.fulfillmentType === 'paid_physical_variant') && Array.isArray(rp.variants) && rp.variants.length > 0 && rp.variants.every((v) => Number(v && v.stock) === 0)
+              );
               return (
                 <button
                   key={rp._id || rp.slug}
@@ -1784,7 +1869,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
                 >
                   <div style={{
                     width: '100%', aspectRatio: '4 / 5', background: 'var(--color-paper)',
-                    borderRadius: '2px', overflow: 'hidden',
+                    borderRadius: '2px', overflow: 'hidden', position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {img ? (
@@ -1794,9 +1879,27 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent' }}
                       />
                     ) : null}
+                    {rpSold ? (
+                      <span style={{
+                        position: 'absolute', top: 10, right: 10,
+                        fontFamily: 'var(--font-family-mono)', fontSize: 10, fontWeight: 500,
+                        letterSpacing: '0.04em', textTransform: 'uppercase',
+                        padding: '6px 10px', borderRadius: 9999, lineHeight: 1,
+                        background: 'var(--color-accent)', color: '#18181B',
+                        pointerEvents: 'none',
+                      }}>Sold out</span>
+                    ) : null}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '15px', color: 'var(--color-ink)', lineHeight: 1.3 }}>{rp.title}</div>
-                  <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)' }}>{rpPrice}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '15px', lineHeight: 1.3,
+                    color: rpSold ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                    textDecoration: rpSold ? 'line-through' : 'none',
+                  }}>{rp.title}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-family-mono)', fontSize: '12px',
+                    color: 'var(--color-ink-55)',
+                    textDecoration: rpSold ? 'line-through' : 'none',
+                  }}>{rpPrice}</div>
                 </button>
               );
             })}
@@ -3110,6 +3213,13 @@ function App() {
 
   const addToCart = React.useCallback((product, variant) => {
     if (!product) return;
+    // Never allow sold-out products into the bag (same rules as the orange pill + Out of stock button)
+    const sold = product.soldOut === true || product.soldOut === 'true' || (
+      (product.fulfillmentType === 'paid_physical') && Number(product.stock) === 0 && product.stock !== null && product.stock !== undefined && product.stock !== ''
+    ) || (
+      (product.fulfillmentType === 'paid_physical_variant') && Array.isArray(product.variants) && product.variants.length > 0 && product.variants.every((v) => Number(v && v.stock) === 0)
+    );
+    if (sold) return;
     setCart((prev) => {
       const lineId = String(product._id || product.slug || product.title) + (variant ? '::' + variant : '');
       const existing = prev.find((l) => l.id === lineId);

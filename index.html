@@ -14,10 +14,19 @@
 <meta property="og:title" content="®Saboteur">
 <meta property="og:description" content="Experimental art studio. Photography, textures, and figure studies.">
 <meta property="og:url" content="https://saboteur.one">
-<meta property="og:image" content="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg">
+<meta property="og:image" content="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/og-share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="®Saboteur">
 <meta name="twitter:description" content="Experimental art studio. Photography, textures, and figure studies.">
+<meta name="twitter:image" content="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/og-share.jpg">
+<!-- Vercel Web Analytics (enabled in dashboard) -->
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -307,7 +316,7 @@ const SIZES = [
 
 function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
 
-let NAV_LINKS = ['Explorations', 'Figure Studies', 'Store'];
+let NAV_LINKS = ['Explorations', 'Figure Studies', 'Store', 'About'];
 let ALL_TAGS = [];
 let FOOTER_DATA = null;
 let FOOTER_NAV = { home: null, contact: null, section: null, store: null, resend: null };
@@ -323,7 +332,7 @@ function pathFromView(view) {
     const slug = (view.product && view.product.slug) || view.productSlug || '';
     return slug ? '/store/' + encodeURIComponent(String(slug)) : '/store';
   }
-  if (p === 'info') return '/info';
+  if (p === 'info' || p === 'about') return '/about';
   if (p === 'resend') return '/resend';
   if (p === 'checkout') return '/checkout';
   if (p === 'order-success') return '/order-success';
@@ -352,7 +361,7 @@ function viewFromPath(pathname) {
       return { page: 'store' };
     }
   }
-  if (path === '/info' || path === '/contact') return { page: 'info' };
+  if (path === '/about' || path === '/info' || path === '/contact') return { page: 'about' };
   if (path === '/resend') return { page: 'resend' };
   if (path === '/checkout') return { page: 'checkout' };
   if (path === '/order-success') return { page: 'order-success' };
@@ -938,13 +947,15 @@ function MasonryGrid({ items, onOpen, dense = false }) {
       ? '2 280px'
       : 'clamp(2, 3, 4) clamp(220px, 26vw, 320px)';
 
-  // Equal visible gap on every side — paddingBottom cannot collapse (margin can)
-  const gap = isMobile ? 24 : 32;
+  // Fluid equal gap — 24px floor / 32px ceiling on 8px scale. columnGap (H) + marginBottom (V).
+  // Container negative margin cancels trailing space so last items sit clean. No padding that can collapse.
+  const gap = 'clamp(24px, 2.8vw, 32px)';
 
   return (
     <div style={{
       columns,
       columnGap: gap,
+      marginBottom: 'calc(-1 * clamp(24px, 2.8vw, 32px))',
     }}>
       {items.map((s) => {
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
@@ -955,8 +966,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             onClick={() => onOpen(s)}
             style={{
               breakInside: 'avoid',
-              paddingBottom: gap,
-              marginBottom: 0,
+              marginBottom: gap,
               cursor: 'pointer',
               overflow: 'hidden',
             }}
@@ -1573,7 +1583,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: isMobile ? 24 : 32,
+              gap: 'clamp(24px, 2.8vw, 32px)',
               width: '100%',
               maxWidth: 560,
               alignItems: 'center',
@@ -2261,6 +2271,220 @@ function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, on
   );
 }
 
+/* ---------- About fly-out panel (~40% desktop, full-screen mobile) ---------- */
+function AboutFlyout({ open, onClose, settings }) {
+  const isMobile = useIsMobile(900);
+  const s = settings || {};
+  const headline = s.infoHeadline || s.aboutHeadline || 'About';
+  const subhead = s.infoSubhead || s.aboutSubhead || '';
+  const paragraphs = Array.isArray(s.infoParagraphs) ? s.infoParagraphs.filter(Boolean) : (s.aboutBody ? [s.aboutBody] : []);
+  const mediaUrl = s.infoMediaUrl || s.aboutImageUrl || null;
+  const mime = (s.infoMediaMime || '').toLowerCase();
+  const isVideo = mediaUrl && (mime.startsWith('video/') || /\.(mp4|webm|mov)(\?|$)/i.test(mediaUrl));
+
+  // Body scroll lock + Esc
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const panelWidth = isMobile ? '100%' : 'min(440px, 42vw)';
+  const panelBg = 'var(--color-paper)'; // surface / quiet grey-white in both modes
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="About"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 450,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        pointerEvents: 'auto',
+      }}
+    >
+      {/* Dimmed backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(24, 24, 27, 0.45)',
+          cursor: 'pointer',
+        }}
+      />
+
+      {/* Panel */}
+      <div
+        style={{
+          position: 'relative',
+          width: panelWidth,
+          maxWidth: '100%',
+          height: '100%',
+          background: panelBg,
+          borderLeft: isMobile ? 'none' : '1px solid var(--color-stroke)',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: isMobile ? 'none' : '-8px 0 32px rgba(0,0,0,0.08)',
+          animation: isMobile ? 'none' : 'aboutSlideIn 0.28s var(--ease, cubic-bezier(0.22,1,0.36,1))',
+        }}
+      >
+        <style>{`
+          @keyframes aboutSlideIn {
+            from { transform: translateX(12px); opacity: 0.96; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            [data-about-panel] { animation: none !important; }
+          }
+        `}</style>
+
+        {/* Header row: label + Close */}
+        <div
+          data-about-panel
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: isMobile ? '20px 20px 12px' : '24px 28px 16px',
+            flexShrink: 0,
+            borderBottom: '1px solid var(--color-stroke)',
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontFamily: 'var(--font-family-mono)',
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color: 'var(--color-ink-55)',
+          }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: 'var(--color-ink-55)', display: 'inline-block',
+            }} />
+            About
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close about"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'var(--color-ink)',
+              color: 'var(--color-paper)',
+              border: 'none',
+              borderRadius: 'var(--radius-sm, 4px)',
+              padding: '8px 14px',
+              fontFamily: 'var(--font-family-mono)',
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '0.03em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              lineHeight: 1,
+            }}
+          >
+            Close
+            <span style={{ opacity: 0.7, fontSize: 11 }}>ESC</span>
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: isMobile ? '28px 20px 48px' : '32px 28px 56px',
+          WebkitOverflowScrolling: 'touch',
+        }}>
+          {headline ? (
+            <h1 style={{
+              fontFamily: 'var(--font-family-display)',
+              fontWeight: 700,
+              fontSize: isMobile ? '1.75rem' : 'var(--font-h2-size, 1.85rem)',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em',
+              color: 'var(--color-ink)',
+              margin: '0 0 12px',
+            }}>{headline}</h1>
+          ) : null}
+
+          {subhead ? (
+            <p style={{
+              fontFamily: 'var(--font-family-display)',
+              fontWeight: 500,
+              fontSize: 'var(--font-body-size, 1rem)',
+              color: 'var(--color-ink-55)',
+              margin: '0 0 24px',
+              lineHeight: 1.45,
+            }}>{subhead}</p>
+          ) : null}
+
+          {paragraphs.map((p, i) => (
+            <p key={i} style={{
+              fontSize: 'var(--font-body-size, 1rem)',
+              lineHeight: 'var(--font-body-leading, 1.55)',
+              color: 'var(--color-ink)',
+              margin: '0 0 1.2em',
+            }}>{p}</p>
+          ))}
+
+          {mediaUrl ? (
+            <div className="photo-wrap" style={{ margin: '28px 0 32px' }}>
+              {isVideo ? (
+                <video
+                  src={mediaUrl}
+                  muted
+                  playsInline
+                  autoPlay
+                  loop
+                  style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-sm, 4px)' }}
+                />
+              ) : (
+                <img
+                  src={mediaUrl}
+                  alt=""
+                  style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-sm, 4px)' }}
+                />
+              )}
+            </div>
+          ) : null}
+
+          {/* Contact form (reused) */}
+          <div style={{ marginTop: 8, paddingTop: 28, borderTop: '1px solid var(--color-stroke)' }}>
+            <div style={{
+              fontFamily: 'var(--font-family-mono)',
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--color-ink-55)',
+              marginBottom: 16,
+            }}>Contact</div>
+            <ContactForm />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleDark, settings, cartCount, onCartOpen, cartOpen, menuOpen }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const s = settings || {};
@@ -2341,6 +2565,8 @@ function GalleryPanel({ series }) {
 
   // Desktop: up to 2 columns for multiple images. Mobile: single stack.
   const multi = items.length > 1 && !isMobile;
+  // Match MasonryGrid fluid gap so home / sections / series all feel the same
+  const gap = 'clamp(24px, 2.8vw, 32px)';
 
   return (
     <div style={{
@@ -2348,7 +2574,7 @@ function GalleryPanel({ series }) {
       display: multi ? 'grid' : 'flex',
       gridTemplateColumns: multi ? '1fr 1fr' : undefined,
       flexDirection: multi ? undefined : 'column',
-      gap: isMobile ? 24 : 32,
+      gap,
     }}>
       {items.map((item, i) => {
         const orient = meta[item.src] ? meta[item.src].orient : null;
@@ -2868,6 +3094,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [landingMenu, setLandingMenu] = useState(false);
   const [landingDone, setLandingDone] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [cart, setCart] = useState(() => {
     try {
@@ -2935,16 +3162,28 @@ function App() {
         initial = { page: 'checkout' };
       }
     } catch (e) {}
-    setView(initial);
-    try {
-      window.history.replaceState(initial, '', pathFromView(initial) + (initial.page === 'order-success' || initial.page === 'checkout' ? window.location.search : ''));
-    } catch (e) {}
+    // /about is a fly-out over home (or current), not a separate page view
+    if (initial.page === 'about') {
+      setView({ page: 'home' });
+      setAboutOpen(true);
+      try {
+        window.history.replaceState({ page: 'home' }, '', '/about');
+      } catch (e) {}
+    } else {
+      setView(initial);
+      try {
+        window.history.replaceState(initial, '', pathFromView(initial) + (initial.page === 'order-success' || initial.page === 'checkout' ? window.location.search : ''));
+      } catch (e) {}
+    }
 
     const onPop = (e) => {
-      if (e.state && e.state.page) {
-        setView(e.state);
+      const next = (e.state && e.state.page) ? e.state : viewFromPath(window.location.pathname);
+      if (next.page === 'about') {
+        setView({ page: 'home' });
+        setAboutOpen(true);
       } else {
-        setView(viewFromPath(window.location.pathname));
+        setAboutOpen(false);
+        setView(next);
       }
       window.scrollTo(0, 0);
     };
@@ -3052,10 +3291,13 @@ function App() {
         }
         setNavSections(nav);
         SECTION_META = nav.map((s) => ({ ...s }));
-        // Keep menu labels in sync
+        // Keep menu labels in sync — About is a fly-out, not a section page, so force it into the menu
         NAV_LINKS = nav.filter((s) => !s.isInfoPage).map((s) => s.title);
         if (!NAV_LINKS.some((t) => String(t).toLowerCase() === 'store')) {
           NAV_LINKS.push('Store');
+        }
+        if (!NAV_LINKS.some((t) => String(t).toLowerCase() === 'about')) {
+          NAV_LINKS.push('About');
         }
         if (raw.length) {
           const series = raw.map((a, i) => assetToSeries(a, i)).filter((s) => s.imageUrl || s.videoUrl || (s.galleryUrls && s.galleryUrls.length));
@@ -3141,7 +3383,7 @@ function App() {
             { title: 'Store', slug: 'store', comingSoon: false, isInfoPage: false },
             { title: 'About', slug: 'info', comingSoon: false, isInfoPage: true },
           ];
-          NAV_LINKS = ['Explorations', 'Figure Studies', 'Store'];
+          NAV_LINKS = ['Explorations', 'Figure Studies', 'Store', 'About'];
           setProducts([
             {
               _id: 'fallback-bts',
@@ -3305,7 +3547,24 @@ function App() {
     }
   }, [ageVerified, view.page, landingDone]);
 
-  const goHome = () => { closeMenu(); navigate({ page: 'home' }); };
+  const goHome = () => { closeMenu(); setAboutOpen(false); navigate({ page: 'home' }); };
+  const openAbout = () => {
+    closeMenu();
+    setAboutOpen(true);
+    try {
+      window.history.pushState({ page: 'about' }, '', '/about');
+    } catch (e) {}
+  };
+  const closeAbout = () => {
+    setAboutOpen(false);
+    // If we were on /about, clean the URL back to current view
+    try {
+      if (window.location.pathname === '/about' || window.location.pathname === '/info') {
+        const path = pathFromView(view.page === 'about' ? { page: 'home' } : view);
+        window.history.replaceState(view, '', path);
+      }
+    } catch (e) {}
+  };
   const openSection = (section) => {
     const raw = String(section || '').trim();
     const slug = raw.toLowerCase().replace(/\s+/g, '-');
@@ -3316,21 +3575,22 @@ function App() {
     // Store is always open now — ignore comingSoon for store only
     if (meta && meta.comingSoon && slug !== 'store' && (meta.slug || '') !== 'store') return;
     closeMenu();
-    if (meta && (meta.isInfoPage || meta.isAbout) || slug === 'info' || slug === 'info-contact') {
-      navigate({ page: 'info' });
-      window.scrollTo(0, 0);
+    // About is a fly-out panel, not a full page
+    if (meta && (meta.isInfoPage || meta.isAbout) || slug === 'info' || slug === 'info-contact' || slug === 'about') {
+      openAbout();
       return;
     }
+    setAboutOpen(false);
     navigate({ page: (meta && meta.slug) ? meta.slug : slug });
     window.scrollTo(0, 0);
   };
-  const goContact = () => { closeMenu(); navigate({ page: 'info' }); };
+  const goContact = () => { openAbout(); };
   FOOTER_NAV = {
-    home: () => { closeMenu(); navigate({ page: 'home' }); },
-    contact: () => { closeMenu(); navigate({ page: 'info' }); },
+    home: () => { closeMenu(); setAboutOpen(false); navigate({ page: 'home' }); },
+    contact: () => { openAbout(); },
     section: (slug) => openSection(slug),
     store: () => { closeMenu(); openSection('store'); },
-    resend: () => { closeMenu(); navigate({ page: 'resend' }); window.scrollTo(0, 0); },
+    resend: () => { closeMenu(); setAboutOpen(false); navigate({ page: 'resend' }); window.scrollTo(0, 0); },
   };
   // Phase 2 return from Stripe (kept for safety; initial path parse also reads the query)
   useEffect(() => {
@@ -3536,6 +3796,11 @@ function App() {
           isLanding={landingMenu}
         />
       )}
+      <AboutFlyout
+        open={aboutOpen}
+        onClose={closeAbout}
+        settings={siteSettings}
+      />
       {cartOpen && (
         <div
           style={{

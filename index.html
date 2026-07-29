@@ -938,10 +938,13 @@ function MasonryGrid({ items, onOpen, dense = false }) {
       ? '2 280px'
       : 'clamp(2, 3, 4) clamp(220px, 26vw, 320px)';
 
+  // Equal visible gap on every side — paddingBottom cannot collapse (margin can)
+  const gap = isMobile ? 24 : 32;
+
   return (
     <div style={{
       columns,
-      columnGap: isMobile ? 16 : 24,
+      columnGap: gap,
     }}>
       {items.map((s) => {
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
@@ -952,7 +955,8 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             onClick={() => onOpen(s)}
             style={{
               breakInside: 'avoid',
-              marginBottom: isMobile ? 16 : 24,
+              paddingBottom: gap,
+              marginBottom: 0,
               cursor: 'pointer',
               overflow: 'hidden',
             }}
@@ -2344,7 +2348,7 @@ function GalleryPanel({ series }) {
       display: multi ? 'grid' : 'flex',
       gridTemplateColumns: multi ? '1fr 1fr' : undefined,
       flexDirection: multi ? undefined : 'column',
-      gap: isMobile ? 16 : 24,
+      gap: isMobile ? 24 : 32,
     }}>
       {items.map((item, i) => {
         const orient = meta[item.src] ? meta[item.src].orient : null;

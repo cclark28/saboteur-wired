@@ -316,7 +316,7 @@ const SIZES = [
 
 function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
 
-let NAV_LINKS = ['Explorations', 'Figure Studies', 'Store', 'About'];
+let NAV_LINKS = ['Explorations', 'Store', 'About'];
 let ALL_TAGS = [];
 let FOOTER_DATA = null;
 let FOOTER_NAV = { home: null, contact: null, section: null, store: null, resend: null };
@@ -3205,7 +3205,7 @@ function App() {
 
         const tagDocs = data.tags || [];
         ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
-        NAV_LINKS = sectionDocs.map((s) => s.title);
+        NAV_LINKS = sectionDocs.map((s) => s.title).filter((t) => !/figure\s*studies/i.test(String(t || '')));
         setAgeGateData(data.ageGate || null);
         {
           const all = data.products || [];
@@ -3292,7 +3292,11 @@ function App() {
         setNavSections(nav);
         SECTION_META = nav.map((s) => ({ ...s }));
         // Keep menu labels in sync — About is a fly-out, not a section page, so force it into the menu
-        NAV_LINKS = nav.filter((s) => !s.isInfoPage).map((s) => s.title);
+        // Figure studies intentionally omitted from the full menu (kept in Sanity for assets only)
+        NAV_LINKS = nav
+          .filter((s) => !s.isInfoPage)
+          .map((s) => s.title)
+          .filter((t) => !/figure\s*studies/i.test(String(t || '')));
         if (!NAV_LINKS.some((t) => String(t).toLowerCase() === 'store')) {
           NAV_LINKS.push('Store');
         }
@@ -3373,17 +3377,15 @@ function App() {
           });
           setNavSections([
             { title: 'Explorations', slug: 'explorations', comingSoon: false, isInfoPage: false },
-            { title: 'Figure Studies', slug: 'figure-studies', comingSoon: false, isInfoPage: false },
             { title: 'Store', slug: 'store', comingSoon: false, isInfoPage: false },
             { title: 'About', slug: 'info', comingSoon: false, isInfoPage: true },
           ]);
           SECTION_META = [
             { title: 'Explorations', slug: 'explorations', comingSoon: false, isInfoPage: false },
-            { title: 'Figure Studies', slug: 'figure-studies', comingSoon: false, isInfoPage: false },
             { title: 'Store', slug: 'store', comingSoon: false, isInfoPage: false },
             { title: 'About', slug: 'info', comingSoon: false, isInfoPage: true },
           ];
-          NAV_LINKS = ['Explorations', 'Figure Studies', 'Store', 'About'];
+          NAV_LINKS = ['Explorations', 'Store', 'About'];
           setProducts([
             {
               _id: 'fallback-bts',

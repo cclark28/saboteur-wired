@@ -6,7 +6,7 @@
 <link rel="icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#111113">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="description" content="®Saboteur — experimental art studio. Photography, textures, and figure studies.">
 <meta name="author" content="Charlie Clark / ®Saboteur">
 <meta property="og:type" content="website">
@@ -3107,8 +3107,9 @@ function App() {
     try {
       const saved = localStorage.getItem('saboteur-theme');
       if (saved === 'dark') return true;
-      if (saved === 'light') return false;
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Always default to light (paper white). Ignore system prefers-color-scheme.
+      // User can still choose dark; choice is persisted via localStorage.
+      return false;
     } catch {
       return false;
     }

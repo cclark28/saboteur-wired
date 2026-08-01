@@ -2529,7 +2529,6 @@ function InfoContact({ onMenu, onBack, onContact, onTag, onHome, dark, onToggleD
 
 function GalleryPanel({ series }) {
   const [meta, setMeta] = useState({});
-  const isMobile = useIsMobile(900);
 
   const items = [];
   const seen = new Set();
@@ -2563,17 +2562,15 @@ function GalleryPanel({ series }) {
     }
   }, [series.imageUrl, series.size]);
 
-  // Desktop: up to 2 columns for multiple images. Mobile: single stack.
-  const multi = items.length > 1 && !isMobile;
-  // Series gallery gap — slightly more open than home grid so photos never collide under subtle parallax
-  const gap = 'clamp(32px, 3.2vw, 48px)';
+  // ONE shared gap token — same as MasonryGrid (Home + sections). Uniform everywhere.
+  // Single column stack so every photo gets equal vertical spacing. No 2-col uneven rows.
+  const gap = 'clamp(24px, 2.8vw, 32px)';
 
   return (
     <div style={{
       width: '100%',
-      display: multi ? 'grid' : 'flex',
-      gridTemplateColumns: multi ? '1fr 1fr' : undefined,
-      flexDirection: multi ? undefined : 'column',
+      display: 'flex',
+      flexDirection: 'column',
       gap,
     }}>
       {items.map((item, i) => {
@@ -2581,18 +2578,16 @@ function GalleryPanel({ series }) {
         const isPort = orient === 'portrait';
         const style = {
           width: '100%',
-          maxWidth: (!multi && isPort) ? 'min(100%, 420px)' : '100%',
-          maxHeight: '72vh',
+          maxWidth: isPort ? 'min(100%, 520px)' : '100%',
           height: 'auto',
           display: 'block',
           objectFit: 'contain',
           background: 'transparent',
           borderRadius: '2px',
-          margin: (!multi && isPort) ? '0 auto' : '0',
         };
         return (
-          <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: (!multi && isPort) ? 'center' : 'stretch' }}>
-            <div className="photo-wrap photo-parallax" data-parallax style={{ width: style.width || '100%', maxWidth: style.maxWidth, margin: style.margin }}>
+          <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
+            <div className="photo-wrap photo-parallax" data-parallax style={{ width: '100%', maxWidth: style.maxWidth }}>
               {item.type === 'video' ? (
                 <video
                   src={item.src}
@@ -2614,7 +2609,6 @@ function GalleryPanel({ series }) {
             </div>
           </div>
         );
-
       })}
     </div>
   );

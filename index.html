@@ -2565,8 +2565,8 @@ function GalleryPanel({ series }) {
 
   // Desktop: up to 2 columns for multiple images. Mobile: single stack.
   const multi = items.length > 1 && !isMobile;
-  // Match MasonryGrid fluid gap so home / sections / series all feel the same
-  const gap = 'clamp(24px, 2.8vw, 32px)';
+  // Series gallery gap — slightly more open than home grid so photos never collide under subtle parallax
+  const gap = 'clamp(32px, 3.2vw, 48px)';
 
   return (
     <div style={{
@@ -3653,7 +3653,7 @@ function App() {
         if (rect.bottom < -100 || rect.top > vh + 100) return;
         const center = rect.top + rect.height / 2;
         const offset = (center - vh / 2) / vh; // -0.5 … 0.5 roughly
-        const move = Math.max(-55, Math.min(55, offset * -70)); // max ±55px — clearly visible
+        const move = Math.max(-12, Math.min(12, offset * -18)); // max ±12px — approved subtle parallax
         el.style.transform = `translate3d(0, ${move.toFixed(1)}px, 0)`;
 
 

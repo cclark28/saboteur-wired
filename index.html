@@ -5,13 +5,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Saboteur</title>
 <script>
-// Temporary restore: last known good index before accidental overwrite.
-// Will be replaced with the proper session-stable shuffle fix next.
+/**
+ * Bootloader: fetch last known-good index, then patch randomSize + shuffle
+ * so image order/sizes are stable for the life of a tab session.
+ * New visit (new sessionStorage) still gets a fresh shuffle.
+ */
 (async function () {
   try {
     const res = await fetch('https://cdn.jsdelivr.net/gh/cclark28/saboteur-wired@adbcf8d/index.html');
     if (!res.ok) throw new Error('restore fetch failed ' + res.status);
-    const html = await res.text();
+    let html = await res.text();
+
+    const OLD_RANDOM = 'function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }';
+    const NEW_RANDOM = [
+      'function getSessionSeed() {',
+      '  try {',
+      "    let seed = sessionStorage.getItem('saboteur-shuffle-seed');",
+      '    if (!seed) {',
+      "      seed = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 10);",
+      "      sessionStorage.setItem('saboteur-shuffle-seed', seed);",
+      '    }',
+      '    return seed;',
+      '  } catch (e) {',
+      '    return String(Date.now());',
+      '  }',
+      '}',
+      'function hashString(str) {',
+      '  let h = 2166136261;',
+      '  for (let i = 0; i < str.length; i++) {',
+      '    h ^= str.charCodeAt(i);',
+      '    h = Math.imul(h, 16777619);',
+      '  }',
+      '  return h >>> 0;',
+      '}',
+      'function seededRandom(seedStr) {',
+      '  let state = hashString(String(seedStr)) || 1;',
+      '  return function () {',
+      '    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;',
+      '    return state / 4294967296;',
+      '  };',
+      '}',
+      'function randomSize(forId) {',
+      "  const rnd = seededRandom(getSessionSeed() + '::size::' + String(forId != null ? forId : Math.random()));",
+      '  return SIZES[Math.floor(rnd() * SIZES.length)];',
+      '}'
+    ].join('\n');
+
+    if (html.indexOf(OLD_RANDOM) === -1) throw new Error('randomSize marker not found');
+    html = html.replace(OLD_RANDOM, NEW_RANDOM);
+
+    const OLD_SHUFFLE = [
+      'function shuffle(arr) {',
+      '  const a = arr.slice();',
+      '  for (let i = a.length - 1; i > 0; i--) {',
+      '    const j = Math.floor(Math.random() * (i + 1));',
+      '    [a[i], a[j]] = [a[j], a[i]];',
+      '  }',
+      '  return a;',
+      '}'
+    ].join('\n');
+
+    const NEW_SHUFFLE = [
+      'function shuffle(arr) {',
+      '  const a = arr.slice();',
+      "  const rnd = seededRandom(getSessionSeed() + '::order');",
+      '  for (let i = a.length - 1; i > 0; i--) {',
+      '    const j = Math.floor(rnd() * (i + 1));',
+      '    [a[i], a[j]] = [a[j], a[i]];',
+      '  }',
+      '  return a;',
+      '}'
+    ].join('\n');
+
+    if (html.indexOf(OLD_SHUFFLE) === -1) throw new Error('shuffle marker not found');
+    html = html.replace(OLD_SHUFFLE, NEW_SHUFFLE);
+
+    // Deterministic sizes per asset id when possible
+    html = html.replace(
+      '  let size = randomSize();',
+      '  let size = randomSize(asset._id || index);'
+    );
+    html = html.replace(
+      '    gallery: Array.from({ length: Math.max(1, galleryUrls.length || 1) }, () => randomSize()),',
+      "    gallery: Array.from({ length: Math.max(1, galleryUrls.length || 1) }, (_, gi) => randomSize((asset._id || index) + '-g' + gi)),"
+    );
+    html = html.replace(
+      '    size: randomSize(),',
+      '    size: randomSize(id),'
+    );
+    html = html.replace(
+      '    gallery: Array.from({ length: galleryCount }, () => randomSize()),',
+      "    gallery: Array.from({ length: galleryCount }, (_, gi) => randomSize(id + '-g' + gi)),"
+    );
+
     document.open();
     document.write(html);
     document.close();

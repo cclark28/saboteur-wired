@@ -1,1 +1,26 @@
-SEE_FILE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saboteur</title>
+<script>
+// Temporary restore: last known good index before accidental overwrite.
+// Will be replaced with the proper session-stable shuffle fix next.
+(async function () {
+  try {
+    const res = await fetch('https://cdn.jsdelivr.net/gh/cclark28/saboteur-wired@adbcf8d/index.html');
+    if (!res.ok) throw new Error('restore fetch failed ' + res.status);
+    const html = await res.text();
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (err) {
+    document.body.innerHTML = '<p style="font-family:system-ui;padding:2rem">Site temporarily unavailable. Refresh in a moment.</p>';
+    console.error(err);
+  }
+})();
+</script>
+</head>
+<body></body>
+</html>

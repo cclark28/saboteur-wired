@@ -109,39 +109,33 @@
   html, body { margin: 0; background: var(--color-paper); color: var(--color-ink); }
   ::-webkit-scrollbar { width: 0; height: 0; }
 
-  /* Store category nav — mobile: underline active; desktop: solid block (Monolog-style) */
+  /* Store category nav — solid block active (Monolog-style) on all sizes */
   .store-cat-btn {
     background: transparent;
     color: var(--color-ink-55);
-    padding: 0 0 14px;
-    margin-bottom: -1px;
-    border-bottom: 1px solid transparent;
+    padding: 10px 16px;
+    margin-bottom: 0;
+    border-bottom: none;
+    border-radius: var(--radius-sm);
   }
-  .store-cat-btn.is-active {
-    color: var(--color-ink);
-    border-bottom-color: var(--color-ink);
+  .store-cat-btn.is-active,
+  .store-cat-btn:hover:not(.is-muted) {
+    background: var(--color-ink);
+    color: var(--color-paper);
   }
   .store-cat-btn.is-muted { color: #B5B4B9; opacity: 0.7; }
+  .store-cat-btn.is-muted:hover {
+    background: transparent;
+    color: #B5B4B9;
+  }
   @media (min-width: 900px) {
     .store-cat-nav {
-      gap: 8px !important;
-      padding-bottom: 16px !important;
+      gap: 16px !important;
+      padding-bottom: 20px !important;
       border-bottom: none !important;
     }
     .store-cat-btn {
-      padding: 12px 18px !important;
-      margin-bottom: 0 !important;
-      border-bottom: none !important;
-      color: var(--color-ink-55);
-    }
-    .store-cat-btn.is-active,
-    .store-cat-btn:hover:not(.is-muted) {
-      background: var(--color-ink) !important;
-      color: var(--color-paper) !important;
-    }
-    .store-cat-btn.is-muted:hover {
-      background: transparent !important;
-      color: #B5B4B9 !important;
+      padding: 12px 20px !important;
     }
   }
 
@@ -1382,11 +1376,12 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
 
 
 const STORE_CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'textures', label: 'Textures' },
   { id: 'comics', label: 'Comics' },
-  { id: 'prints-and-books', label: 'Prints & Books' },
+  { id: 'prints-and-books', label: 'Books & Zines' },
+  { id: 'textures', label: 'Textures' },
+  { id: 'original-art', label: 'Original Art' },
   { id: 'clothing', label: 'Apparel' },
+  { id: 'all', label: 'All' },
 ];
 
 function formatPrice(cents, fulfillmentType) {
@@ -1412,7 +1407,7 @@ function productImageUrl(p) {
 
 function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('comics');
   const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
   const isEmpty = list.length === 0;
 
@@ -1429,7 +1424,7 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store</h1>
-        <div className="store-cat-nav" style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 16, marginBottom: 48, borderBottom: '1px solid var(--color-stroke)' }}>
+        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: 64, borderBottom: '1px solid var(--color-stroke)' }}>
           {STORE_CATEGORIES.map((c) => {
             const active = filter === c.id;
             const muted = mutedCats[c.id];

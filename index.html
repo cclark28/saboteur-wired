@@ -1410,14 +1410,23 @@ function isPhysicalFulfillment(ft) {
   return ft === 'paid_physical' || ft === 'paid_physical_variant';
 }
 
-const PHYSICAL_PAUSED_COPY = 'Physical goods are paused while out of the country. Digital downloads remain available.';
+// Auto-pause at local midnight Indianapolis on Aug 19, 2026.
+// Sanity switch: false = pause now; true = selling (also the way to resume after the trip); unset = follow this date.
+const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
+const PHYSICAL_PAUSED_COPY = "I'm out of the country, so I can't ship physical goods right now. Digital downloads are still available.";
 
-/** True when product cannot be purchased (sold out OR physical + shipping paused). Digital never affected by the travel switch. */
+function arePhysicalOrdersLive(flag) {
+  if (flag === false) return false;
+  if (Date.now() >= PHYSICAL_PAUSE_START_MS) return flag === true;
+  return true;
+}
+
+/** True when product cannot be purchased (sold out OR physical + shipping paused). Digital never affected. */
 function isProductUnavailable(p, physicalOrdersEnabled) {
   if (!p) return true;
   if (p.soldOut === true || p.soldOut === 'true') return true;
   if (isPhysicalFulfillment(p.fulfillmentType)) {
-    if (physicalOrdersEnabled === false) return true;
+    if (!arePhysicalOrdersLive(physicalOrdersEnabled)) return true;
     if (p.fulfillmentType === 'paid_physical' && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== '') return true;
     if (p.fulfillmentType === 'paid_physical_variant' && Array.isArray(p.variants) && p.variants.length > 0 && p.variants.every((v) => Number(v && v.stock) === 0)) return true;
   }
@@ -1426,7 +1435,33 @@ function isProductUnavailable(p, physicalOrdersEnabled) {
 
 /** True only when physical orders are paused for this product (not classic sold-out). */
 function isShippingPaused(p, physicalOrdersEnabled) {
-  return physicalOrdersEnabled === false && isPhysicalFulfillment(p && p.fulfillmentType);
+  return !arePhysicalOrdersLive(physicalOrdersEnabled) && isPhysicalFulfillment(p && p.fulfillmentType);
+}
+
+function WarningFilledIcon({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false" style={{ flexShrink: 0, display: 'block', color: 'var(--color-accent)', marginTop: 1 }}>
+      <path fill="currentColor" d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14C30 8.3 23.7 2 16 2zm-1.1 6h2.2v11h-2.2V8zM16 25c-.8 0-1.5-.7-1.5-1.5S15.2 22 16 22s1.5.7 1.5 1.5S16.8 25 16 25z" />
+    </svg>
+  );
+}
+
+function PhysicalPauseNotice({ message, compact }) {
+  return (
+    <div role="status" style={{
+      display: 'flex', gap: 10, alignItems: 'flex-start',
+      margin: compact ? '12px 0 0' : '-24px 0 40px',
+      maxWidth: 540,
+    }}>
+      <WarningFilledIcon size={20} />
+      <p style={{
+        fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)',
+        margin: 0, lineHeight: 1.5,
+      }}>
+        {message || PHYSICAL_PAUSED_COPY}
+      </p>
+    </div>
+  );
 }
 
 function productImageUrl(p) {
@@ -1450,7 +1485,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
   const [filter, setFilter] = useState('comics');
   const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
   const isEmpty = list.length === 0;
-  const shippingPaused = physicalOrdersEnabled === false;
+  const shippingPaused = !arePhysicalOrdersLive(physicalOrdersEnabled);
 
   // Mute a category when it is empty of buyable items, or when travel-pause
   // makes every item in that category physical-only (comics stays live if it has a digital).
@@ -1470,12 +1505,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store</h1>
         {shippingPaused ? (
-          <p style={{
-            fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)',
-            margin: '-24px 0 40px', lineHeight: 1.5, maxWidth: 480,
-          }}>
-            {physicalOrdersPausedMessage || PHYSICAL_PAUSED_COPY}
-          </p>
+          <PhysicalPauseNotice message={physicalOrdersPausedMessage} />
         ) : null}
         <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: 64, borderBottom: '1px solid var(--color-stroke)' }}>
           {STORE_CATEGORIES.map((c) => {
@@ -1540,7 +1570,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         {p.title || 'Product'}
                       </span>
                     )}
-                    {unavailable && (
+                    {sold && (
                       <span
                         style={{
                           position: 'absolute',
@@ -1562,7 +1592,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                           color: '#18181B',
                         }}
                       >
-                        {paused ? 'Paused' : 'Sold out'}
+                        Sold out
                       </span>
                     )}
                   </div>
@@ -1732,7 +1762,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
-                  {isSoldOut ? (
+                  {(isSoldOut && !shippingPaused) ? (
                     <span
                       style={{
                         position: 'absolute',
@@ -1754,7 +1784,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         color: '#18181B',
                       }}
                     >
-                      {shippingPaused ? 'Shipping paused' : 'Sold out'}
+                      Sold out
                     </span>
                   ) : null}
                 </div>
@@ -1914,6 +1944,9 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             </div>
           )}
 
+          {shippingPaused && !isFree ? (
+            <PhysicalPauseNotice message={physicalOrdersPausedMessage} compact />
+          ) : (
           <button
             onClick={handlePrimary}
             disabled={isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)}
@@ -1947,16 +1980,10 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             {isSoldOut
-              ? (shippingPaused ? 'Shipping paused' : 'Out of stock')
+              ? 'Out of stock'
               : (isFree ? (dlDone ? 'Download again' : 'Download') : 'Add to bag')}
           </button>
-
-          {shippingPaused && !isFree ? (
-            <p style={{
-              fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
-              margin: '12px 0 0', lineHeight: 1.45,
-            }}>{physicalOrdersPausedMessage || PHYSICAL_PAUSED_COPY}</p>
-          ) : null}
+          )}
           {isFree && dlDone ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-success)',
@@ -2021,7 +2048,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: rpPaused ? 0.4 : 1 }}
                       />
                     ) : null}
-                    {rpSold ? (
+                    {(rpSold && !rpPaused) ? (
                       <span style={{
                         position: 'absolute', top: 10, right: 10,
                         fontFamily: 'var(--font-family-mono)', fontSize: 10, fontWeight: 500,
@@ -2029,7 +2056,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         padding: '6px 10px', borderRadius: 9999, lineHeight: 1,
                         background: 'var(--color-accent)', color: '#18181B',
                         pointerEvents: 'none',
-                      }}>{rpPaused ? 'Paused' : 'Sold out'}</span>
+                      }}>Sold out</span>
                     ) : null}
                   </div>
                   <div style={{
@@ -2206,7 +2233,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
     const t = l.fulfillmentType || '';
     return t === 'paid_physical' || t === 'paid_physical_variant' || String(t).indexOf('physical') >= 0 || l.fulfillmentLabel === 'Physical';
   });
-  const shippingBlocked = hasPhysical && physicalOrdersEnabled === false;
+  const shippingBlocked = hasPhysical && !arePhysicalOrdersLive(physicalOrdersEnabled);
 
   const placeOrder = async () => {
     setCheckoutError('');
@@ -2215,7 +2242,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       return;
     }
     if (shippingBlocked) {
-      setCheckoutError(physicalOrdersPausedMessage || (PHYSICAL_PAUSED_COPY + ' Remove physical items from your bag to continue.'));
+      setCheckoutError(physicalOrdersPausedMessage || (PHYSICAL_PAUSED_COPY + ' Remove them from your bag to continue.'));
       return;
     }
     if (totalCents <= 0) {
@@ -2349,9 +2376,12 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
           </div>
         )}
         {shippingBlocked ? (
-          <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 16px', lineHeight: 1.5 }}>
-            {physicalOrdersPausedMessage || (PHYSICAL_PAUSED_COPY + ' Remove physical items from your bag to continue.')}
-          </p>
+          <div style={{ margin: '0 0 16px' }}>
+            <PhysicalPauseNotice
+              compact
+              message={(physicalOrdersPausedMessage || PHYSICAL_PAUSED_COPY) + ' Remove them from your bag to continue.'}
+            />
+          </div>
         ) : hasPhysical ? (
           <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 16px', lineHeight: 1.5 }}>
             Physical items: shipping address is collected on the Stripe payment page (US only).
@@ -3595,7 +3625,7 @@ function App() {
   const addToCart = React.useCallback((product, variant) => {
     if (!product) return;
     // Never allow sold-out or shipping-paused physical products into the bag
-    const physicalOn = siteSettings ? siteSettings.physicalOrdersEnabled !== false : true;
+    const physicalOn = arePhysicalOrdersLive(siteSettings && siteSettings.physicalOrdersEnabled);
     if (isProductUnavailable(product, physicalOn)) return;
     setCart((prev) => {
       const lineId = String(product._id || product.slug || product.title) + (variant ? '::' + variant : '');
@@ -3819,7 +3849,7 @@ function App() {
       {view.page === 'store' && (
         <StoreGrid
           products={products}
-          physicalOrdersEnabled={siteSettings ? siteSettings.physicalOrdersEnabled !== false : true}
+          physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={goHome}
@@ -3842,7 +3872,7 @@ function App() {
         <ProductDetail
           product={view.product}
           allProducts={products}
-          physicalOrdersEnabled={siteSettings ? siteSettings.physicalOrdersEnabled !== false : true}
+          physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}
@@ -3897,7 +3927,7 @@ function App() {
       {view.page === 'checkout' && (
         <CheckoutPage
           cart={cart}
-          physicalOrdersEnabled={siteSettings ? siteSettings.physicalOrdersEnabled !== false : true}
+          physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}

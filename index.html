@@ -1410,6 +1410,8 @@ function isPhysicalFulfillment(ft) {
   return ft === 'paid_physical' || ft === 'paid_physical_variant';
 }
 
+const PHYSICAL_PAUSED_COPY = 'Physical goods are paused while out of the country. Digital downloads remain available.';
+
 /** True when product cannot be purchased (sold out OR physical + shipping paused). Digital never affected by the travel switch. */
 function isProductUnavailable(p, physicalOrdersEnabled) {
   if (!p) return true;
@@ -1450,12 +1452,16 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
   const isEmpty = list.length === 0;
   const shippingPaused = physicalOrdersEnabled === false;
 
-  // category muted if no enabled products in that category
+  // Mute a category when it is empty of buyable items, or when travel-pause
+  // makes every item in that category physical-only (comics stays live if it has a digital).
   const mutedCats = {};
   STORE_CATEGORIES.forEach((c) => {
     if (c.id === 'all') return;
     const inCat = (products || []).filter((p) => p.category === c.id);
-    mutedCats[c.id] = inCat.length > 0 && inCat.every((p) => p.enabled === false);
+    if (!inCat.length) return;
+    const allDisabled = inCat.every((p) => p.enabled === false);
+    const allPhysicalPaused = shippingPaused && inCat.every((p) => p.enabled === false || isPhysicalFulfillment(p.fulfillmentType));
+    mutedCats[c.id] = allDisabled || allPhysicalPaused;
   });
 
   return (
@@ -1468,7 +1474,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)',
             margin: '-24px 0 40px', lineHeight: 1.5, maxWidth: 480,
           }}>
-            {physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Digital downloads remain available.'}
+            {physicalOrdersPausedMessage || PHYSICAL_PAUSED_COPY}
           </p>
         ) : null}
         <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: 64, borderBottom: '1px solid var(--color-stroke)' }}>
@@ -1481,7 +1487,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                 onClick={() => setFilter(c.id)}
                 className={'store-cat-btn' + (active ? ' is-active' : '') + (muted ? ' is-muted' : '')}
                 style={{
-                  border: 'none', cursor: muted ? 'default' : 'pointer',
+                  border: 'none', cursor: 'pointer',
                   fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
                   letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   borderRadius: 'var(--radius-sm)',
@@ -1512,6 +1518,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category;
               const unavailable = isProductUnavailable(p, physicalOrdersEnabled);
               const paused = isShippingPaused(p, physicalOrdersEnabled);
+              const sold = unavailable && !paused;
               return (
                 <button
                   key={p._id || p.slug}
@@ -1527,7 +1534,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {img ? (
-                      <img src={img + (img.includes('cdn.sanity.io') ? '?w=800&h=1000&fit=crop&auto=format' : '')} alt={p.title || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent' }} />
+                      <img src={img + (img.includes('cdn.sanity.io') ? '?w=800&h=1000&fit=crop&auto=format' : '')} alt={p.title || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: paused ? 0.4 : 1, transition: 'opacity var(--duration-fast) var(--ease)' }} />
                     ) : (
                       <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase', padding: 16, textAlign: 'center' }}>
                         {p.title || 'Product'}
@@ -1555,7 +1562,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                           color: '#18181B',
                         }}
                       >
-                        {paused ? 'Shipping paused' : 'Sold out'}
+                        {paused ? 'Paused' : 'Sold out'}
                       </span>
                     )}
                   </div>
@@ -1563,7 +1570,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                     <div style={{
                       fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '16px', marginBottom: 8, lineHeight: 1.3,
                       color: unavailable ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                      textDecoration: unavailable ? 'line-through' : 'none',
+                      textDecoration: sold ? 'line-through' : 'none',
                     }}>{p.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
                       <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{catLabel}</span>
@@ -1572,7 +1579,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         fontSize: '13px',
                         fontVariantNumeric: 'tabular-nums',
                         color: unavailable ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                        textDecoration: unavailable ? 'line-through' : 'none',
+                        textDecoration: sold ? 'line-through' : 'none',
                       }}>{price}</span>
                     </div>
                   </div>
@@ -1781,14 +1788,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             fontFamily: 'var(--font-family-display)', fontWeight: 700,
             fontSize: 'var(--font-h2-size)', margin: '0 0 12px', lineHeight: 1.15, letterSpacing: '-0.02em',
             color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
-            textDecoration: isSoldOut ? 'line-through' : 'none',
+            textDecoration: (isSoldOut && !shippingPaused) ? 'line-through' : 'none',
           }}>{p.title || 'Untitled'}</h1>
 
           <div style={{
             fontFamily: 'var(--font-family-mono)', fontSize: '15px', fontWeight: 500,
             color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
             marginBottom: 28, fontVariantNumeric: 'tabular-nums',
-            textDecoration: isSoldOut ? 'line-through' : 'none',
+            textDecoration: (isSoldOut && !shippingPaused) ? 'line-through' : 'none',
           }}>
             {price}
           </div>
@@ -1948,7 +1955,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '12px 0 0', lineHeight: 1.45,
-            }}>{physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Digital downloads remain available.'}</p>
+            }}>{physicalOrdersPausedMessage || PHYSICAL_PAUSED_COPY}</p>
           ) : null}
           {isFree && dlDone ? (
             <p style={{
@@ -2011,7 +2018,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       <img
                         src={img + (img.includes('cdn.sanity.io') ? '?w=600&h=750&fit=crop&auto=format' : '')}
                         alt={rp.title || ''}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: rpPaused ? 0.4 : 1 }}
                       />
                     ) : null}
                     {rpSold ? (
@@ -2022,18 +2029,18 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         padding: '6px 10px', borderRadius: 9999, lineHeight: 1,
                         background: 'var(--color-accent)', color: '#18181B',
                         pointerEvents: 'none',
-                      }}>{rpPaused ? 'Shipping paused' : 'Sold out'}</span>
+                      }}>{rpPaused ? 'Paused' : 'Sold out'}</span>
                     ) : null}
                   </div>
                   <div style={{
                     fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '15px', lineHeight: 1.3,
                     color: rpSold ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                    textDecoration: rpSold ? 'line-through' : 'none',
+                    textDecoration: (rpSold && !rpPaused) ? 'line-through' : 'none',
                   }}>{rp.title}</div>
                   <div style={{
                     fontFamily: 'var(--font-family-mono)', fontSize: '12px',
                     color: 'var(--color-ink-55)',
-                    textDecoration: rpSold ? 'line-through' : 'none',
+                    textDecoration: (rpSold && !rpPaused) ? 'line-through' : 'none',
                   }}>{rpPrice}</div>
                 </button>
               );
@@ -2208,7 +2215,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       return;
     }
     if (shippingBlocked) {
-      setCheckoutError(physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Remove physical items from your bag, or try again later. Digital downloads remain available from the product page.');
+      setCheckoutError(physicalOrdersPausedMessage || (PHYSICAL_PAUSED_COPY + ' Remove physical items from your bag to continue.'));
       return;
     }
     if (totalCents <= 0) {
@@ -2343,7 +2350,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
         )}
         {shippingBlocked ? (
           <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 16px', lineHeight: 1.5 }}>
-            {physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Remove physical items from your bag to continue, or try again later.'}
+            {physicalOrdersPausedMessage || (PHYSICAL_PAUSED_COPY + ' Remove physical items from your bag to continue.')}
           </p>
         ) : hasPhysical ? (
           <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 16px', lineHeight: 1.5 }}>

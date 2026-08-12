@@ -389,7 +389,9 @@ async function fetchSanityBundle() {
       infoHeadline, infoSubhead, infoParagraphs,
       "infoMediaUrl": infoMedia.asset->url,
       "infoMediaMime": infoMedia.asset->mimeType,
-      socialLinks
+      socialLinks,
+      physicalOrdersEnabled,
+      physicalOrdersPausedMessage
     },
     "footer": *[_type == "footer"][0]{
       marqueeText,
@@ -1389,6 +1391,27 @@ function formatPrice(cents, fulfillmentType) {
   return '$' + (Number(cents) / 100).toFixed(2).replace(/\.00$/, '');
 }
 
+function isPhysicalFulfillment(ft) {
+  return ft === 'paid_physical' || ft === 'paid_physical_variant';
+}
+
+/** True when product cannot be purchased (sold out OR physical + shipping paused). Digital never affected by the travel switch. */
+function isProductUnavailable(p, physicalOrdersEnabled) {
+  if (!p) return true;
+  if (p.soldOut === true || p.soldOut === 'true') return true;
+  if (isPhysicalFulfillment(p.fulfillmentType)) {
+    if (physicalOrdersEnabled === false) return true;
+    if (p.fulfillmentType === 'paid_physical' && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== '') return true;
+    if (p.fulfillmentType === 'paid_physical_variant' && Array.isArray(p.variants) && p.variants.length > 0 && p.variants.every((v) => Number(v && v.stock) === 0)) return true;
+  }
+  return false;
+}
+
+/** True only when physical orders are paused for this product (not classic sold-out). */
+function isShippingPaused(p, physicalOrdersEnabled) {
+  return physicalOrdersEnabled === false && isPhysicalFulfillment(p && p.fulfillmentType);
+}
+
 function productImageUrl(p) {
   if (!p) return null;
   if (p.imageUrl) return p.imageUrl;
@@ -1405,11 +1428,12 @@ function productImageUrl(p) {
   return null;
 }
 
-function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct }) {
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const [filter, setFilter] = useState('comics');
   const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
   const isEmpty = list.length === 0;
+  const shippingPaused = physicalOrdersEnabled === false;
 
   // category muted if no enabled products in that category
   const mutedCats = {};
@@ -1424,6 +1448,14 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store</h1>
+        {shippingPaused ? (
+          <p style={{
+            fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)',
+            margin: '-24px 0 40px', lineHeight: 1.5, maxWidth: 480,
+          }}>
+            {physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Digital downloads remain available.'}
+          </p>
+        ) : null}
         <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: 64, borderBottom: '1px solid var(--color-stroke)' }}>
           {STORE_CATEGORIES.map((c) => {
             const active = filter === c.id;
@@ -1463,11 +1495,8 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
               const img = productImageUrl(p);
               const price = formatPrice(p.priceCents, p.fulfillmentType);
               const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category;
-              const isSoldOut = p.soldOut === true || p.soldOut === 'true' || (
-                (p.fulfillmentType === 'paid_physical') && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== ''
-              ) || (
-                (p.fulfillmentType === 'paid_physical_variant') && Array.isArray(p.variants) && p.variants.length > 0 && p.variants.every((v) => Number(v && v.stock) === 0)
-              );
+              const unavailable = isProductUnavailable(p, physicalOrdersEnabled);
+              const paused = isShippingPaused(p, physicalOrdersEnabled);
               return (
                 <button
                   key={p._id || p.slug}
@@ -1489,7 +1518,7 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
                         {p.title || 'Product'}
                       </span>
                     )}
-                    {isSoldOut && (
+                    {unavailable && (
                       <span
                         style={{
                           position: 'absolute',
@@ -1511,15 +1540,15 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
                           color: '#18181B',
                         }}
                       >
-                        Sold out
+                        {paused ? 'Shipping paused' : 'Sold out'}
                       </span>
                     )}
                   </div>
                   <div style={{ paddingTop: 2 }}>
                     <div style={{
                       fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '16px', marginBottom: 8, lineHeight: 1.3,
-                      color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                      textDecoration: isSoldOut ? 'line-through' : 'none',
+                      color: unavailable ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                      textDecoration: unavailable ? 'line-through' : 'none',
                     }}>{p.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
                       <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{catLabel}</span>
@@ -1527,8 +1556,8 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
                         fontFamily: 'var(--font-family-mono)',
                         fontSize: '13px',
                         fontVariantNumeric: 'tabular-nums',
-                        color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                        textDecoration: isSoldOut ? 'line-through' : 'none',
+                        color: unavailable ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                        textDecoration: unavailable ? 'line-through' : 'none',
                       }}>{price}</span>
                     </div>
                   </div>
@@ -1544,7 +1573,7 @@ function StoreGrid({ products, onMenu, onBack, onHome, onContact, onTag, dark, o
 }
 
 
-function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onAddToCart, onOpenProduct }) {
+function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onAddToCart, onOpenProduct }) {
   useEffect(() => { window.scrollTo(0, 0); }, [product && product._id]);
   const isMobile = useIsMobile(900);
   const p = product || {};
@@ -1558,12 +1587,9 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
   const price = formatPrice(p.priceCents, p.fulfillmentType);
   const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category || '';
   const isFree = p.fulfillmentType === 'free_digital' || !p.priceCents;
-  // Top-level soldOut flag, non-variant stock 0, or all size variants at 0
-  const isSoldOut = p.soldOut === true || p.soldOut === 'true' || (
-    (p.fulfillmentType === 'paid_physical') && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== ''
-  ) || (
-    (p.fulfillmentType === 'paid_physical_variant') && Array.isArray(p.variants) && p.variants.length > 0 && p.variants.every((v) => Number(v && v.stock) === 0)
-  );
+  // Sold out OR physical + shipping paused (digital never affected by the travel switch)
+  const isSoldOut = isProductUnavailable(p, physicalOrdersEnabled);
+  const shippingPaused = isShippingPaused(p, physicalOrdersEnabled);
   const details = p.productDetails || {};
   const detailRows = [
     details.format && { label: 'Format', value: details.format },
@@ -1705,7 +1731,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
                         color: '#18181B',
                       }}
                     >
-                      Sold out
+                      {shippingPaused ? 'Shipping paused' : 'Sold out'}
                     </span>
                   ) : null}
                 </div>
@@ -1897,9 +1923,17 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
             onMouseDown={(e) => { if (!(isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            {isSoldOut ? 'Out of stock' : (isFree ? (dlDone ? 'Download again' : 'Download') : 'Add to bag')}
+            {isSoldOut
+              ? (shippingPaused ? 'Shipping paused' : 'Out of stock')
+              : (isFree ? (dlDone ? 'Download again' : 'Download') : 'Add to bag')}
           </button>
 
+          {shippingPaused && !isFree ? (
+            <p style={{
+              fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
+              margin: '12px 0 0', lineHeight: 1.45,
+            }}>{physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Digital downloads remain available.'}</p>
+          ) : null}
           {isFree && dlDone ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-success)',
@@ -1940,11 +1974,8 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
             {relatedProducts.map((rp) => {
               const img = productImageUrl(rp);
               const rpPrice = formatPrice(rp.priceCents, rp.fulfillmentType);
-              const rpSold = rp.soldOut === true || rp.soldOut === 'true' || (
-                (rp.fulfillmentType === 'paid_physical') && Number(rp.stock) === 0 && rp.stock !== null && rp.stock !== undefined && rp.stock !== ''
-              ) || (
-                (rp.fulfillmentType === 'paid_physical_variant') && Array.isArray(rp.variants) && rp.variants.length > 0 && rp.variants.every((v) => Number(v && v.stock) === 0)
-              );
+              const rpSold = isProductUnavailable(rp, physicalOrdersEnabled);
+              const rpPaused = isShippingPaused(rp, physicalOrdersEnabled);
               return (
                 <button
                   key={rp._id || rp.slug}
@@ -1975,7 +2006,7 @@ function ProductDetail({ product, allProducts, onMenu, onBack, onHome, onContact
                         padding: '6px 10px', borderRadius: 9999, lineHeight: 1,
                         background: 'var(--color-accent)', color: '#18181B',
                         pointerEvents: 'none',
-                      }}>Sold out</span>
+                      }}>{rpPaused ? 'Shipping paused' : 'Sold out'}</span>
                     ) : null}
                   </div>
                   <div style={{
@@ -2142,7 +2173,7 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
   );
 }
 
-function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping, onUpdateQty, onRemoveLine }) {
+function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping, onUpdateQty, onRemoveLine }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
@@ -2152,11 +2183,16 @@ function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, on
     const t = l.fulfillmentType || '';
     return t === 'paid_physical' || t === 'paid_physical_variant' || String(t).indexOf('physical') >= 0 || l.fulfillmentLabel === 'Physical';
   });
+  const shippingBlocked = hasPhysical && physicalOrdersEnabled === false;
 
   const placeOrder = async () => {
     setCheckoutError('');
     if (!(cart || []).length) {
       setCheckoutError('Your bag is empty.');
+      return;
+    }
+    if (shippingBlocked) {
+      setCheckoutError(physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Remove physical items from your bag, or try again later. Digital downloads remain available from the product page.');
       return;
     }
     if (totalCents <= 0) {
@@ -2289,7 +2325,11 @@ function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, on
             <span style={{ fontSize: '22px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{totalLabel}</span>
           </div>
         )}
-        {hasPhysical ? (
+        {shippingBlocked ? (
+          <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 16px', lineHeight: 1.5 }}>
+            {physicalOrdersPausedMessage || 'Physical shipping is temporarily paused. Remove physical items from your bag to continue, or try again later.'}
+          </p>
+        ) : hasPhysical ? (
           <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 16px', lineHeight: 1.5 }}>
             Physical items: shipping address is collected on the Stripe payment page (US only).
           </p>
@@ -2300,24 +2340,24 @@ function CheckoutPage({ cart, onMenu, onBack, onHome, onContact, onTag, dark, on
         <button
           type="button"
           onClick={placeOrder}
-          disabled={checkoutBusy || !(cart || []).length || totalCents <= 0}
+          disabled={checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked}
           style={{
             width: '100%', minHeight: 52, padding: '14px 28px', marginBottom: 10,
-            background: (checkoutBusy || !(cart || []).length || totalCents <= 0) ? 'var(--color-card)' : 'var(--color-ink)',
-            color: (checkoutBusy || !(cart || []).length || totalCents <= 0) ? 'var(--color-ink-55)' : 'var(--color-paper)',
+            background: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) ? 'var(--color-card)' : 'var(--color-ink)',
+            color: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) ? 'var(--color-ink-55)' : 'var(--color-paper)',
             border: 'none',
             borderRadius: 'var(--radius-sm)',
-            cursor: (checkoutBusy || !(cart || []).length || totalCents <= 0) ? 'not-allowed' : 'pointer',
+            cursor: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) ? 'not-allowed' : 'pointer',
             fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
             letterSpacing: '0.02em',
           }}
           onMouseEnter={(e) => {
-            if (checkoutBusy || !(cart || []).length || totalCents <= 0) return;
+            if (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) return;
             e.currentTarget.style.background = 'var(--color-accent)';
             e.currentTarget.style.color = '#fff';
           }}
           onMouseLeave={(e) => {
-            if (checkoutBusy || !(cart || []).length || totalCents <= 0) {
+            if (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) {
               e.currentTarget.style.background = 'var(--color-card)';
               e.currentTarget.style.color = 'var(--color-ink-55)';
               return;
@@ -3530,13 +3570,9 @@ function App() {
 
   const addToCart = React.useCallback((product, variant) => {
     if (!product) return;
-    // Never allow sold-out products into the bag (same rules as the orange pill + Out of stock button)
-    const sold = product.soldOut === true || product.soldOut === 'true' || (
-      (product.fulfillmentType === 'paid_physical') && Number(product.stock) === 0 && product.stock !== null && product.stock !== undefined && product.stock !== ''
-    ) || (
-      (product.fulfillmentType === 'paid_physical_variant') && Array.isArray(product.variants) && product.variants.length > 0 && product.variants.every((v) => Number(v && v.stock) === 0)
-    );
-    if (sold) return;
+    // Never allow sold-out or shipping-paused physical products into the bag
+    const physicalOn = siteSettings ? siteSettings.physicalOrdersEnabled !== false : true;
+    if (isProductUnavailable(product, physicalOn)) return;
     setCart((prev) => {
       const lineId = String(product._id || product.slug || product.title) + (variant ? '::' + variant : '');
       const existing = prev.find((l) => l.id === lineId);
@@ -3579,7 +3615,7 @@ function App() {
     setLandingMenu(false);
     setLandingDone(true);
     setCartOpen(true);
-  }, []);
+  }, [siteSettings]);
 
   const removeFromCart = React.useCallback((lineId) => {
     setCart((prev) => {
@@ -3759,6 +3795,8 @@ function App() {
       {view.page === 'store' && (
         <StoreGrid
           products={products}
+          physicalOrdersEnabled={siteSettings ? siteSettings.physicalOrdersEnabled !== false : true}
+          physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={goHome}
           onHome={goHome}
@@ -3780,6 +3818,8 @@ function App() {
         <ProductDetail
           product={view.product}
           allProducts={products}
+          physicalOrdersEnabled={siteSettings ? siteSettings.physicalOrdersEnabled !== false : true}
+          physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}
           onHome={goHome}
@@ -3833,6 +3873,8 @@ function App() {
       {view.page === 'checkout' && (
         <CheckoutPage
           cart={cart}
+          physicalOrdersEnabled={siteSettings ? siteSettings.physicalOrdersEnabled !== false : true}
+          physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}
           onHome={goHome}

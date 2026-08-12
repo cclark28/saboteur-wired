@@ -669,9 +669,7 @@ function SaboteurIcon({ size = 40, onClick }) {
   );
 }
 
-/* Full SABOTEUR COMICS lockup. On mobile (≤640px) falls back to orange icon only so it never overflows. */
-const SABOTEUR_COMICS_SVG = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMiIgZGF0YS1uYW1lPSJMYXllciAyIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNDM2LjU2IDExNi4wNiI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmb250LWZhbWlseTogTmV1ZUhhYXNEaXNwbGF5LU1lZGl1LCAnTmV1ZSBIYWFzIEdyb3Rlc2sgRGlzcGxheSBQcm8nOwogICAgICAgIGZvbnQtc2l6ZTogNDAuN3B4OwogICAgICB9CgogICAgICAuY2xzLTMgewogICAgICAgIGxldHRlci1zcGFjaW5nOiAwZW07CiAgICAgIH0KCiAgICAgIC5jbHMtNCB7CiAgICAgICAgZmlsbDogI2ZmZjsKICAgICAgfQoKICAgICAgLmNscy01IHsKICAgICAgICBmaWxsOiAjZjMwOwogICAgICB9CgogICAgICAuY2xzLTYgewogICAgICAgIGZvbnQtZmFtaWx5OiBOZXVlSGFhc0Rpc3BsYXktQm9sZCwgJ05ldWUgSGFhcyBHcm90ZXNrIERpc3BsYXkgUHJvJzsKICAgICAgICBmb250LXNpemU6IDYwLjAycHg7CiAgICAgICAgZm9udC13ZWlnaHQ6IDcwMDsKICAgICAgfQoKICAgICAgLmNscy03IHsKICAgICAgICBsZXR0ZXItc3BhY2luZzogLS4wMWVtOwogICAgICB9CgogICAgICAuY2xzLTggewogICAgICAgIGxldHRlci1zcGFjaW5nOiAtLjAzZW07CiAgICAgIH0KCiAgICAgIC5jbHMtOSB7CiAgICAgICAgY2xpcC1wYXRoOiB1cmwoI2NsaXBwYXRoKTsKICAgICAgfQogICAgPC9zdHlsZT4KICAgIDxjbGlwUGF0aCBpZD0iY2xpcHBhdGgiPgogICAgICA8Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9IjUwIiBjeT0iNTIuODciIHI9IjUwIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZyBpZD0iU2Fib3RldXItb3JhbmdlIj4KICAgIDx0ZXh0IGNsYXNzPSJjbHMtNiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTE2LjQyIDUxLjQ3KSI+PHRzcGFuIGNsYXNzPSJjbHMtNyIgeD0iMCIgeT0iMCI+UzwvdHNwYW4+PHRzcGFuIGNsYXNzPSJjbHMtMyIgeD0iMzguMTEiIHk9IjAiPkFCPC90c3Bhbj48dHNwYW4gY2xhc3M9ImNscy04IiB4PSIxMjAuMjIiIHk9IjAiPk88L3RzcGFuPjx0c3BhbiB4PSIxNjMuMjUiIHk9IjAiPlRFVVI8L3RzcGFuPjx0c3BhbiB4PSIwIiB5PSI0OC44MSI+Q09NSUNTPC90c3Bhbj48L3RleHQ+CiAgICA8Y2lyY2xlIGNsYXNzPSJjbHMtNSIgY3g9IjUwIiBjeT0iNTIuODciIHI9IjUwIi8+CiAgICA8ZyBjbGFzcz0iY2xzLTkiPgogICAgICA8cGF0aCBkPSJNODAuNjksNzkuMTljLS45Mi0yLjgzLTEuNTEtNS43Ni0xLjc2LTguNzNsLS4wOC0uODljLS4yMy0yLjczLS42NS01LjQ1LTEuMjUtOC4xM2wtMy41NS0xNS44NWMtLjM0LTEuNTItMi4yMy0yLjA3LTMuMzMtLjk2bC0xMi4yMiwxMi4zN2MtLjg3Ljg5LTIuMDYsMS4zOC0zLjMxLDEuMzctMS4zLDAtMy4xNC0uMDItNS4xOSwwLTIuMDUtLjAyLTMuODksMC01LjE5LDAtMS4yNCwwLTIuNDMtLjQ4LTMuMzEtMS4zN2wtMTIuMjItMTIuMzdjLTEuMS0xLjExLTIuOTktLjU3LTMuMzMuOTZsLTMuNTUsMTUuODVjLS42LDIuNjgtMS4wMiw1LjM5LTEuMjUsOC4xM2wtLjA4Ljg5Yy0uMjUsMi45Ny0uODQsNS44OS0xLjc2LDguNzNsLTcuNzYsMjMuOTN2NS43OGg3Ni45di01Ljc4bC03Ljc2LTIzLjkzWiIvPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik00My44Myw4NS4zOWwtLjY4LTUuMTVjLS4yNi0xLjk3LTEuNDQtMy43LTMuMTctNC42NmwtMi4wMi0xLjEyYy0xLjYyLS45LTMuNTgtLjk3LTUuMjYtLjE4bC01LjAxLDIuMzUsMS4yNCw1LjE2Yy40NiwxLjksMS43OCwzLjQ4LDMuNTgsNC4yNWwuOTQuNDFjMi4yLjk1LDQuNjYsMS4wOSw2Ljk1LjRsMy4xMS0uOTRjLjIxLS4wNi4zNS0uMjguMzItLjVaIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIzNS43NiIgY3k9IjgwLjUiIHJ4PSIzLjUyIiByeT0iMi43NiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTQ4LjU0IDEwNi4wMikgcm90YXRlKC04Mi44OSkiLz4KICAgICAgPHBhdGggY2xhc3M9ImNscy00IiBkPSJNNTYuMTcsODUuMzlsLjY4LTUuMTVjLjI2LTEuOTcsMS40NC0zLjcsMy4xNy00LjY2bDIuMDItMS4xMmMxLjYyLS45LDMuNTgtLjk3LDUuMjYtLjE4bDUuMDEsMi4zNS0xLjI0LDUuMTZjLS40NiwxLjktMS43OCwzLjQ4LTMuNTgsNC4yNWwtLjk0LjQxYy0yLjIuOTUtNC42NiwxLjA5LTYuOTUuNGwtMy4xMS0uOTRjLS4yMS0uMDYtLjM1LS4yOC0uMzItLjVaIi8+CiAgICAgIDxlbGxpcHNlIGN4PSI2NC4yNCIgY3k9IjgwLjUiIHJ4PSIyLjc2IiByeT0iMy41MiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTkuNDcgOC41Nykgcm90YXRlKC03LjExKSIvPgogICAgPC9nPgogICAgPHRleHQgY2xhc3M9ImNscy0yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg5Mi45OCAzNy43NykiPjx0c3BhbiB4PSIwIiB5PSIwIj7CrzwvdHNwYW4+PC90ZXh0PgogIDwvZz4KPC9zdmc+';
-
+/* Desktop lockup: orange cat + ® + SABOTEUR/COMICS set in R2 Neue Haas. Mobile: icon only. */
 function goHeaderStoreComics() {
   if (FOOTER_NAV && typeof FOOTER_NAV.comics === 'function') FOOTER_NAV.comics();
   else if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store();
@@ -697,19 +695,45 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   const inner = isMobile ? (
     <SaboteurIcon size={height} />
   ) : (
-    <img
-      src={SABOTEUR_COMICS_SVG}
-      alt=""
+    <span
+      className="js-comics-lockup"
       style={{
-        height: height,
-        width: 'auto',
-        display: 'block',
-        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: Math.round(height * 0.14),
+        height,
         pointerEvents: 'none',
         transform: pressed ? 'scale(0.88)' : 'scale(1)',
         transition: 'transform var(--duration-fast) var(--ease)',
       }}
-    />
+    >
+      <SaboteurIcon size={height} />
+      <span style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        color: 'var(--color-ink)',
+        fontFamily: 'var(--font-family-display)',
+        fontWeight: 700,
+        letterSpacing: '-0.02em',
+        lineHeight: 0.84,
+        fontSize: height * 0.46,
+        paddingLeft: '0.7em',
+      }}>
+        <span aria-hidden="true" style={{
+          position: 'absolute',
+          left: 0,
+          top: '-0.04em',
+          fontSize: '0.48em',
+          fontWeight: 500,
+          letterSpacing: 0,
+          lineHeight: 1,
+        }}>®</span>
+        <span>SABOTEUR</span>
+        <span>COMICS</span>
+      </span>
+    </span>
   );
   return (
     <a
@@ -725,8 +749,8 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
         cursor: 'pointer',
         flexShrink: 0,
       }}
-      onMouseEnter={(e) => { const el = e.currentTarget.querySelector('img, svg'); if (el) el.style.transform = 'scale(1.05)'; }}
-      onMouseLeave={(e) => { const el = e.currentTarget.querySelector('img, svg'); if (el) el.style.transform = pressed ? 'scale(0.88)' : 'scale(1)'; }}
+      onMouseEnter={(e) => { const el = e.currentTarget.querySelector('.js-comics-lockup, svg'); if (el) el.style.transform = 'scale(1.05)'; }}
+      onMouseLeave={(e) => { const el = e.currentTarget.querySelector('.js-comics-lockup, svg'); if (el) el.style.transform = pressed ? 'scale(0.88)' : 'scale(1)'; }}
     >
       {inner}
     </a>

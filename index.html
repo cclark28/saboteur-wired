@@ -438,6 +438,7 @@ async function fetchSanityBundle() {
       digitalFileUrl,
       published,
       soldOut,
+      comingSoon,
       productDetails,
       variants,
       "imageUrl": images[0].asset->url,
@@ -1421,9 +1422,14 @@ function arePhysicalOrdersLive(flag) {
   return true;
 }
 
-/** True when product cannot be purchased (sold out OR physical + shipping paused). Digital never affected. */
+function isComingSoon(p) {
+  return !!(p && (p.comingSoon === true || p.comingSoon === 'true'));
+}
+
+/** True when product cannot be purchased (coming soon, sold out, or physical + shipping paused). Digital never affected by travel pause. */
 function isProductUnavailable(p, physicalOrdersEnabled) {
   if (!p) return true;
+  if (isComingSoon(p)) return true;
   if (p.soldOut === true || p.soldOut === 'true') return true;
   if (isPhysicalFulfillment(p.fulfillmentType)) {
     if (!arePhysicalOrdersLive(physicalOrdersEnabled)) return true;
@@ -1544,11 +1550,13 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
           }}>
             {list.map((p) => {
               const img = productImageUrl(p);
-              const price = formatPrice(p.priceCents, p.fulfillmentType);
+              const comingSoon = isComingSoon(p);
+              const price = comingSoon ? 'Coming soon' : formatPrice(p.priceCents, p.fulfillmentType);
               const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category;
               const unavailable = isProductUnavailable(p, physicalOrdersEnabled);
               const paused = isShippingPaused(p, physicalOrdersEnabled);
-              const sold = unavailable && !paused;
+              const sold = unavailable && !paused && !comingSoon;
+              const badge = comingSoon ? 'Coming soon' : (sold ? 'Sold out' : null);
               return (
                 <button
                   key={p._id || p.slug}
@@ -1570,7 +1578,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         {p.title || 'Product'}
                       </span>
                     )}
-                    {sold && (
+                    {badge && (
                       <span
                         style={{
                           position: 'absolute',
@@ -1592,14 +1600,14 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                           color: '#18181B',
                         }}
                       >
-                        Sold out
+                        {badge}
                       </span>
                     )}
                   </div>
                   <div style={{ paddingTop: 2 }}>
                     <div style={{
                       fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '16px', marginBottom: 8, lineHeight: 1.3,
-                      color: unavailable ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                      color: (unavailable && !comingSoon) ? 'var(--color-ink-55)' : 'var(--color-ink)',
                       textDecoration: sold ? 'line-through' : 'none',
                     }}>{p.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
@@ -1608,7 +1616,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         fontFamily: 'var(--font-family-mono)',
                         fontSize: '13px',
                         fontVariantNumeric: 'tabular-nums',
-                        color: unavailable ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                        color: (unavailable && !comingSoon) ? 'var(--color-ink-55)' : 'var(--color-ink)',
                         textDecoration: sold ? 'line-through' : 'none',
                       }}>{price}</span>
                     </div>
@@ -1636,12 +1644,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
   const sameCat = (allProducts || []).filter((x) => x && x._id && x._id !== p._id && x.enabled !== false && x.category && p.category && x.category === p.category);
   const others = (allProducts || []).filter((x) => x && x._id && x._id !== p._id && x.enabled !== false && (!p.category || x.category !== p.category));
   const relatedProducts = sameCat.concat(others).slice(0, 8);
-  const price = formatPrice(p.priceCents, p.fulfillmentType);
+  const comingSoon = isComingSoon(p);
+  const price = comingSoon ? 'Coming soon' : formatPrice(p.priceCents, p.fulfillmentType);
   const catLabel = (STORE_CATEGORIES.find((c) => c.id === p.category) || {}).label || p.category || '';
   const isFree = p.fulfillmentType === 'free_digital' || !p.priceCents;
-  // Sold out OR physical + shipping paused (digital never affected by the travel switch)
+  // Coming soon, sold out, OR physical + shipping paused (digital never affected by the travel switch)
   const isSoldOut = isProductUnavailable(p, physicalOrdersEnabled);
   const shippingPaused = isShippingPaused(p, physicalOrdersEnabled);
+  const soldOnly = isSoldOut && !comingSoon && !shippingPaused;
   const details = p.productDetails || {};
   const detailRows = [
     details.format && { label: 'Format', value: details.format },
@@ -1667,7 +1677,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(dlEmail || '').trim());
 
   const handlePrimary = () => {
-    if (isSoldOut) return;
+    if (isSoldOut || comingSoon) return;
     if (isFree) {
       if (needsAge && !ageOk) {
         setDlError('Confirm you are 18 or older to continue.');
@@ -1762,7 +1772,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
-                  {(isSoldOut && !shippingPaused) ? (
+                  {(comingSoon || soldOnly) ? (
                     <span
                       style={{
                         position: 'absolute',
@@ -1784,7 +1794,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         color: '#18181B',
                       }}
                     >
-                      Sold out
+                      {comingSoon ? 'Coming soon' : 'Sold out'}
                     </span>
                   ) : null}
                 </div>
@@ -1817,15 +1827,15 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           <h1 style={{
             fontFamily: 'var(--font-family-display)', fontWeight: 700,
             fontSize: 'var(--font-h2-size)', margin: '0 0 12px', lineHeight: 1.15, letterSpacing: '-0.02em',
-            color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
-            textDecoration: (isSoldOut && !shippingPaused) ? 'line-through' : 'none',
+            color: soldOnly ? 'var(--color-ink-55)' : 'var(--color-ink)',
+            textDecoration: soldOnly ? 'line-through' : 'none',
           }}>{p.title || 'Untitled'}</h1>
 
           <div style={{
             fontFamily: 'var(--font-family-mono)', fontSize: '15px', fontWeight: 500,
-            color: isSoldOut ? 'var(--color-ink-55)' : 'var(--color-ink)',
+            color: soldOnly ? 'var(--color-ink-55)' : 'var(--color-ink)',
             marginBottom: 28, fontVariantNumeric: 'tabular-nums',
-            textDecoration: (isSoldOut && !shippingPaused) ? 'line-through' : 'none',
+            textDecoration: soldOnly ? 'line-through' : 'none',
           }}>
             {price}
           </div>
@@ -1857,7 +1867,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
 
 
 
-          {(p.fulfillmentType === 'paid_physical' || p.fulfillmentType === 'paid_physical_variant') ? (
+          {comingSoon ? (
+            <p style={{
+              fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
+              margin: '0 0 20px', lineHeight: 1.5,
+            }}>
+              Preview — this item is not available yet.
+            </p>
+          ) : (p.fulfillmentType === 'paid_physical' || p.fulfillmentType === 'paid_physical_variant') ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 20px', lineHeight: 1.5,
@@ -1944,31 +1961,31 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             </div>
           )}
 
-          {shippingPaused && !isFree ? (
+          {shippingPaused && !isFree && !comingSoon ? (
             <PhysicalPauseNotice message={physicalOrdersPausedMessage} compact />
           ) : (
           <button
             onClick={handlePrimary}
-            disabled={isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)}
+            disabled={isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)}
             style={{
               width: '100%', minHeight: 48, padding: '14px 28px',
-              background: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-card)' : 'var(--color-ink)',
-              color: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
+              background: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-card)' : 'var(--color-ink)',
+              color: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
               border: 'none',
               borderRadius: 'var(--radius-sm)',
-              cursor: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'not-allowed' : 'pointer',
+              cursor: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
               letterSpacing: '0.02em',
-              opacity: (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 0.9 : 1,
+              opacity: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 0.9 : 1,
               transition: 'background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease)',
             }}
             onMouseEnter={(e) => {
-              if (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) return;
+              if (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) return;
               e.currentTarget.style.background = 'var(--color-accent)';
               e.currentTarget.style.color = '#FFFFFF';
             }}
             onMouseLeave={(e) => {
-              if (isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) {
+              if (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) {
                 e.currentTarget.style.background = 'var(--color-card)';
                 e.currentTarget.style.color = 'var(--color-ink-55)';
                 return;
@@ -1976,10 +1993,12 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               e.currentTarget.style.background = 'var(--color-ink)';
               e.currentTarget.style.color = 'var(--color-paper)';
             }}
-            onMouseDown={(e) => { if (!(isSoldOut || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onMouseDown={(e) => { if (!(isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            {isSoldOut
+            {comingSoon
+              ? 'Coming soon'
+              : isSoldOut
               ? 'Out of stock'
               : (isFree ? (dlDone ? 'Download again' : 'Download') : 'Add to bag')}
           </button>
@@ -1990,7 +2009,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               margin: '12px 0 0',
             }}>Thanks — email saved. Your download is starting.</p>
           ) : null}
-          {isFree && !p.digitalFileUrl ? (
+          {isFree && !comingSoon && !p.digitalFileUrl ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)',
               margin: '12px 0 0',
@@ -2023,9 +2042,11 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           }}>
             {relatedProducts.map((rp) => {
               const img = productImageUrl(rp);
-              const rpPrice = formatPrice(rp.priceCents, rp.fulfillmentType);
+              const rpSoon = isComingSoon(rp);
+              const rpPrice = rpSoon ? 'Coming soon' : formatPrice(rp.priceCents, rp.fulfillmentType);
               const rpSold = isProductUnavailable(rp, physicalOrdersEnabled);
               const rpPaused = isShippingPaused(rp, physicalOrdersEnabled);
+              const rpBadge = rpSoon ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
               return (
                 <button
                   key={rp._id || rp.slug}
@@ -2048,7 +2069,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: rpPaused ? 0.4 : 1 }}
                       />
                     ) : null}
-                    {(rpSold && !rpPaused) ? (
+                    {rpBadge ? (
                       <span style={{
                         position: 'absolute', top: 10, right: 10,
                         fontFamily: 'var(--font-family-mono)', fontSize: 10, fontWeight: 500,
@@ -2056,18 +2077,18 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         padding: '6px 10px', borderRadius: 9999, lineHeight: 1,
                         background: 'var(--color-accent)', color: '#18181B',
                         pointerEvents: 'none',
-                      }}>Sold out</span>
+                      }}>{rpBadge}</span>
                     ) : null}
                   </div>
                   <div style={{
                     fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: '15px', lineHeight: 1.3,
-                    color: rpSold ? 'var(--color-ink-55)' : 'var(--color-ink)',
-                    textDecoration: (rpSold && !rpPaused) ? 'line-through' : 'none',
+                    color: (rpSold && !rpSoon) ? 'var(--color-ink-55)' : 'var(--color-ink)',
+                    textDecoration: (rpSold && !rpPaused && !rpSoon) ? 'line-through' : 'none',
                   }}>{rp.title}</div>
                   <div style={{
                     fontFamily: 'var(--font-family-mono)', fontSize: '12px',
                     color: 'var(--color-ink-55)',
-                    textDecoration: (rpSold && !rpPaused) ? 'line-through' : 'none',
+                    textDecoration: (rpSold && !rpPaused && !rpSoon) ? 'line-through' : 'none',
                   }}>{rpPrice}</div>
                 </button>
               );
@@ -3265,6 +3286,20 @@ function App() {
     } catch { return []; }
   });
   const cartCount = cart.reduce((n, line) => n + (line.qty || 1), 0);
+
+  useEffect(() => {
+    if (!products || !products.length) return;
+    setCart((prev) => {
+      const next = (prev || []).filter((line) => {
+        const match = products.find((p) => p && line && p._id === line.productId);
+        if (!match) return true;
+        return !isComingSoon(match) && match.soldOut !== true && match.soldOut !== 'true';
+      });
+      if (next.length === (prev || []).length) return prev;
+      try { localStorage.setItem('saboteur-cart', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  }, [products]);
   const [dark, setDark] = useState(() => {
     try {
       const saved = localStorage.getItem('saboteur-theme');
@@ -3624,7 +3659,7 @@ function App() {
 
   const addToCart = React.useCallback((product, variant) => {
     if (!product) return;
-    // Never allow sold-out or shipping-paused physical products into the bag
+    // Never allow coming-soon, sold-out, or shipping-paused physical products into the bag
     const physicalOn = arePhysicalOrdersLive(siteSettings && siteSettings.physicalOrdersEnabled);
     if (isProductUnavailable(product, physicalOn)) return;
     setCart((prev) => {

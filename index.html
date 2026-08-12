@@ -369,6 +369,21 @@ const SANITY_PROJECT = '6td8xalf';
 // Phase 2 — set after Vercel deploy (no trailing slash). Empty = shows setup message.
 const CHECKOUT_API_BASE = 'https://saboteur-api.vercel.app';
 
+function saveShopEmail(email, source) {
+  const apiBase = String(CHECKOUT_API_BASE || '').replace(/\/$/, '');
+  const value = String(email || '').trim();
+  if (!apiBase || !value) return Promise.resolve();
+  return fetch(apiBase + '/api/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: value, source: source || 'shop' }),
+  }).then((res) => {
+    if (!res.ok) console.error('Email list save failed', res.status);
+  }).catch((err) => {
+    console.error('Email list save failed', err);
+  });
+}
+
 const SANITY_DATASET = 'production';
 const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
 
@@ -1633,6 +1648,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         log.push({ email: email, productId: p._id, title: p.title, digitalFileUrl: p.digitalFileUrl || null, at: new Date().toISOString() });
         localStorage.setItem('saboteur-download-log', JSON.stringify(log.slice(-50)));
       } catch (e) {}
+      saveShopEmail(email, 'download');
       if (p.digitalFileUrl) {
         window.open(p.digitalFileUrl, '_blank', 'noopener,noreferrer');
         setDlDone(true);
@@ -3057,6 +3073,7 @@ function ContactForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
+        saveShopEmail(email, 'contact');
         setStatus('success');
         setName('');
         setEmail('');

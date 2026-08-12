@@ -310,18 +310,56 @@ const SIZES = [
 
 function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; }
 
-let NAV_LINKS = ['Explorations', 'Store', 'About'];
+let NAV_LINKS = [];
 let ALL_TAGS = [];
 let FOOTER_DATA = null;
 let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null };
 let SECTION_META = [];
+
+const STORE_TABS = [
+  { id: 'comics', label: 'Comics' },
+  { id: 'prints-and-books', label: 'Books & Zines' },
+  { id: 'textures', label: 'Textures' },
+  { id: 'original-art', label: 'Original Art' },
+  { id: 'clothing', label: 'Apparel' },
+];
+
+function isFigureStudiesItem(item) {
+  const label = String((item && item.label) || '');
+  const slug = String((item && item.sectionSlug) || '');
+  return /figure\s*studies/i.test(label) || slug.toLowerCase().replace(/\s+/g, '-') === 'figure-studies';
+}
+
+function isInfoMapItem(item) {
+  const t = String((item && item.linkType) || '').toLowerCase();
+  const label = String((item && item.label) || '');
+  const slug = String((item && item.sectionSlug) || '').toLowerCase();
+  return t === 'info' || t === 'contact' || /info\s*\/?\s*contact/i.test(label) || /^(info|info-contact|about)$/.test(slug);
+}
+
+function resolveStoreTab(item) {
+  if (!item) return null;
+  const slug = String(item.sectionSlug || '').trim().toLowerCase().replace(/\s+/g, '-');
+  const label = String(item.label || '').trim().toLowerCase();
+  const byId = STORE_TABS.find((c) => c.id === slug);
+  if (byId) return byId.id;
+  const byLabel = STORE_TABS.find((c) => c.label.toLowerCase() === label);
+  if (byLabel) return byLabel.id;
+  if (label === 'books' || label === 'zines' || label === 'books and zines' || slug === 'books' || slug === 'zines' || slug === 'books-and-zines') return 'prints-and-books';
+  if (label === 'apparel' || label === 'clothes' || slug === 'apparel') return 'clothing';
+  return null;
+}
 
 // ---------- Path routing (shareable /store + /store/{slug}) ----------
 function pathFromView(view) {
   if (!view || !view.page) return '/';
   const p = view.page;
   if (p === 'home') return '/';
-  if (p === 'store') return '/store';
+  if (p === 'store') {
+    const cat = view.storeCategory;
+    if (cat && STORE_TABS.some((t) => t.id === cat)) return '/store?tab=' + encodeURIComponent(cat);
+    return '/store';
+  }
   if (p === 'product') {
     const slug = (view.product && view.product.slug) || view.productSlug || '';
     return slug ? '/store/' + encodeURIComponent(String(slug)) : '/store';
@@ -336,7 +374,7 @@ function pathFromView(view) {
   return '/';
 }
 
-function viewFromPath(pathname) {
+function viewFromPath(pathname, search) {
   // Local file:// previews and non-SPA hosts fall back to home (path routing needs a real host + rewrite)
   try {
     if (typeof location !== 'undefined' && (location.protocol === 'file:' || !pathname || pathname.indexOf('.html') !== -1)) {
@@ -346,7 +384,17 @@ function viewFromPath(pathname) {
   let path = (pathname || '/').split('?')[0];
   path = path.replace(/\/+$/, '') || '/';
   if (path === '/' || path === '') return { page: 'home' };
-  if (path === '/store') return { page: 'store' };
+  if (path === '/store') {
+    let storeCategory;
+    try {
+      const q = search != null ? search : (typeof window !== 'undefined' ? window.location.search : '');
+      storeCategory = new URLSearchParams(q).get('tab') || undefined;
+    } catch (e) {}
+    if (storeCategory && STORE_TABS.some((t) => t.id === storeCategory)) {
+      return { page: 'store', storeCategory };
+    }
+    return { page: 'store' };
+  }
   const storeMatch = path.match(/^\/store\/([^/]+)$/);
   if (storeMatch) {
     try {
@@ -410,7 +458,8 @@ async function fetchSanityBundle() {
     },
     "footer": *[_type == "footer"][0]{
       marqueeText,
-      logoSubhead, copyright, nextLocation, nextTimezone, localLabel,
+      logoSubhead, copyright, nextLocation, nextTimezone, localLabel, localTimezone,
+      itinerary[]{ _key, startDate, city, label, timezone },
       siteMapLinks[]{ label, linkType, sectionSlug, url },
       socialLinks[]{ label, url }
     },
@@ -895,7 +944,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
   );
 }
 
-function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding = false }) {
+function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding = false, links }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [exiting, setExiting] = useState(false);
@@ -1092,7 +1141,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
 
       {/* Big menu links */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-        {NAV_LINKS.map((l) => {
+        {(Array.isArray(links) && links.length ? links : NAV_LINKS).map((l) => {
           const key = l.toLowerCase().replace(/\s+/g, '-');
           const isActive = activeSection === key;
           return (
@@ -1235,6 +1284,53 @@ function InfiniteGrid({ baseItems, onOpen }) {
 const SHOW_MARQUEE = true; // toggle from Sanity CMS
 const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · ®SABOTEUR.ONE — ';
 
+// Calendar-derived travel stops. Local clock follows the current stop; Upcoming is the next one.
+const DEFAULT_ITINERARY = [
+  { startDate: '2026-01-01', city: 'Indianapolis', label: 'Indianapolis, Indiana', timezone: 'America/Indiana/Indianapolis' },
+  { startDate: '2026-08-20', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
+  { startDate: '2026-08-24', city: 'Prague', label: 'Prague, Czechia', timezone: 'Europe/Prague' },
+  { startDate: '2026-08-29', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
+  { startDate: '2026-09-04', city: 'Brașov', label: 'Brașov, Romania', timezone: 'Europe/Bucharest' },
+  { startDate: '2026-09-08', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
+  { startDate: '2026-09-11', city: 'Bratislava', label: 'Bratislava, Slovakia', timezone: 'Europe/Bratislava' },
+  { startDate: '2026-09-14', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
+  { startDate: '2026-09-20', city: 'Belgrade', label: 'Belgrade, Serbia', timezone: 'Europe/Belgrade' },
+  { startDate: '2026-10-05', city: 'Skopje', label: 'Skopje, North Macedonia', timezone: 'Europe/Skopje' },
+  { startDate: '2026-10-09', city: 'Sofia', label: 'Sofia, Bulgaria', timezone: 'Europe/Sofia' },
+  { startDate: '2026-10-12', city: 'Istanbul', label: 'Istanbul, Turkey', timezone: 'Europe/Istanbul' },
+  { startDate: '2026-10-16', city: 'Skopje', label: 'Skopje, North Macedonia', timezone: 'Europe/Skopje' },
+  { startDate: '2026-10-19', city: 'Sofia', label: 'Sofia, Bulgaria', timezone: 'Europe/Sofia' },
+  { startDate: '2026-10-23', city: 'Istanbul', label: 'Istanbul, Turkey', timezone: 'Europe/Istanbul' },
+  { startDate: '2026-11-15', city: 'Indianapolis', label: 'Indianapolis, Indiana', timezone: 'America/Indiana/Indianapolis' },
+];
+
+function resolveItinerary(stops, now) {
+  const list = (Array.isArray(stops) ? stops : [])
+    .filter((s) => s && s.startDate && s.timezone)
+    .slice()
+    .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
+  if (!list.length) return { current: null, upcoming: null };
+  const today = now.toISOString().slice(0, 10);
+  let idx = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (String(list[i].startDate) <= today) idx = i;
+  }
+  return { current: list[idx], upcoming: list[idx + 1] || null };
+}
+
+function formatClock(date, timeZone) {
+  try {
+    return date.toLocaleTimeString('en-US', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch (err) {
+    return '—';
+  }
+}
+
 function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -1245,24 +1341,18 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const f = FOOTER_DATA || {};
   const subhead = f.logoSubhead || 'Experimental creative house';
   const copyright = f.copyright || '© 2026 ®Saboteur LLC — All rights reserved';
-  const localLabel = f.localLabel || 'Indianapolis, Indiana';
-  const nextLocation = f.nextLocation || 'Budapest';
-  const nextTimezone = f.nextTimezone || 'Europe/Budapest';
+  const cmsItinerary = Array.isArray(f.itinerary) ? f.itinerary : [];
+  const { current, upcoming } = resolveItinerary(cmsItinerary.length ? cmsItinerary : DEFAULT_ITINERARY, time);
+  const localLabel = (current && (current.label || current.city)) || f.localLabel || 'Indianapolis, Indiana';
+  const localTimezone = (current && current.timezone) || f.localTimezone || 'America/Indiana/Indianapolis';
+  const nextLocation = (upcoming && (upcoming.city || upcoming.label)) || f.nextLocation || '';
+  const nextTimezone = (upcoming && upcoming.timezone) || f.nextTimezone || '';
   const siteMap = Array.isArray(f.siteMapLinks) ? f.siteMapLinks : [];
   const socials = Array.isArray(f.socialLinks) ? f.socialLinks : [];
   const marquee = (f.marqueeText || '').trim();
 
-  const localStr = time.toLocaleTimeString('en-US', {
-    timeZone: 'America/Indiana/Indianapolis',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  });
-  let nextStr = '—';
-  try {
-    nextStr = time.toLocaleTimeString('en-US', {
-      timeZone: nextTimezone,
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
-  } catch (err) {}
+  const localStr = formatClock(time, localTimezone);
+  const nextStr = nextTimezone ? formatClock(time, nextTimezone) : '—';
 
   const colLabel = {
     fontFamily: 'var(--font-family-mono)',
@@ -1301,42 +1391,64 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const goSection = (slug) => {
     if (FOOTER_NAV && FOOTER_NAV.section) FOOTER_NAV.section(slug);
   };
+  const goStore = (category) => {
+    if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store(category);
+    else if (onStore) onStore(category);
+    else goSection('store');
+  };
 
   const onMapClick = (item) => {
     if (!item) return;
+    if (isFigureStudiesItem(item)) return;
+    if (isInfoMapItem(item)) {
+      goContact();
+      return;
+    }
+    const tab = resolveStoreTab(item);
+    if (tab) {
+      goStore(tab);
+      return;
+    }
     const t = item.linkType;
     if (t === 'home') goHome();
-    else if (t === 'contact' || t === 'info') goContact();
-    else if (t === 'store') {
-      if (onStore) onStore();
-      else if (FOOTER_NAV && FOOTER_NAV.store) FOOTER_NAV.store();
-      else goSection('store');
-    }
+    else if (t === 'store') goStore();
     else if (t === 'resend') {
       if (onResend) onResend();
       else if (FOOTER_NAV && FOOTER_NAV.resend) FOOTER_NAV.resend();
     }
     else if (t === 'section' && item.sectionSlug) goSection(String(item.sectionSlug).trim());
-    else if (t === 'external' && item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
+    else if ((t === 'external' || t === 'url') && item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
-  // Always surface Store + Re-send downloads in the site map (Phase 1)
-  const extraMap = [
+  // Drop figure studies, send Info/Contact to About, and treat store categories as store tabs
+  const rewritten = siteMap
+    .filter((item) => !isFigureStudiesItem(item))
+    .map((item) => {
+      if (isInfoMapItem(item)) return Object.assign({}, item, { linkType: 'info', sectionSlug: null });
+      const tab = resolveStoreTab(item);
+      if (tab) return Object.assign({}, item, { linkType: 'store', sectionSlug: tab, label: (STORE_TABS.find((c) => c.id === tab) || item).label || item.label });
+      return item;
+    });
+  const extraMap = STORE_TABS.map((c) => ({ label: c.label, linkType: 'store', sectionSlug: c.id })).concat([
     { label: 'Store', linkType: 'store' },
     { label: 'Re-send downloads', linkType: 'resend' },
-  ];
-  const mapLabels = new Set(siteMap.map((x) => String((x && x.label) || '').toLowerCase()));
-  const mergedMap = siteMap.slice();
-  extraMap.forEach((ex) => {
-    if (!mapLabels.has(ex.label.toLowerCase())) mergedMap.push(ex);
-  });
-  // If Sanity left site map empty, still show Home / Store / Re-send / About
-  const displayMap = mergedMap.length ? mergedMap : [
+  ]);
+  const baseMap = rewritten.length ? rewritten : [
     { label: 'Home', linkType: 'home' },
-    { label: 'Store', linkType: 'store' },
-    { label: 'Re-send downloads', linkType: 'resend' },
-    { label: 'About', linkType: 'info' },
+    { label: 'Info/Contact', linkType: 'info' },
   ];
+  const mapLabels = new Set(baseMap.map((x) => String((x && x.label) || '').toLowerCase()));
+  const mapTabs = new Set(baseMap.map((x) => resolveStoreTab(x)).filter(Boolean));
+  const mergedMap = baseMap.slice();
+  extraMap.forEach((ex) => {
+    const tab = resolveStoreTab(ex);
+    if (mapLabels.has(String(ex.label).toLowerCase())) return;
+    if (tab && mapTabs.has(tab)) return;
+    mergedMap.push(ex);
+    mapLabels.add(String(ex.label).toLowerCase());
+    if (tab) mapTabs.add(tab);
+  });
+  const displayMap = mergedMap;
 
 const colBox = {
     display: 'flex',
@@ -1417,10 +1529,12 @@ const colBox = {
             <div style={colLabel}>Local time</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6, lineHeight: 1.2 }}>{localStr}</div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink-55)', marginBottom: 16, lineHeight: 1.5 }}>{localLabel}</div>
-            <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Next: {nextLocation}</div>
-              <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{nextStr}</div>
-            </div>
+            {nextLocation ? (
+              <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {nextLocation}</div>
+                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{nextStr}</div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -1442,6 +1556,7 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, items, dark, onToggleD
       <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
         <InfiniteGrid baseItems={items} onOpen={onOpen} />
       </div>
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
   );
 }
@@ -1474,14 +1589,7 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
 
 
 
-const STORE_CATEGORIES = [
-  { id: 'comics', label: 'Comics' },
-  { id: 'prints-and-books', label: 'Books & Zines' },
-  { id: 'textures', label: 'Textures' },
-  { id: 'original-art', label: 'Original Art' },
-  { id: 'clothing', label: 'Apparel' },
-  { id: 'all', label: 'All' },
-];
+const STORE_CATEGORIES = STORE_TABS.concat([{ id: 'all', label: 'All' }]);
 
 function formatPrice(cents, fulfillmentType) {
   if (fulfillmentType === 'free_digital' || !cents) return 'Free';
@@ -1567,9 +1675,14 @@ function productImageUrl(p) {
   return null;
 }
 
-function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct }) {
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [filter, setFilter] = useState('comics');
+  const firstFilter = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : 'comics';
+  const [filter, setFilter] = useState(firstFilter);
+  useEffect(() => {
+    const next = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : 'comics';
+    setFilter(next);
+  }, [initialCategory]);
   const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
   const isEmpty = list.length === 0;
   const shippingPaused = !arePhysicalOrdersLive(physicalOrdersEnabled);
@@ -3345,9 +3458,9 @@ function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark, cartCount, on
 
 function App() {
   const [items, setItems] = useState(() => ({
-    home: HOME_ITEMS,
-    explorations: FIGURE_ITEMS,
-    'figure-studies': FIGURE_ITEMS,
+    home: [],
+    explorations: [],
+    'figure-studies': [],
   }));
 
   const [navSections, setNavSections] = useState([]);
@@ -3431,7 +3544,7 @@ function App() {
 
   // Initial path parse + popstate listener
   useEffect(() => {
-    let initial = viewFromPath(window.location.pathname);
+    let initial = viewFromPath(window.location.pathname, window.location.search);
     try {
       const params = new URLSearchParams(window.location.search);
       const qPage = params.get('page');
@@ -3456,7 +3569,7 @@ function App() {
     }
 
     const onPop = (e) => {
-      const next = (e.state && e.state.page) ? e.state : viewFromPath(window.location.pathname);
+      const next = (e.state && e.state.page) ? e.state : viewFromPath(window.location.pathname, window.location.search);
       if (next.page === 'about') {
         setView({ page: 'home' });
         setAboutOpen(true);
@@ -3568,14 +3681,13 @@ function App() {
             ? { ...s, comingSoon: false, isInfoPage: false }
             : s);
         }
+        nav = nav.filter((s) => s.slug !== 'figure-studies' && !/figure\s*studies/i.test(String(s.title || '')));
         setNavSections(nav);
         SECTION_META = nav.map((s) => ({ ...s }));
         // Keep menu labels in sync — About is a fly-out, not a section page, so force it into the menu
-        // Figure studies intentionally omitted from the full menu (kept in Sanity for assets only)
         NAV_LINKS = nav
           .filter((s) => !s.isInfoPage)
-          .map((s) => s.title)
-          .filter((t) => !/figure\s*studies/i.test(String(t || '')));
+          .map((s) => s.title);
         if (!NAV_LINKS.some((t) => String(t).toLowerCase() === 'store')) {
           NAV_LINKS.push('Store');
         }
@@ -3818,11 +3930,11 @@ function App() {
   // Homepage landing: after age gate, open the full menu once. Scroll / Escape / click dismisses it.
   // Only on the home page entry — never on other pages or subsequent home visits.
   useEffect(() => {
-    if (ageVerified && view.page === 'home' && !landingDone) {
+    if (ageVerified && view.page === 'home' && !landingDone && !loading) {
       setMenuOpen(true);
       setLandingMenu(true);
     }
-  }, [ageVerified, view.page, landingDone]);
+  }, [ageVerified, view.page, landingDone, loading]);
 
   const goHome = () => { closeMenu(); setAboutOpen(false); navigate({ page: 'home' }); window.scrollTo(0, 0); };
   const goStoreComics = () => {
@@ -3851,6 +3963,15 @@ function App() {
   const openSection = (section) => {
     const raw = String(section || '').trim();
     const slug = raw.toLowerCase().replace(/\s+/g, '-');
+    if (slug === 'figure-studies' || /figure\s*studies/i.test(raw)) return;
+    const storeTab = resolveStoreTab({ label: raw, sectionSlug: slug });
+    if (storeTab && slug !== 'store') {
+      closeMenu();
+      setAboutOpen(false);
+      navigate({ page: 'store', storeCategory: storeTab, storeResetKey: Date.now() });
+      window.scrollTo(0, 0);
+      return;
+    }
     const meta = (SECTION_META || []).find((s) =>
       s.slug === raw || s.slug === slug ||
       (s.title || '').toLowerCase().replace(/\s+/g, '-') === slug
@@ -3872,7 +3993,16 @@ function App() {
     home: goHome,
     contact: () => { openAbout(); },
     section: (slug) => openSection(slug),
-    store: () => { closeMenu(); openSection('store'); },
+    store: (category) => {
+      closeMenu();
+      setAboutOpen(false);
+      navigate({
+        page: 'store',
+        storeCategory: category || undefined,
+        storeResetKey: Date.now(),
+      });
+      window.scrollTo(0, 0);
+    },
     comics: goStoreComics,
     resend: () => { closeMenu(); setAboutOpen(false); navigate({ page: 'resend' }); window.scrollTo(0, 0); },
   };
@@ -3963,16 +4093,27 @@ function App() {
     };
   }, [view.page]); // re-run when the page / grid changes
 
+  const menuLinks = React.useMemo(() => {
+    const titles = (navSections || [])
+      .filter((s) => !s.isInfoPage)
+      .map((s) => s.title)
+      .filter(Boolean);
+    if (!titles.length) return [];
+    if (!titles.some((t) => String(t).toLowerCase() === 'store')) titles.push('Store');
+    if (!titles.some((t) => String(t).toLowerCase() === 'about')) titles.push('About');
+    return titles;
+  }, [navSections]);
 
   return (
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
 
-      {view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
-      {navSections.filter((sec) => !sec.isInfoPage && sec.slug !== 'store').map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />))}
-      {view.page === 'store' && (
+      {!loading && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {!loading && navSections.filter((sec) => !sec.isInfoPage && sec.slug !== 'store').map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />))}
+      {!loading && view.page === 'store' && (
         <StoreGrid
           key={view.storeResetKey || 'store'}
           products={products}
+          initialCategory={view.storeCategory}
           physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
@@ -3992,7 +4133,7 @@ function App() {
         />
       )}
 
-      {view.page === 'product' && view.product && (
+      {!loading && view.page === 'product' && view.product && (
         <ProductDetail
           product={view.product}
           allProducts={products}
@@ -4014,7 +4155,7 @@ function App() {
         />
       )}
       
-      {view.page === 'resend' && (
+      {!loading && view.page === 'resend' && (
         <ResendDownloadsPage
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}
@@ -4030,7 +4171,7 @@ function App() {
         />
       )}
       
-      {view.page === 'order-success' && (
+      {!loading && view.page === 'order-success' && (
         <OrderSuccessPage
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={back}
@@ -4048,7 +4189,7 @@ function App() {
         />
       )}
       
-      {view.page === 'checkout' && (
+      {!loading && view.page === 'checkout' && (
         <CheckoutPage
           cart={cart}
           physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
@@ -4070,14 +4211,14 @@ function App() {
         />
       )}
       
-      {view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
-      {view.page === 'contact' && <ContactPage onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
-      {view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={(items.home || []).filter((s) => {
+      {!loading && view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {!loading && view.page === 'contact' && <ContactPage onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {!loading && view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={(items.home || []).filter((s) => {
         const tags = (s.tags || []).map((t) => String(typeof t === 'string' ? t : (t && t.title) || '').toLowerCase());
         return tags.includes(String(view.tag || '').toLowerCase());
       })} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
-      {view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
-      {menuOpen && (
+      {!loading && view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {!loading && menuOpen && (
         <FullMenu
           activeSection={view.page === 'item' ? view.from : (view.page === 'product' ? 'store' : view.page)}
           onSelect={openSection}
@@ -4085,13 +4226,16 @@ function App() {
           onHome={goHome}
           onTag={(t) => { closeMenu(); goTag(t); }}
           isLanding={landingMenu}
+          links={menuLinks}
         />
       )}
+      {!loading && (
       <AboutFlyout
         open={aboutOpen}
         onClose={closeAbout}
         settings={siteSettings}
       />
+      )}
       {cartOpen && (
         <div
           style={{

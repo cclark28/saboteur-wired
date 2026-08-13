@@ -478,7 +478,15 @@ function saveShopEmail(email, source) {
 }
 
 const SANITY_DATASET = 'production';
-const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
+const SANITY_API_DIRECT = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
+// Same-origin proxy so Vercel staging/preview can load the live Sanity feed.
+// Direct api.sanity.io is blocked there (CORS). /cms is rewritten in vercel.json.
+function sanityQueryUrl() {
+  try {
+    if (typeof location !== 'undefined' && location.protocol !== 'file:') return '/cms';
+  } catch (e) {}
+  return SANITY_API_DIRECT;
+}
 
 async function fetchSanityBundle() {
   const query = encodeURIComponent(`{
@@ -541,7 +549,7 @@ async function fetchSanityBundle() {
       "imageUrls": images[].asset->url
     }
   }`);
-  const res = await fetch(`${SANITY_API}?query=${query}`);
+  const res = await fetch(`${sanityQueryUrl()}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
   const json = await res.json();
   return json.result || { assets: [], sections: [], tags: [], settings: null, footer: null, products: [] };

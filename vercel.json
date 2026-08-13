@@ -1,5 +1,9 @@
 {
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/cms",
+      "destination": "https://6td8xalf.api.sanity.io/v2024-01-01/data/query/production"
+    },
+    { "source": "/((?!api/|cms).*)", "destination": "/index.html" }
   ]
 }

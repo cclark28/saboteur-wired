@@ -350,6 +350,38 @@ function isInfoMapItem(item) {
   return t === 'info' || t === 'contact' || /info\s*\/?\s*contact/i.test(label) || /^(info|info-contact|about)$/.test(slug);
 }
 
+// Search/filter tags only. Does not change store tab labels.
+function displayTagTitle(raw) {
+  const t = String(raw == null ? '' : raw).trim();
+  if (!t) return '';
+  if (/^apperal$/i.test(t)) return 'Apparel';
+  if (t.toLowerCase() === 'art') return 'Art';
+  return t;
+}
+
+function isFigureStudiesLabel(value) {
+  const s = String(value || '').toLowerCase().replace(/\s+/g, '-');
+  return s === 'figure-studies' || s === 'figurestudies';
+}
+
+function isBooksAndZinesLabel(value) {
+  const s = String(value || '').toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '-');
+  return s === 'books-and-zines' || s === 'prints-and-books';
+}
+
+function normalizeAssetTags(rawTags, sections) {
+  const tags = (rawTags || [])
+    .map((t) => displayTagTitle(typeof t === 'string' ? t : (t && t.title)))
+    .filter(Boolean);
+  const hasFigure =
+    tags.some((t) => isFigureStudiesLabel(t)) ||
+    (sections || []).some((s) => isFigureStudiesLabel(s));
+  if (hasFigure && !tags.some((t) => isBooksAndZinesLabel(t))) {
+    tags.push('Books & Zines');
+  }
+  return tags;
+}
+
 function resolveStoreTab(item) {
   if (!item) return null;
   const slug = String(item.sectionSlug || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -446,7 +478,15 @@ function saveShopEmail(email, source) {
 }
 
 const SANITY_DATASET = 'production';
-const SANITY_API = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
+const SANITY_API_DIRECT = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
+// Same-origin proxy so Vercel staging/preview can load the live Sanity feed.
+// Direct api.sanity.io is blocked there (CORS). /cms is rewritten in vercel.json.
+function sanityQueryUrl() {
+  try {
+    if (typeof location !== 'undefined' && location.protocol !== 'file:') return '/cms';
+  } catch (e) {}
+  return SANITY_API_DIRECT;
+}
 
 async function fetchSanityBundle() {
   const query = encodeURIComponent(`{
@@ -509,7 +549,7 @@ async function fetchSanityBundle() {
       "imageUrls": images[].asset->url
     }
   }`);
-  const res = await fetch(`${SANITY_API}?query=${query}`);
+  const res = await fetch(`${sanityQueryUrl()}?query=${query}`);
   if (!res.ok) throw new Error('Sanity fetch failed: ' + res.status);
   const json = await res.json();
   return json.result || { assets: [], sections: [], tags: [], settings: null, footer: null, products: [] };
@@ -533,7 +573,6 @@ function buildImageUrl(mainImage) {
 
 function assetToSeries(asset, index) {
   const hasInfo = !!(asset.headline || asset.subhead || asset.body || (asset.tags && asset.tags.length));
-  const tags = (asset.tags || []).map((t) => (typeof t === 'string' ? t : t && t.title)).filter(Boolean);
   const galleryUrls = (asset.galleryUrls || []).filter(Boolean);
 
   let imageUrl = buildImageUrl(asset.mainImage);
@@ -562,6 +601,8 @@ function assetToSeries(asset, index) {
     if (typeof sec === 'string') return sec.toLowerCase().replace(/\s+/g, '-');
     return String(sec.slug || sec.title || '').toLowerCase().replace(/\s+/g, '-');
   }).filter(Boolean);
+
+  const tags = normalizeAssetTags(asset.tags, sections);
 
   return {
     id: asset._id || ('asset-' + index),
@@ -3090,7 +3131,7 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
                 <a
                   key={t}
                   href="#"
-                  onClick={(e) => { e.preventDefault(); onTag && onTag(t); }}
+                  onClick={(e) => { e.preventDefault(); onTag && onTag(displayTagTitle(t)); }}
                   style={{
                     background: 'var(--color-card)',
                     color: 'var(--color-ink-55)',
@@ -3103,7 +3144,7 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-55)'; }}
-                >{t}</a>
+                >{displayTagTitle(t)}</a>
               ))}
             </div>
           )}
@@ -3626,7 +3667,9 @@ function App() {
         setSiteSettings(data.settings || null);
 
         const tagDocs = data.tags || [];
-        ALL_TAGS = tagDocs.map((t) => t.title).filter(Boolean);
+        ALL_TAGS = tagDocs.map((t) => displayTagTitle(t.title)).filter(Boolean);
+        if (!ALL_TAGS.some((t) => isBooksAndZinesLabel(t))) ALL_TAGS.push('Books & Zines');
+        ALL_TAGS = ALL_TAGS.filter((t, i, arr) => arr.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
         NAV_LINKS = sectionDocs.map((s) => s.title).filter((t) => !/figure\s*studies/i.test(String(t || '')));
         setAgeGateData(data.ageGate || null);
         {
@@ -4243,9 +4286,13 @@ function App() {
       
       {!loading && view.page === 'info' && <InfoContact settings={siteSettings} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && view.page === 'contact' && <ContactPage onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
-      {!loading && view.page === 'tag' && <SectionGrid title={'Tag: ' + view.tag} items={(items.home || []).filter((s) => {
-        const tags = (s.tags || []).map((t) => String(typeof t === 'string' ? t : (t && t.title) || '').toLowerCase());
-        return tags.includes(String(view.tag || '').toLowerCase());
+      {!loading && view.page === 'tag' && <SectionGrid title={'Tag: ' + displayTagTitle(view.tag)} items={(items.home || []).filter((s) => {
+        const tags = (s.tags || []).map((t) => String(typeof t === 'string' ? t : (t && t.title) || ''));
+        const wanted = displayTagTitle(view.tag);
+        if (isBooksAndZinesLabel(wanted)) {
+          return tags.some((t) => isBooksAndZinesLabel(t) || isFigureStudiesLabel(t));
+        }
+        return tags.some((t) => t.toLowerCase() === String(wanted || '').toLowerCase());
       })} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && menuOpen && (

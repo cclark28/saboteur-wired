@@ -128,6 +128,19 @@
     background: transparent;
     color: #B5B4B9;
   }
+  .store-cat-btn.is-locked {
+    color: #B5B4B9;
+    opacity: 0.55;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .store-cat-btn.is-locked:hover,
+  .store-cat-btn.is-locked.is-active {
+    background: transparent;
+    color: #B5B4B9;
+  }
   @media (min-width: 900px) {
     .store-cat-nav {
       gap: 16px !important;
@@ -1673,6 +1686,14 @@ function isShippingPaused(p, physicalOrdersEnabled) {
   return !arePhysicalOrdersLive(physicalOrdersEnabled) && isPhysicalFulfillment(p && p.fulfillmentType);
 }
 
+/** Category has products, but none can be bought (sold out, coming soon, or shipping paused). */
+function isStoreCategoryLocked(products, catId, physicalOrdersEnabled) {
+  if (!catId || catId === 'all') return false;
+  const inCat = (products || []).filter((p) => p && p.category === catId);
+  if (!inCat.length) return false;
+  return inCat.every((p) => p.enabled === false || isProductUnavailable(p, physicalOrdersEnabled));
+}
+
 function WarningFilledIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false" style={{ flexShrink: 0, display: 'block', color: 'var(--color-accent)', marginTop: 1 }}>
@@ -1717,26 +1738,24 @@ function productImageUrl(p) {
 
 function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const firstFilter = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : 'comics';
+  const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
+  const firstFilter = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory) && !isStoreCategoryLocked(products, initialCategory, physicalOrdersEnabled)) ? initialCategory : firstUnlocked;
   const [filter, setFilter] = useState(firstFilter);
   useEffect(() => {
-    const next = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : 'comics';
+    const next = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory) && !isStoreCategoryLocked(products, initialCategory, physicalOrdersEnabled)) ? initialCategory : firstUnlocked;
     setFilter(next);
-  }, [initialCategory]);
+  }, [initialCategory, firstUnlocked, products, physicalOrdersEnabled]);
   const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
   const isEmpty = list.length === 0;
   const shippingPaused = !arePhysicalOrdersLive(physicalOrdersEnabled);
 
-  // Mute a category when it is empty of buyable items, or when travel-pause
-  // makes every item in that category physical-only (comics stays live if it has a digital).
   const mutedCats = {};
+  const lockedCats = {};
   STORE_CATEGORIES.forEach((c) => {
     if (c.id === 'all') return;
-    const inCat = (products || []).filter((p) => p.category === c.id);
-    if (!inCat.length) return;
-    const allDisabled = inCat.every((p) => p.enabled === false);
-    const allPhysicalPaused = shippingPaused && inCat.every((p) => p.enabled === false || isPhysicalFulfillment(p.fulfillmentType));
-    mutedCats[c.id] = allDisabled || allPhysicalPaused;
+    const locked = isStoreCategoryLocked(products, c.id, physicalOrdersEnabled);
+    lockedCats[c.id] = locked;
+    mutedCats[c.id] = locked;
   });
 
   return (
@@ -1751,13 +1770,17 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
           {STORE_CATEGORIES.map((c) => {
             const active = filter === c.id;
             const muted = mutedCats[c.id];
+            const locked = lockedCats[c.id];
             return (
               <button
                 key={c.id}
-                onClick={() => setFilter(c.id)}
-                className={'store-cat-btn' + (active ? ' is-active' : '') + (muted ? ' is-muted' : '')}
+                type="button"
+                disabled={!!locked}
+                aria-disabled={locked ? 'true' : undefined}
+                onClick={() => { if (!locked) setFilter(c.id); }}
+                className={'store-cat-btn' + (active ? ' is-active' : '') + (muted ? ' is-muted' : '') + (locked ? ' is-locked' : '')}
                 style={{
-                  border: 'none', cursor: 'pointer',
+                  border: 'none', cursor: locked ? 'not-allowed' : 'pointer',
                   fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
                   letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   borderRadius: 'var(--radius-sm)',

@@ -1636,7 +1636,14 @@ function isPhysicalFulfillment(ft) {
 // Auto-pause at local midnight Indianapolis on Aug 19, 2026.
 // Sanity switch: false = pause now; true = selling (also the way to resume after the trip); unset = follow this date.
 const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
-const PHYSICAL_PAUSED_COPY = "I'm out of the country, so I can't ship physical goods right now. Digital downloads are still available.";
+const PHYSICAL_PAUSED_COPY = "I'm out of the country, so I can't ship physical goods right now. Digital downloads are still available. Please send me an email for any inquiries.";
+
+function physicalPauseCopy(custom) {
+  const c = String(custom || '').trim();
+  if (!c) return PHYSICAL_PAUSED_COPY;
+  if (/please send me an email/i.test(c)) return c;
+  return c.replace(/\s+$/, '') + ' Please send me an email for any inquiries.';
+}
 
 function arePhysicalOrdersLive(flag) {
   if (flag === false) return false;
@@ -1686,7 +1693,7 @@ function PhysicalPauseNotice({ message, compact }) {
         fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)',
         margin: 0, lineHeight: 1.5,
       }}>
-        {message || PHYSICAL_PAUSED_COPY}
+        {physicalPauseCopy(message)}
       </p>
     </div>
   );
@@ -2490,7 +2497,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       return;
     }
     if (shippingBlocked) {
-      setCheckoutError(physicalOrdersPausedMessage || (PHYSICAL_PAUSED_COPY + ' Remove them from your bag to continue.'));
+      setCheckoutError(physicalPauseCopy(physicalOrdersPausedMessage) + ' Remove them from your bag to continue.');
       return;
     }
     if (totalCents <= 0) {
@@ -2627,7 +2634,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
           <div style={{ margin: '0 0 16px' }}>
             <PhysicalPauseNotice
               compact
-              message={(physicalOrdersPausedMessage || PHYSICAL_PAUSED_COPY) + ' Remove them from your bag to continue.'}
+              message={physicalPauseCopy(physicalOrdersPausedMessage) + ' Remove them from your bag to continue.'}
             />
           </div>
         ) : hasPhysical ? (

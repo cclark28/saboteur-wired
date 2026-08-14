@@ -840,7 +840,7 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   );
   return (
     <a
-      href="/store"
+      href="/store?tab=comics"
       aria-label="Saboteur Comics store"
       title="Store — Comics"
       onClick={handleClick}
@@ -1747,10 +1747,12 @@ function productImageUrl(p) {
 function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
-  const firstFilter = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory) && !isStoreCategoryLocked(products, initialCategory, physicalOrdersEnabled)) ? initialCategory : firstUnlocked;
+  // Honor an explicit deep link (?tab=comics) even if that tab is locked (travel pause).
+  const requested = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : null;
+  const firstFilter = requested || firstUnlocked;
   const [filter, setFilter] = useState(firstFilter);
   useEffect(() => {
-    const next = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory) && !isStoreCategoryLocked(products, initialCategory, physicalOrdersEnabled)) ? initialCategory : firstUnlocked;
+    const next = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : firstUnlocked;
     setFilter(next);
   }, [initialCategory, firstUnlocked, products, physicalOrdersEnabled]);
   const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
@@ -4012,7 +4014,7 @@ function App() {
   const goStoreComics = () => {
     closeMenu();
     setAboutOpen(false);
-    navigate({ page: 'store', storeResetKey: Date.now() });
+    navigate({ page: 'store', storeCategory: 'comics', storeResetKey: Date.now() });
     window.scrollTo(0, 0);
   };
   const openAbout = () => {
@@ -4504,8 +4506,16 @@ function App() {
         localStorage.setItem('saboteur-age-verified', 'true');
       } catch {}
       setAgeVerified(true);
-      // Replace the current history entry so the age gate itself is never in the stack
-      navigate({ page: 'home' }, { replace: true });
+      // Keep the URL they arrived on (e.g. /store?tab=comics). Re-read location so a
+      // fast confirm cannot wipe a deep link still sitting in the default home state.
+      const current = viewFromPath(window.location.pathname, window.location.search);
+      if (current.page === 'about') {
+        setView({ page: 'home' });
+        setAboutOpen(true);
+        try { window.history.replaceState({ page: 'home' }, '', '/about'); } catch (e) {}
+      } else {
+        navigate(current, { replace: true });
+      }
     }}
     data={ageGateData}
   />

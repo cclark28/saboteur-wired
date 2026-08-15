@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/cms",
-      "destination": "/api/cms"
+      "destination": "https://saboteur-api.vercel.app/api/cms"
     },
     { "source": "/((?!api/|cms).*)", "destination": "/index.html" }
   ]

@@ -719,7 +719,7 @@ function Placeholder({ size, label, imageUrl, videoUrl }) {
 
 
 
-function Logo({ size = 160, onClick, forceLight }) {
+function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   const [pressed, setPressed] = useState(false);
   const clickable = typeof onClick === 'function';
   const img = (
@@ -749,8 +749,8 @@ function Logo({ size = 160, onClick, forceLight }) {
   return (
     <a
       href="/"
-      aria-label="Saboteur home"
-      title="Home"
+      aria-label={title === 'Refresh' ? 'Refresh homepage' : 'Saboteur home'}
+      title={title}
       onClick={(e) => {
         e.preventDefault();
         setPressed(true);
@@ -1633,12 +1633,12 @@ const colBox = {
 
 
 
-function Home({ onMenu, onOpen, onContact, onTag, onHome, items, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
+function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
   return (
     <div>
       <TopBar onMenu={onMenu} hero onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Logo size={220} onClick={onHome} />
+        <Logo size={220} onClick={onRefresh || onHome} title="Refresh" />
       </div>
       <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
         <InfiniteGrid baseItems={items} onOpen={onOpen} />
@@ -4066,6 +4066,13 @@ function App() {
   }, [ageVerified, view.page, landingDone, loading]);
 
   const goHome = () => { closeMenu(); setAboutOpen(false); navigate({ page: 'home' }); window.scrollTo(0, 0); };
+  const refreshHome = React.useCallback(() => {
+    setItems((prev) => {
+      const list = prev && prev.home;
+      if (!list || !list.length) return prev;
+      return { ...prev, home: shuffle(list) };
+    });
+  }, []);
   const goStoreComics = () => {
     closeMenu();
     setAboutOpen(false);
@@ -4238,7 +4245,7 @@ function App() {
       <div className="sr-only" aria-live="polite" aria-atomic="true">{labelForView(view)}</div>
       <main id="main">
 
-      {!loading && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {!loading && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && navSections.filter((sec) => !sec.isInfoPage && sec.slug !== 'store').map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />))}
       {!loading && view.page === 'store' && (
         <StoreGrid

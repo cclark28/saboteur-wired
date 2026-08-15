@@ -313,6 +313,66 @@
       will-change: transform;
     }
   }
+
+  /* ——— Messenger 404 (XP desktop) ——— */
+  @keyframes msn404-tblink { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
+  @keyframes msn404-prog { from { transform: translateX(-100%) } to { transform: translateX(320%) } }
+  @keyframes msn404-fade { from { opacity: 0 } to { opacity: 1 } }
+  .msn404 {
+    position: relative;
+    min-height: 100vh;
+    background: #0B1020;
+    font-family: Tahoma, Verdana, Geneva, sans-serif;
+    color: #18181B;
+    overflow: hidden;
+  }
+  .msn404 a { color: #0033AA; }
+  .msn404 a:hover { color: #FF4D00; }
+  .msn404 button:focus-visible,
+  .msn404 a:focus-visible {
+    outline: 2px solid #18181B;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+  .msn404-primary:hover { background: #FF6222 !important; color: #18181B !important; }
+  .msn404-ghost:hover { border-color: #18181B !important; }
+  .msn404-ghost-dark:hover { border-color: #FFFFFF !important; color: #FFFFFF !important; }
+  .msn404-startitem:hover { background: #0353E6; color: #FFFFFF; }
+  .msn404-startbtn:hover {
+    background: linear-gradient(180deg, #6CBE47 0%, #357F14 100%) !important;
+  }
+  .msn404-typing { animation: msn404-tblink 1.4s ease-in-out infinite; }
+  .msn404-prog {
+    height: 100%;
+    width: 30%;
+    background: repeating-linear-gradient(90deg, #0353E6 0 8px, #FFFFFF 8px 11px);
+    animation: msn404-prog 1.1s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .msn404-typing, .msn404-prog { animation: none !important; }
+  }
+  @media (max-width: 900px) {
+    .msn404-desk {
+      display: flex !important;
+      flex-direction: column;
+      gap: 14px;
+      padding: 14px 12px 60px !important;
+      min-height: 0 !important;
+      height: auto !important;
+    }
+    .msn404-win {
+      position: static !important;
+      width: 100% !important;
+      max-width: 520px;
+      margin: 0 auto !important;
+      left: auto !important;
+      top: auto !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,.5) !important;
+    }
+    .msn404-drag { cursor: default !important; }
+    .msn404-log { height: 180px !important; }
+    .msn404-stub { display: none !important; }
+  }
 </style>
 
 <script type="application/ld+json">
@@ -444,6 +504,14 @@ function pathFromView(view) {
   if (p === 'resend') return '/resend';
   if (p === 'checkout') return '/checkout';
   if (p === 'order-success') return '/order-success';
+  if (p === 'not-found') {
+    try {
+      const cur = (typeof window !== 'undefined' && window.location && window.location.pathname) || '';
+      const clean = String(cur).replace(/\/+$/, '');
+      if (clean && clean !== '/') return clean;
+    } catch (e) {}
+    return '/404';
+  }
   if (p === 'tag' || p === 'item') return '/';
   // section pages
   if (p && typeof p === 'string') return '/' + encodeURIComponent(p);
@@ -460,6 +528,7 @@ function viewFromPath(pathname, search) {
   let path = (pathname || '/').split('?')[0];
   path = path.replace(/\/+$/, '') || '/';
   if (path === '/' || path === '') return { page: 'home' };
+  if (path === '/404' || path === '/not-found') return { page: 'not-found' };
   if (path === '/store') {
     let storeCategory;
     try {
@@ -483,9 +552,32 @@ function viewFromPath(pathname, search) {
   if (path === '/resend') return { page: 'resend' };
   if (path === '/checkout') return { page: 'checkout' };
   if (path === '/order-success') return { page: 'order-success' };
-  const seg = path.slice(1);
-  if (seg && seg.indexOf('/') === -1) return { page: seg };
-  return { page: 'home' };
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length === 1) return { page: parts[0] };
+  return { page: 'not-found' };
+}
+
+const KNOWN_VIEW_PAGES = {
+  home: 1, store: 1, product: 1, about: 1, info: 1, contact: 1,
+  resend: 1, checkout: 1, 'order-success': 1, tag: 1, item: 1, 'not-found': 1,
+};
+
+// Real section slugs stay pages even if Sanity is slow or /cms is missing (local serve).
+const RESERVED_SECTION_SLUGS = {
+  photography: 1,
+  art: 1,
+  explorations: 1,
+  'figure-studies': 1,
+  'info-contact': 1,
+};
+
+function isNotFoundView(view, navSections, loading) {
+  if (!view || !view.page) return false;
+  if (view.page === 'not-found') return true;
+  if (loading) return false;
+  if (KNOWN_VIEW_PAGES[view.page]) return false;
+  if (RESERVED_SECTION_SLUGS[view.page]) return false;
+  return !(navSections || []).some((s) => s && s.slug === view.page);
 }
 
 // ---------- Sanity ----------
@@ -3575,7 +3667,768 @@ function labelForView(view) {
   if (view.page === 'checkout') return 'Checkout';
   if (view.page === 'resend') return 'Re-send downloads';
   if (view.page === 'order-success') return 'Order confirmation';
+  if (view.page === 'not-found') return 'Page not found';
   return view.page || 'Home';
+}
+
+const MSN404_SCRIPTS = [
+  [['A','my mum played my cd backwards'],['S','what did it say'],['A','she says it said "serve the beast"'],['S','what album'],['A','the cranberries'],['S','linger?'],['A','linger'],['S','played backwards'],['A','on a cd player'],['S','you cant play a cd backwards'],['A','i KNOW'],['S','how did she even'],['A','she says she used her spirit'],['S','right'],['A','anyway she binned it'],['S','was it your cd'],['A','it was HERS']],
+  [['S','did you know the washing up liquid logo is satanic'],['A','no'],['S','the man in the moon'],['S','count the stars'],['A','how many'],['S','thirteen'],['A','and'],['S','thirteen'],['A','yes you said'],['S','THIRTEEN'],['A','is that a lot of stars'],['S','its the WRONG amount of stars'],['A','my nan has had that bottle since 1994'],['S','your nan is compromised'],['A','my nan is 81']],
+  [['A','kev got his dice taken off him'],['S','for what'],['A','his mum read a pamphlet'],['S','which one'],['A','the one where dungeons and dragons is a recruitment tool'],['S','for what'],['A','for hell'],['S','kev cant do fractions'],['A','thats what i said'],['S','hell has standards'],['A','she burnt the players handbook'],['S','thats £24.99'],['A','she burnt £24.99']],
+  [['S','every barcode has 666 in it'],['A','says who'],['S','says the guard bars'],['A','whats a guard bar'],['S','the thin ones at the ends'],['A','and theyre sixes'],['S','theyre SHAPED like sixes'],['A','so is a 5'],['S','dont'],['A','so is a 9 upside down'],['S','DONT'],['A','im just saying numbers have shapes']],
+  [['A','pokemon is banned at my school now'],['S','why'],['A','evolution'],['S','the cards evolve'],['A','yes'],['S','thats the entire game'],['A','mrs tolley says its a gateway'],['S','to what'],['A','to darwin'],['S','i thought you were going to say hell'],['A','hell is thursday'],['A','today is darwin']],
+  [['A','the page you sent me is gone'],['S','which page'],['A','the saboteur one'],['S','gone gone?'],['A','it says 404'],['S','they got to it'],['A','who'],['S','you know who'],['A','the webmaster?'],['S','THE WEBMASTER'],['A','he had a stroke in march'],['S','convenient']]
+];
+
+const MSN404_ERRORS = [
+  ['Error 404 — page not found', "This page was here. Now it isn't. We're not saying anything happened to it."],
+  ['Error 404 — page not found', 'The address is wrong, the page moved, or your email client put a dash in the middle of the URL again.'],
+  ['Cannot find server', 'The page might be unavailable. You might also just be wrong.'],
+  ['Error 404 — page not found', 'This page has left the conversation.'],
+  ['Error 404 — page not found', "The item you're looking for has been removed by somebody's mother."],
+  ['Error 404 — page not found', "We checked twice. Kev checked once, but Kev also can't do fractions."],
+  ['Error 404 — page not found', 'The resource is unavailable. It may have evolved into a different page.'],
+  ['Error 404 — page not found', 'Nothing is here. The homepage, by contrast, is extremely here.']
+];
+
+const MSN404_NAMES = { A: '~*~Assslayer~*~', S: 'xXSaboteurXx' };
+
+const MSN404_ONLINE = [
+  ['~*~Assslayer~*~', 'on'], ['xXSaboteurXx', 'on'], ['Kev_no_dice', 'on'], ['backmask_mum', 'on'],
+  ['(f) Waffl (f)', 'on'], ['BabyGirl', 'on'], ['~ toxicwaste ~', 'on'], ['G2G', 'on'], ['nan81', 'on'],
+  ['d20_confiscated', 'on'], ['MoshPit_Marcus', 'on'],
+  ['PastorDan_', 'away'], ['shira', 'away'], ['LiSaAaA', 'busy']
+];
+const MSN404_OFFLINE = ['webmaster@saboteur', 'MomsAgainstEverything', 'Steve_56k', 'jackie_ballew'];
+
+const MSN404_START = [
+  { href: '/', label: 'saboteur.one', icon: 'home', strong: true },
+  { href: '/store', label: 'Store', icon: 'bag' },
+  { href: '/art', label: 'Art', icon: 'art' },
+  { href: '/photography', label: 'Photography', icon: 'cam' },
+  { href: '/explorations', label: 'Explorations', icon: 'stack' },
+  { href: '/about', label: 'Info / Contact', icon: 'mail' },
+];
+
+function MsnIcon({ name, size }) {
+  const s = size || 14;
+  const common = { viewBox: '0 0 16 16', width: s, height: s, 'aria-hidden': 'true' };
+  if (name === 'bubbles') return (
+    <svg {...common}>
+      <rect x="1" y="2" width="10" height="7" rx="2" fill="#8FC0FF" stroke="#0B2E7A" strokeWidth="1"/>
+      <rect x="5" y="6" width="10" height="7" rx="2" fill="#8FE08A" stroke="#1D5C16" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'mail') return (
+    <svg {...common}>
+      <rect x="1" y="3.5" width="14" height="9" fill="#FFFFFF" stroke="#0353E6" strokeWidth="1.4"/>
+      <path d="M1.6 4.2 L8 9 L14.4 4.2" fill="none" stroke="#0353E6" strokeWidth="1.4"/>
+    </svg>
+  );
+  if (name === 'add') return (
+    <svg {...common}>
+      <circle cx="6" cy="5" r="2.6" fill="#8CA0B8" stroke="#3E4E60" strokeWidth="1"/>
+      <path d="M1.6 14 C2 9.8 4 8.6 6 8.6 C8 8.6 10 9.8 10.4 14 Z" fill="#8CA0B8" stroke="#3E4E60" strokeWidth="1"/>
+      <path d="M12.5 8 v5 M10 10.5 h5" stroke="#2E9B2E" strokeWidth="2.2" strokeLinecap="round"/>
+    </svg>
+  );
+  if (name === 'im') return (
+    <svg {...common}>
+      <rect x="1" y="3" width="12" height="8" rx="2" fill="#FFFFFF" stroke="#0353E6" strokeWidth="1.3"/>
+      <path d="M8 13 L11 11 L14 14" fill="none" stroke="#C08A20" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+  if (name === 'file') return (
+    <svg {...common}>
+      <path d="M1.5 4 h4.5 l1.4 1.6 H14.5 V13 H1.5 Z" fill="#E8C05A" stroke="#8A6A12" strokeWidth="1.1"/>
+      <rect x="8.5" y="7.5" width="5" height="4" fill="#FFFFFF" stroke="#8A6A12" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'search') return (
+    <svg {...common}>
+      <circle cx="6.8" cy="6.8" r="4.4" fill="#FFFFFF" stroke="#0353E6" strokeWidth="1.6"/>
+      <path d="M10 10 L14.5 14.5" stroke="#0353E6" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+  if (name === 'on') return (
+    <svg {...common}>
+      <circle cx="8" cy="4.6" r="2.8" fill="#2E9B2E" stroke="#14610F" strokeWidth="1"/>
+      <path d="M2.6 14.5 C3.1 9.9 5.4 8.6 8 8.6 C10.6 8.6 12.9 9.9 13.4 14.5 Z" fill="#2E9B2E" stroke="#14610F" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'away') return (
+    <svg {...common}>
+      <circle cx="8" cy="4.6" r="2.8" fill="#E8A020" stroke="#8A5B08" strokeWidth="1"/>
+      <path d="M2.6 14.5 C3.1 9.9 5.4 8.6 8 8.6 C10.6 8.6 12.9 9.9 13.4 14.5 Z" fill="#E8A020" stroke="#8A5B08" strokeWidth="1"/>
+      <circle cx="12.4" cy="11.6" r="3.2" fill="#FFFFFF" stroke="#8A5B08" strokeWidth="1"/>
+      <path d="M12.4 9.8 v2 h1.6" stroke="#8A5B08" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'busy') return (
+    <svg {...common}>
+      <circle cx="8" cy="4.6" r="2.8" fill="#C81E1E" stroke="#7C0D0D" strokeWidth="1"/>
+      <path d="M2.6 14.5 C3.1 9.9 5.4 8.6 8 8.6 C10.6 8.6 12.9 9.9 13.4 14.5 Z" fill="#C81E1E" stroke="#7C0D0D" strokeWidth="1"/>
+      <rect x="5" y="11" width="6" height="2" fill="#FFFFFF"/>
+    </svg>
+  );
+  if (name === 'off') return (
+    <svg {...common}>
+      <circle cx="8" cy="4.6" r="2.8" fill="none" stroke="#9A9A9F" strokeWidth="1.3"/>
+      <path d="M2.6 14.5 C3.1 9.9 5.4 8.6 8 8.6 C10.6 8.6 12.9 9.9 13.4 14.5 Z" fill="none" stroke="#9A9A9F" strokeWidth="1.3"/>
+    </svg>
+  );
+  if (name === 'home') return (
+    <svg {...common}>
+      <path d="M8 1.6 L15 7 H1 Z" fill="#FF4D00" stroke="#B33600" strokeWidth="1"/>
+      <rect x="3.5" y="7" width="9" height="7" fill="#F2EEE2" stroke="#6B6B60" strokeWidth="1"/>
+      <rect x="6.6" y="9.6" width="2.8" height="4.4" fill="#8CA0B8" stroke="#3E4E60" strokeWidth=".9"/>
+    </svg>
+  );
+  if (name === 'bag') return (
+    <svg {...common}>
+      <path d="M5.4 5.4 V4.2 a2.6 2.6 0 0 1 5.2 0 V5.4" fill="none" stroke="#3E4E60" strokeWidth="1.2"/>
+      <rect x="2.4" y="5.4" width="11.2" height="9" fill="#C9B98E" stroke="#6B6B60" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'cam') return (
+    <svg {...common}>
+      <rect x="1.4" y="4.4" width="13.2" height="9.2" fill="#5D6A78" stroke="#2F3843" strokeWidth="1"/>
+      <rect x="5.4" y="2.6" width="4" height="2" fill="#5D6A78" stroke="#2F3843" strokeWidth="1"/>
+      <circle cx="8" cy="9" r="3" fill="#D9E6F2" stroke="#2F3843" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'stack') return (
+    <svg {...common}>
+      <rect x="1.4" y="7.4" width="10" height="6.6" fill="#B9C6D4" stroke="#3E4E60" strokeWidth="1"/>
+      <rect x="3.4" y="5" width="10" height="6.6" fill="#D9E3EC" stroke="#3E4E60" strokeWidth="1"/>
+      <rect x="5" y="2.4" width="9.6" height="6.6" fill="#FFFFFF" stroke="#3E4E60" strokeWidth="1"/>
+    </svg>
+  );
+  if (name === 'art') return (
+    <svg {...common}>
+      <rect x="1.6" y="2.6" width="12.8" height="10.8" fill="#FFFFFF" stroke="#3E4E60" strokeWidth="1.1"/>
+      <path d="M8 2.6 V13.4 M1.6 8 H14.4" stroke="#3E4E60" strokeWidth="1"/>
+      <rect x="2.6" y="3.6" width="4.4" height="3.4" fill="#FFD34D"/>
+    </svg>
+  );
+  if (name === 'power') return (
+    <svg {...common}>
+      <path d="M12.2 4.2 a6 6 0 1 1 -8.4 0" fill="none" stroke="#C81E1E" strokeWidth="1.8"/>
+      <path d="M8 1.4 V7.4" stroke="#C81E1E" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+  return null;
+}
+
+function MsnCaption({ symbols }) {
+  return (
+    <span aria-hidden="true" style={{ display: 'flex', gap: 2 }}>
+      {(symbols || ['✕']).map((sym, i) => (
+        <span key={i} style={{
+          width: 16, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#3D82F4', border: '1px solid #FFFFFF', fontSize: 9, lineHeight: 1,
+        }}>{sym}</span>
+      ))}
+    </span>
+  );
+}
+
+function MsnPerson({ st }) {
+  if (st === 'away') return <MsnIcon name="away" />;
+  if (st === 'busy') return <MsnIcon name="busy" />;
+  if (st === 'off') return <MsnIcon name="off" />;
+  return <MsnIcon name="on" />;
+}
+
+function Messenger404() {
+  const logRef = React.useRef(null);
+  const menuRef = React.useRef(null);
+  const zTop = React.useRef(0);
+  const timers = React.useRef({});
+  const dropOrder = React.useRef([]);
+
+  const [shown, setShown] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [dropped, setDropped] = useState([]);
+  const [startOpen, setStartOpen] = useState(false);
+  const [clock, setClock] = useState('');
+  const [si, setSi] = useState(0);
+  const [ei, setEi] = useState(0);
+  const [tasks, setTasks] = useState(2);
+  const [power, setPower] = useState('on');
+
+  const tick = React.useCallback(() => {
+    const d = new Date();
+    const p = (n) => (n < 10 ? '0' + n : '' + n);
+    setClock(p(d.getHours()) + ':' + p(d.getMinutes()));
+  }, []);
+
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = '404 — Saboteur';
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.title = prevTitle;
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pick = Math.floor(Math.random() * MSN404_SCRIPTS.length);
+    const err = Math.floor(Math.random() * MSN404_ERRORS.length);
+    const order = MSN404_ONLINE.map((c, i) => i).filter((i) => MSN404_ONLINE[i][1] === 'on' && i > 1);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = order[i];
+      order[i] = order[j];
+      order[j] = t;
+    }
+    dropOrder.current = order;
+    setSi(pick);
+    setEi(err);
+    setTasks(2 + Math.floor(Math.random() * 3));
+    tick();
+    timers.current.clock = setInterval(tick, 15000);
+
+    const jitter = () => {
+      if (window.innerWidth < 900) return;
+      const j = () => Math.round((Math.random() * 40) - 20);
+      document.querySelectorAll('[data-msn-jitter]').forEach((el) => {
+        el.style.marginLeft = j() + 'px';
+        el.style.marginTop = j() + 'px';
+      });
+    };
+
+    const onDown = (e) => {
+      if (window.innerWidth < 900) return;
+      const handle = e.target.closest && e.target.closest('[data-msn-drag]');
+      if (!handle) return;
+      const win = handle.closest('[data-msn-win]');
+      if (!win) return;
+      const r = win.getBoundingClientRect();
+      const parent = win.offsetParent || win.parentElement;
+      const pr = parent.getBoundingClientRect();
+      const dx = e.clientX - r.left;
+      const dy = e.clientY - r.top;
+      win.style.margin = '0';
+      zTop.current += 1;
+      win.style.zIndex = String(100 + zTop.current);
+      const move = (ev) => {
+        win.style.left = Math.max(0, ev.clientX - pr.left - dx) + 'px';
+        win.style.top = Math.max(0, ev.clientY - pr.top - dy) + 'px';
+      };
+      const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+      e.preventDefault();
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') setStartOpen(false);
+    };
+
+    if (!reduced) {
+      jitter();
+      document.addEventListener('mousedown', onDown);
+      window.addEventListener('keydown', onKey);
+      const script = MSN404_SCRIPTS[pick];
+      const step = (i) => {
+        if (i >= script.length) {
+          setTyping(false);
+          setEnded(true);
+          return;
+        }
+        const punch = i >= script.length - 2 || script[i][1].length > 34;
+        const gap = punch ? 1900 + Math.random() * 500 : 1200 + Math.random() * 700;
+        setTyping(true);
+        timers.current.msg = setTimeout(() => {
+          const nextShown = i + 1;
+          setShown(nextShown);
+          setTyping(false);
+          setDropped((prev) => {
+            if (nextShown > Math.floor(script.length * 0.66)) {
+              return dropOrder.current.slice(0, Math.min(prev.length + 1, dropOrder.current.length - 1));
+            }
+            return prev;
+          });
+          step(nextShown);
+        }, gap);
+      };
+      step(0);
+    } else {
+      setShown(MSN404_SCRIPTS[pick].length);
+      setEnded(true);
+    }
+
+    return () => {
+      clearInterval(timers.current.clock);
+      clearTimeout(timers.current.msg);
+      clearTimeout(timers.current.off);
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [tick]);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [shown, typing, ended]);
+
+  useEffect(() => {
+    if (!startOpen) return;
+    const onDoc = (e) => {
+      if (menuRef.current && menuRef.current.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('[data-msn-start]')) return;
+      setStartOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [startOpen]);
+
+  const shutDown = () => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setStartOpen(false);
+    if (reduced) {
+      setPower('off');
+      return;
+    }
+    setPower('closing');
+    clearTimeout(timers.current.off);
+    timers.current.off = setTimeout(() => setPower('off'), 2200);
+  };
+
+  const powerOn = () => {
+    clearTimeout(timers.current.off);
+    setPower('on');
+  };
+
+  const script = MSN404_SCRIPTS[si] || MSN404_SCRIPTS[0];
+  const err = MSN404_ERRORS[ei] || MSN404_ERRORS[0];
+  const msgs = script.slice(0, shown).map((m) => ({
+    head: MSN404_NAMES[m[0]] + ' says:',
+    text: m[1],
+  }));
+  const nextSpeaker = script[shown] ? MSN404_NAMES[script[shown][0]] : MSN404_NAMES.S;
+  const gone = ended ? dropped.concat([1]) : dropped;
+  const onList = MSN404_ONLINE
+    .map((c, i) => ({ name: c[0], i, st: c[1] }))
+    .filter((c) => gone.indexOf(c.i) === -1);
+  const offList = gone.map((i) => ({ name: MSN404_ONLINE[i][0] }))
+    .concat(MSN404_OFFLINE.map((n) => ({ name: n })));
+
+  const titlebar = {
+    cursor: 'move',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    background: 'linear-gradient(180deg,#0353E6 0%,#0057EC 52%,#0567FF 100%)',
+    border: '1px solid #2163EF',
+    borderBottom: 'none',
+    padding: '4px 4px 4px 7px',
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 700,
+  };
+  const menubar = {
+    background: '#DCE5E0',
+    borderLeft: '1px solid #2163EF',
+    borderRight: '1px solid #2163EF',
+    display: 'flex',
+    gap: 14,
+    padding: '3px 8px',
+    fontSize: 11,
+    color: '#18181B',
+  };
+  const xpBtn = {
+    display: 'block',
+    background: 'linear-gradient(180deg,#FDFDFD 0%,#ECE9D8 100%)',
+    border: '1px solid #7B7B6E',
+    borderRadius: 3,
+    padding: '5px 16px',
+    fontSize: 11,
+    color: '#18181B',
+    textDecoration: 'none',
+    minWidth: 96,
+    textAlign: 'center',
+  };
+  const xpPrimary = {
+    ...xpBtn,
+    background: '#FF4D00',
+    border: '1px solid #C43B00',
+    fontWeight: 700,
+  };
+
+  return (
+    <div className="msn404" data-msn404="1">
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
+        <img
+          src="/assets/amelia-paper-cracks-full.jpg"
+          alt=""
+          width="2160"
+          height="1080"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      </div>
+
+      <div className="msn404-desk" style={{ position: 'relative', zIndex: 1, minHeight: 'min(100vh,700px)', height: 700, padding: '0 0 40px' }}>
+        <div
+          className="msn404-win"
+          data-msn-win="1"
+          data-msn-jitter="1"
+          role="alertdialog"
+          aria-labelledby="msn404-err-title"
+          style={{ position: 'absolute', left: '19%', top: 452, width: 428, zIndex: 60, boxShadow: '3px 3px 12px rgba(0,0,0,.55)' }}
+        >
+          <div style={titlebar}>
+            <span>saboteur.one</span>
+            <MsnCaption symbols={['✕']} />
+          </div>
+          <div style={{ background: '#ECE9D8', border: '1px solid #ACA899', borderTop: 'none', padding: '18px 16px 12px' }}>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true" style={{ flex: '0 0 auto' }}>
+                <circle cx="16" cy="16" r="14" fill="#C81E1E" stroke="#8E0F0F" strokeWidth="1.5"/>
+                <circle cx="16" cy="16" r="14" fill="url(#msn404g)" opacity=".35"/>
+                <defs>
+                  <linearGradient id="msn404g" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#FFFFFF"/>
+                    <stop offset="1" stopColor="#FFFFFF" stopOpacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M11 11 L21 21 M21 11 L11 21" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round"/>
+              </svg>
+              <div style={{ fontSize: 11, lineHeight: 1.55, color: '#18181B', paddingTop: 1 }}>
+                <h1 id="msn404-err-title" style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, letterSpacing: 0 }}>{err[0]}</h1>
+                <p style={{ margin: 0, maxWidth: 330 }}>{err[1]}</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <a href="/store" className="msn404-ghost" style={xpBtn}>Browse the shop</a>
+              <a href="/" className="msn404-primary" style={xpPrimary}>Go to homepage</a>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="msn404-stub"
+          style={{ position: 'absolute', left: 'calc(6% + 34px)', top: 26, width: 452, zIndex: 18, boxShadow: '3px 3px 12px rgba(0,0,0,.5)' }}
+        >
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'linear-gradient(180deg,#4D8BEE 0%,#3C7BE0 100%)',
+            border: '1px solid #2163EF', padding: '4px 4px 4px 7px',
+            color: '#E7EEFF', fontSize: 11, fontWeight: 700,
+          }}>
+            <span>backmask_mum - Conversation</span>
+            <span aria-hidden="true" style={{ display: 'flex', gap: 2 }}>
+              <span style={{
+                width: 16, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#6C9EF2', border: '1px solid #D8E4FF', fontSize: 9, lineHeight: 1,
+              }}>✕</span>
+            </span>
+          </div>
+          <div style={{ height: 26, background: '#DCE5E0', border: '1px solid #2163EF', borderTop: 'none' }} />
+        </div>
+
+        <div
+          className="msn404-win"
+          data-msn-win="1"
+          data-msn-jitter="1"
+          style={{ position: 'absolute', left: '6%', top: 60, width: 452, zIndex: 20, boxShadow: '3px 3px 14px rgba(0,0,0,.55)' }}
+        >
+          <div data-msn-drag="1" className="msn404-drag" style={titlebar}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <MsnIcon name="bubbles" />
+              ~*~Assslayer~*~ - Conversation
+            </span>
+            <MsnCaption symbols={['_', '▢', '✕']} />
+          </div>
+          <div style={menubar}>
+            <span>File</span><span>Edit</span><span>View</span><span>Actions</span><span>Tools</span><span>Help</span>
+          </div>
+          <div style={{
+            background: '#F8FDFF', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF',
+            borderBottom: '1px solid #B7C7D8', padding: '6px 8px', fontSize: 11, color: '#18181B',
+          }}>To: ~*~Assslayer~*~ &lt;assslayer@hotmail.com&gt;</div>
+          <div style={{ background: '#ECE9D8', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF', padding: 8 }}>
+            <div
+              ref={logRef}
+              className="msn404-log"
+              aria-live="polite"
+              style={{
+                height: 232, overflowY: 'auto', background: '#FFFFFF',
+                borderTop: '1px solid #7B8A99', borderLeft: '1px solid #7B8A99',
+                borderRight: '1px solid #FFFFFF', borderBottom: '1px solid #FFFFFF',
+                padding: '8px 10px', fontSize: 11, lineHeight: 1.5, color: '#18181B',
+              }}
+            >
+              {msgs.map((m, i) => (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div style={{ color: '#0033AA', fontWeight: 700 }}>{m.head}</div>
+                  <div style={{ paddingLeft: 10 }}>{m.text}</div>
+                </div>
+              ))}
+              {typing && (
+                <div className="msn404-typing" style={{ color: '#666666', fontSize: 11 }}>
+                  {nextSpeaker} is typing a message.
+                </div>
+              )}
+              {ended && (
+                <div style={{ color: '#666666', fontStyle: 'italic', marginTop: 8 }}>
+                  xXSaboteurXx has been disconnected.
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <div style={{
+                flex: 1, height: 52, background: '#FFFFFF',
+                borderTop: '1px solid #7B8A99', borderLeft: '1px solid #7B8A99',
+                borderRight: '1px solid #FFFFFF', borderBottom: '1px solid #FFFFFF',
+                padding: '6px 8px', fontSize: 11, color: '#9A9A9A',
+              }}>Type message here</div>
+              <button type="button" disabled style={{
+                background: '#ECE9D8', border: '1px solid #ACA899', borderRadius: 3,
+                padding: '5px 18px', fontSize: 11, color: '#9A9A9A',
+                fontFamily: 'inherit', cursor: 'default',
+              }}>Send</button>
+            </div>
+          </div>
+          <div style={{
+            background: '#ECE9D8', border: '1px solid #2163EF', borderTop: '1px solid #ACA899',
+            padding: '4px 8px', fontSize: 11, color: '#4A4A50',
+          }}>Last message received on 28/09/2001 at 22:41.</div>
+        </div>
+
+        <div
+          className="msn404-win"
+          data-msn-win="1"
+          data-msn-jitter="1"
+          style={{ position: 'absolute', left: 'calc(6% + 476px)', top: 34, width: 244, zIndex: 22, boxShadow: '3px 3px 14px rgba(0,0,0,.55)' }}
+        >
+          <div data-msn-drag="1" className="msn404-drag" style={titlebar}>
+            <span>Messenger</span>
+            <MsnCaption symbols={['_', '✕']} />
+          </div>
+          <div style={{ ...menubar, gap: 12 }}>
+            <span>File</span><span>Contacts</span><span>Tools</span><span>Help</span>
+          </div>
+          <div style={{
+            display: 'flex', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF',
+            borderBottom: '1px solid #2163EF', background: '#FFFFFF',
+          }}>
+            <div style={{
+              flex: '0 0 30px', background: '#CEE6E8', display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 10, padding: '8px 0', borderRight: '1px solid #A9C6C9',
+            }}>
+              <MsnIcon name="bubbles" size={16} />
+              <MsnIcon name="mail" size={16} />
+              <MsnIcon name="add" size={16} />
+              <MsnIcon name="im" size={16} />
+              <MsnIcon name="file" size={16} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ background: '#F8FDFF', borderBottom: '1px solid #C7D8E4', padding: '7px 8px', fontSize: 11, color: '#18181B' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MsnIcon name="on" />
+                  <span><strong>Charlie</strong> (Online)</span>
+                </div>
+              </div>
+              <div style={{ padding: '6px 8px', fontSize: 11, borderBottom: '1px solid #C7D8E4', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <MsnIcon name="mail" />
+                <span style={{ color: '#0033AA' }}>No new e-mail messages</span>
+              </div>
+              <div style={{ background: '#FFFFFF', padding: '7px 8px 10px', fontSize: 11, minHeight: 250 }}>
+                <div style={{ color: '#1B4F9C', fontWeight: 700, marginBottom: 4 }}>Online ({onList.length})</div>
+                {onList.map((c) => (
+                  <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '1px 0 1px 4px', color: '#18181B' }}>
+                    <span style={{ flex: '0 0 auto' }}><MsnPerson st={c.st} /></span>
+                    <span>{c.name}</span>
+                    {c.st === 'away' && <span style={{ color: '#8A8A90' }}>(Away)</span>}
+                    {c.st === 'busy' && <span style={{ color: '#8A8A90' }}>(Busy)</span>}
+                  </div>
+                ))}
+                <div style={{ color: '#1B4F9C', fontWeight: 700, margin: '10px 0 4px' }}>Not Online ({offList.length})</div>
+                {offList.map((c) => (
+                  <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '1px 0 1px 4px', color: '#6B6B72' }}>
+                    <span style={{ flex: '0 0 auto' }}><MsnIcon name="off" /></span>
+                    <span>{c.name}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: '#E6EDF7', borderTop: '1px solid #C0CFE4', padding: 8, fontSize: 11, color: '#18181B' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>I want to...</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MsnIcon name="add" /><span style={{ color: '#0033AA' }}>Add a Contact</span></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MsnIcon name="im" /><span style={{ color: '#0033AA' }}>Send an Instant Message</span></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MsnIcon name="file" /><span style={{ color: '#0033AA' }}>Send a File or Photo</span></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MsnIcon name="search" /><span style={{ color: '#0033AA' }}>Search for a Contact</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {startOpen && (
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed', left: 0, bottom: 32, zIndex: 9100, width: 302,
+            display: 'flex', background: '#ECE9D8', border: '1px solid #2163EF',
+            borderBottom: 'none', boxShadow: '2px -2px 12px rgba(0,0,0,.5)',
+          }}
+        >
+          <div style={{
+            flex: '0 0 26px', background: '#032064', display: 'flex',
+            alignItems: 'flex-end', justifyContent: 'center', padding: '10px 0',
+          }}>
+            <span style={{
+              writingMode: 'vertical-rl', transform: 'rotate(180deg)',
+              color: '#FFFFFF', fontSize: 12, fontWeight: 700, letterSpacing: '.24em',
+            }}>SABOTEUR</span>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, padding: '6px 0 8px' }}>
+            {MSN404_START.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="msn404-startitem"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 9, padding: '7px 12px',
+                  fontSize: 11, fontWeight: item.strong ? 700 : 400, color: '#18181B',
+                  textDecoration: 'none',
+                }}
+              >
+                <MsnIcon name={item.icon} size={16} />
+                {item.label}
+              </a>
+            ))}
+            <div style={{ height: 1, background: '#ACA899', margin: '5px 10px' }} />
+            <button
+              type="button"
+              onClick={shutDown}
+              className="msn404-startitem"
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+                padding: '7px 12px', fontSize: 11, color: '#18181B',
+                background: 'transparent', border: 'none', fontFamily: 'inherit',
+                textAlign: 'left', cursor: 'pointer',
+              }}
+            >
+              <MsnIcon name="power" size={16} />
+              Shut Down
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9000, height: 32,
+        background: 'linear-gradient(180deg,#3F8CF3 0%,#245EDC 100%)',
+        borderTop: '1px solid #6FA8F8', display: 'flex', alignItems: 'center',
+        gap: 6, padding: '0 4px',
+      }}>
+        <button
+          type="button"
+          data-msn-start="1"
+          onClick={() => setStartOpen((v) => !v)}
+          aria-expanded={startOpen}
+          className="msn404-startbtn"
+          style={{
+            height: 26, display: 'flex', alignItems: 'center', gap: 6,
+            background: 'linear-gradient(180deg,#5CA83C 0%,#2E7010 100%)',
+            border: '1px solid #23560C', borderRadius: '0 8px 8px 0',
+            color: '#FFFFFF', fontFamily: 'inherit', fontSize: 13,
+            fontStyle: 'italic', fontWeight: 700, padding: '0 14px 0 10px', cursor: 'pointer',
+          }}
+        >start</button>
+        <div style={{ display: 'flex', gap: 4, minWidth: 0, overflow: 'hidden' }}>
+          <span style={{
+            display: 'flex', alignItems: 'center', gap: 6, height: 22,
+            background: '#1F51BC', border: '1px solid #1A46A2', color: '#E7EEFF',
+            fontSize: 11, padding: '0 10px', whiteSpace: 'nowrap',
+          }}>
+            <MsnIcon name="bubbles" size={12} />
+            {tasks} Conversations
+          </span>
+          <span style={{
+            display: 'flex', alignItems: 'center', gap: 6, height: 22,
+            background: '#1F51BC', border: '1px solid #1A46A2', color: '#E7EEFF',
+            fontSize: 11, padding: '0 10px', whiteSpace: 'nowrap',
+          }}>Messenger</span>
+        </div>
+        <div style={{
+          marginLeft: 'auto', display: 'flex', alignItems: 'center', height: 22,
+          background: '#1B4CB4', border: '1px solid #1A46A2', color: '#FFFFFF',
+          fontSize: 11, padding: '0 10px',
+        }}>{clock}</div>
+      </div>
+
+      {power === 'closing' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9500, background: '#032064',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'msn404-fade .25s ease-out',
+        }}>
+          <div style={{ width: 300, background: '#ECE9D8', border: '1px solid #ACA899', boxShadow: '3px 3px 14px rgba(0,0,0,.5)' }}>
+            <div style={{
+              background: 'linear-gradient(180deg,#0353E6 0%,#0057EC 52%,#0567FF 100%)',
+              borderBottom: '1px solid #2163EF', padding: '4px 7px',
+              color: '#FFFFFF', fontSize: 11, fontWeight: 700,
+            }}>Shutting down</div>
+            <div style={{ padding: '16px 14px', fontSize: 11, color: '#18181B', lineHeight: 1.6 }}>
+              <div style={{ marginBottom: 12 }}>Ending {tasks} conversations...</div>
+              <div style={{ height: 14, border: '1px solid #7B8A99', background: '#FFFFFF', overflow: 'hidden' }}>
+                <div className="msn404-prog" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {power === 'off' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9600, background: '#000000',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 28, padding: 24, textAlign: 'center',
+          animation: 'msn404-fade .5s ease-out', overflow: 'hidden',
+        }}>
+          <div aria-hidden="true" style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(120% 80% at 50% 50%, rgba(20,20,24,.2) 0%, rgba(0,0,0,1) 100%)',
+          }} />
+          <div style={{
+            position: 'relative', fontFamily: 'Tahoma, Verdana, sans-serif',
+            fontSize: 'clamp(30px, 6.4vw, 84px)', fontWeight: 700, lineHeight: 1.02,
+            letterSpacing: '-.02em', color: '#FFFFFF', maxWidth: '14ch',
+            textShadow: '0 2px 24px rgba(0,0,0,.7)',
+          }}>
+            It is now safe to go <span style={{ color: '#FF4D00' }}>somewhere that exists</span>.
+          </div>
+          <div style={{ position: 'relative', display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <a href="/" className="msn404-primary" style={{ ...xpPrimary, padding: '9px 22px', fontSize: 12 }}>Go to homepage</a>
+            <a href="/store" className="msn404-ghost-dark" style={{
+              background: 'rgba(10,10,12,.75)', border: '1px solid #55555C', borderRadius: 3,
+              padding: '9px 22px', fontSize: 12, color: '#E7E7EA', textDecoration: 'none',
+            }}>Browse the shop</a>
+          </div>
+          <button
+            type="button"
+            onClick={powerOn}
+            style={{
+              position: 'relative', background: 'transparent', border: 'none',
+              color: '#9A9AA0', fontFamily: 'inherit', fontSize: 11,
+              cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >Turn it back on</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function App() {
@@ -4240,12 +5093,15 @@ function App() {
     return titles;
   }, [navSections]);
 
+  const showNotFound = isNotFoundView(view, navSections, loading);
+
   return (
-    <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
-      <div className="sr-only" aria-live="polite" aria-atomic="true">{labelForView(view)}</div>
+    <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: showNotFound ? '#0B1020' : 'var(--color-paper)' }}>
+      <div className="sr-only" aria-live="polite" aria-atomic="true">{showNotFound ? 'Page not found' : labelForView(view)}</div>
       <main id="main">
 
-      {!loading && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {showNotFound && <Messenger404 />}
+      {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && navSections.filter((sec) => !sec.isInfoPage && sec.slug !== 'store').map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />))}
       {!loading && view.page === 'store' && (
         <StoreGrid
@@ -4361,7 +5217,7 @@ function App() {
       })} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, 'tag')} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && view.page === 'item' && <SingleItem series={view.series} allItems={(items[view.from] || items.home || [])} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={back} onOpen={(s) => openItem(s, view.from)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       </main>
-      {!loading && menuOpen && (
+      {!loading && !showNotFound && menuOpen && (
         <FullMenu
           activeSection={view.page === 'item' ? view.from : (view.page === 'product' ? 'store' : view.page)}
           onSelect={openSection}
@@ -4372,14 +5228,14 @@ function App() {
           links={menuLinks}
         />
       )}
-      {!loading && (
+      {!loading && !showNotFound && (
       <AboutFlyout
         open={aboutOpen}
         onClose={closeAbout}
         settings={siteSettings}
       />
       )}
-      {cartOpen && (
+      {!showNotFound && cartOpen && (
         <div
           style={{
             position: 'fixed',

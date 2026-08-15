@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/cms",
-      "destination": "https://6td8xalf.api.sanity.io/v2024-01-01/data/query/production"
+      "destination": "/api/cms"
     },
     { "source": "/((?!api/|cms).*)", "destination": "/index.html" }
   ]

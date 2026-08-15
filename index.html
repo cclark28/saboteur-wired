@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <title>Saboteur</title>
 <link rel="canonical" href="https://saboteur.one/">
-<link rel="icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg">
-<link rel="stylesheet" href="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/tokens/fonts.css">
+<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/logo.svg">
+<link rel="stylesheet" href="/tokens/fonts-plex.css">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
@@ -18,14 +18,14 @@
 <meta property="og:title" content="®Saboteur">
 <meta property="og:description" content="Experimental art studio. Photography, textures, and figure studies.">
 <meta property="og:url" content="https://saboteur.one">
-<meta property="og:image" content="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/og-share.jpg">
+<meta property="og:image" content="https://saboteur.one/assets/logo.svg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/jpeg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="®Saboteur">
 <meta name="twitter:description" content="Experimental art studio. Photography, textures, and figure studies.">
-<meta name="twitter:image" content="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/og-share.jpg">
+<meta name="twitter:image" content="https://saboteur.one/assets/logo.svg">
 <!-- Vercel Web Analytics (enabled in dashboard) -->
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -328,7 +328,7 @@
     "url": "https://saboteur.one",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg"
+      "url": "https://saboteur.one/assets/logo.svg"
     },
     "sameAs": [
       "https://www.instagram.com/saboteur.supply/",
@@ -724,7 +724,7 @@ function Logo({ size = 160, onClick, forceLight }) {
   const clickable = typeof onClick === 'function';
   const img = (
     <img
-      src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg"
+      src="/assets/logo.svg"
       alt="Saboteur"
       style={{
         width: size, display: 'block',
@@ -737,7 +737,7 @@ function Logo({ size = 160, onClick, forceLight }) {
   if (!clickable) {
     return (
       <img
-        src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/logo.svg"
+        src="/assets/logo.svg"
         alt="Saboteur"
         style={{
           width: size, display: 'block', cursor: 'default',
@@ -952,7 +952,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/search.svg" style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)', display: 'block' }} alt="" />
+              <img src="/assets/icons/search.svg" style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)', display: 'block' }} alt="" />
             </button>
             {searchOpen && (
               <input
@@ -1011,20 +1011,20 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
         </div>
         {showBack && (
           <button onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'} style={{ background: 'var(--back-btn-bg, var(--color-ink))', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', transition: 'background var(--duration-fast) var(--ease)' }}>
-            <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
+            <img src="/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
           </button>
         )}
         <button aria-label="Toggle dark mode" className="icon-btn" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>
-          <img src={dark ? 'https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/moon.svg' : 'https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/sun.svg'} style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
+          <img src={dark ? '/assets/icons/moon.svg' : '/assets/icons/sun.svg'} style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
         </button>
         <button aria-label="Open bag" className="icon-btn" onClick={() => { if (typeof onCartOpen === 'function') onCartOpen(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, position: 'relative' }}>
-          <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/cart.svg" style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
+          <img src="/assets/icons/cart.svg" style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
           {cartCount > 0 && (
             <span style={{ position: 'absolute', top: -4, right: -6, minWidth: 16, height: 16, borderRadius: 9999, background: 'var(--color-accent)', color: '#fff', fontFamily: 'var(--font-family-mono)', fontSize: 9, fontWeight: 500, displayAlign: 'center', lineHeight: '16px', padding: '0 4px' }}>{cartCount > 99 ? '99+' : cartCount}</span>
           )}
         </button>
         <button aria-label="Open menu" className="icon-btn" onClick={onMenu} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0 }}>
-          <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/menu.svg" style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
+          <img src="/assets/icons/menu.svg" style={{ width: 22, height: 22, filter: 'var(--logo-filter, none)' }} alt="" />
         </button>
       </div>
     </div>
@@ -1143,7 +1143,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/search.svg" width="22" height="22" style={{ width: 22, height: 22, display: 'block', filter: 'var(--logo-filter, none)' }} alt="" />
+                <img src="/assets/icons/search.svg" width="22" height="22" style={{ width: 22, height: 22, display: 'block', filter: 'var(--logo-filter, none)' }} alt="" />
               </button>
               {searchOpen && (
                 <input
@@ -1221,7 +1221,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
           </div>
 
           <button aria-label="Close menu" className="icon-btn" onClick={requestClose} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(90deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, width: 48, height: 48, transition: 'transform var(--duration-normal) var(--ease)' }}>
-            <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/close.svg" width="22" height="22" style={{ width: 22, height: 22, display: 'block', filter: 'var(--logo-filter, none)' }} alt="" />
+            <img src="/assets/icons/close.svg" width="22" height="22" style={{ width: 22, height: 22, display: 'block', filter: 'var(--logo-filter, none)' }} alt="" />
           </button>
         </div>
       </div>
@@ -4405,7 +4405,7 @@ function App() {
                 aria-label="Close bag"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0 }}
               >
-                <img src="https://pub-6aa495d760904bd3845ce50eafe53089.r2.dev/assets/icons/close.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
+                <img src="/assets/icons/close.svg" style={{ width: 24, height: 24, filter: 'var(--logo-filter, none)' }} alt="" />
               </button>
             </div>
             <div style={{ flex: 1, minHeight: 0, padding: cartCount === 0 ? '48px 24px' : '16px 24px 20px', display: 'flex', flexDirection: 'column', alignItems: cartCount === 0 ? 'center' : 'stretch', justifyContent: cartCount === 0 ? 'center' : 'flex-start', overflow: 'hidden' }}>

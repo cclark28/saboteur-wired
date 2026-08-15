@@ -341,6 +341,39 @@
   .msn404-startbtn:hover {
     background: linear-gradient(180deg, #6CBE47 0%, #357F14 100%) !important;
   }
+  .msn404-cap {
+    width: 16px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #3D82F4;
+    border: 1px solid #FFFFFF;
+    font-size: 9px;
+    line-height: 1;
+    color: #FFFFFF;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .msn404-cap:hover { background: #6BA0F8; }
+  .msn404-cap-close:hover { background: #C81E1E; }
+  .msn404-task {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    background: #1F51BC;
+    border: 1px solid #1A46A2;
+    color: #E7EEFF;
+    font-size: 11px;
+    padding: 0 10px;
+    white-space: nowrap;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .msn404-task:hover { background: #2A5FD0; }
+  .msn404-task.is-min { background: #3A72E0; }
   .msn404-typing { animation: msn404-tblink 1.4s ease-in-out infinite; }
   .msn404-prog {
     height: 100%;
@@ -3820,15 +3853,19 @@ function MsnIcon({ name, size }) {
   return null;
 }
 
-function MsnCaption({ symbols }) {
+function MsnCaption({ onMin, onMax, onClose }) {
+  const stop = (e) => { e.stopPropagation(); };
   return (
-    <span aria-hidden="true" style={{ display: 'flex', gap: 2 }}>
-      {(symbols || ['✕']).map((sym, i) => (
-        <span key={i} style={{
-          width: 16, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#3D82F4', border: '1px solid #FFFFFF', fontSize: 9, lineHeight: 1,
-        }}>{sym}</span>
-      ))}
+    <span data-msn-cap="1" style={{ display: 'flex', gap: 2 }} onMouseDown={stop}>
+      {onMin && (
+        <button type="button" className="msn404-cap" aria-label="Minimize" onClick={onMin}>_</button>
+      )}
+      {onMax && (
+        <button type="button" className="msn404-cap" aria-label="Maximize" onClick={onMax}>▢</button>
+      )}
+      {onClose && (
+        <button type="button" className="msn404-cap msn404-cap-close" aria-label="Close" onClick={onClose}>✕</button>
+      )}
     </span>
   );
 }
@@ -3857,6 +3894,29 @@ function Messenger404() {
   const [ei, setEi] = useState(0);
   const [tasks, setTasks] = useState(2);
   const [power, setPower] = useState('on');
+  const [wins, setWins] = useState({
+    error: { open: true, min: false, max: false, z: 80, left: null, top: null },
+    chat: { open: true, min: false, max: false, z: 40, left: null, top: null },
+    backmask: { open: true, min: false, max: false, z: 20, left: null, top: null },
+    messenger: { open: true, min: false, max: false, z: 30, left: null, top: null },
+  });
+  const raiseRef = React.useRef(() => {});
+
+  const raiseWin = React.useCallback((id) => {
+    zTop.current += 1;
+    const z = 100 + zTop.current;
+    setWins((w) => (w[id] ? { ...w, [id]: { ...w[id], z, min: false } } : w));
+  }, []);
+  raiseRef.current = raiseWin;
+
+  const closeWin = (id) => setWins((w) => (w[id] ? { ...w, [id]: { ...w[id], open: false, min: false } } : w));
+  const minWin = (id) => setWins((w) => (w[id] ? { ...w, [id]: { ...w[id], min: true } } : w));
+  const maxWin = (id) => setWins((w) => {
+    if (!w[id]) return w;
+    zTop.current += 1;
+    return { ...w, [id]: { ...w[id], max: !w[id].max, min: false, z: 100 + zTop.current } };
+  });
+  const taskClick = (id) => raiseWin(id);
 
   const tick = React.useCallback(() => {
     const d = new Date();
@@ -3903,26 +3963,43 @@ function Messenger404() {
     };
 
     const onDown = (e) => {
-      if (window.innerWidth < 900) return;
-      const handle = e.target.closest && e.target.closest('[data-msn-drag]');
-      if (!handle) return;
-      const win = handle.closest('[data-msn-win]');
+      if (e.target.closest && e.target.closest('[data-msn-cap]')) return;
+      const win = e.target.closest && e.target.closest('[data-msn-win]');
       if (!win) return;
+      const id = win.getAttribute('data-msn-id');
       const r = win.getBoundingClientRect();
       const parent = win.offsetParent || win.parentElement;
       const pr = parent.getBoundingClientRect();
+      const startLeft = r.left - pr.left;
+      const startTop = r.top - pr.top;
+      if (id) {
+        zTop.current += 1;
+        const z = 100 + zTop.current;
+        win.style.zIndex = String(z);
+        win.style.margin = '0';
+        win.style.left = startLeft + 'px';
+        win.style.top = startTop + 'px';
+        setWins((w) => (w[id] ? { ...w, [id]: { ...w[id], z, min: false, left: startLeft, top: startTop } } : w));
+      }
+      if (window.innerWidth < 900) return;
+      const handle = e.target.closest && e.target.closest('[data-msn-drag]');
+      if (!handle) return;
       const dx = e.clientX - r.left;
       const dy = e.clientY - r.top;
-      win.style.margin = '0';
-      zTop.current += 1;
-      win.style.zIndex = String(100 + zTop.current);
+      let lastLeft = startLeft;
+      let lastTop = startTop;
       const move = (ev) => {
-        win.style.left = Math.max(0, ev.clientX - pr.left - dx) + 'px';
-        win.style.top = Math.max(0, ev.clientY - pr.top - dy) + 'px';
+        lastLeft = Math.max(0, ev.clientX - pr.left - dx);
+        lastTop = Math.max(0, ev.clientY - pr.top - dy);
+        win.style.left = lastLeft + 'px';
+        win.style.top = lastTop + 'px';
       };
       const up = () => {
         document.removeEventListener('mousemove', move);
         document.removeEventListener('mouseup', up);
+        if (id) {
+          setWins((w) => (w[id] ? { ...w, [id]: { ...w[id], left: lastLeft, top: lastTop } } : w));
+        }
       };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
@@ -4021,6 +4098,25 @@ function Messenger404() {
   const offList = gone.map((i) => ({ name: MSN404_ONLINE[i][0] }))
     .concat(MSN404_OFFLINE.map((n) => ({ name: n })));
 
+  const openWinCount = ['error', 'chat', 'backmask', 'messenger'].filter((id) => wins[id] && wins[id].open).length;
+  const winBox = (id, defaults) => {
+    const w = wins[id];
+    if (w.max) {
+      return {
+        position: 'absolute', left: 8, top: 8, width: 'calc(100% - 16px)',
+        zIndex: w.z, margin: 0, boxShadow: '3px 3px 14px rgba(0,0,0,.55)',
+      };
+    }
+    return {
+      position: 'absolute',
+      left: w.left != null ? w.left : defaults.left,
+      top: w.top != null ? w.top : defaults.top,
+      width: defaults.width,
+      zIndex: w.z,
+      margin: w.left != null ? 0 : undefined,
+      boxShadow: '3px 3px 14px rgba(0,0,0,.55)',
+    };
+  };
   const titlebar = {
     cursor: 'move',
     display: 'flex',
@@ -4076,17 +4172,19 @@ function Messenger404() {
       </div>
 
       <div className="msn404-desk" style={{ position: 'relative', zIndex: 1, minHeight: 'min(100vh,700px)', height: 700, padding: '0 0 40px' }}>
+        {wins.error.open && !wins.error.min && (
         <div
           className="msn404-win"
           data-msn-win="1"
+          data-msn-id="error"
           data-msn-jitter="1"
           role="alertdialog"
           aria-labelledby="msn404-err-title"
-          style={{ position: 'absolute', left: '19%', top: 452, width: 428, zIndex: 60, boxShadow: '3px 3px 12px rgba(0,0,0,.55)' }}
+          style={winBox('error', { left: '22%', top: 150, width: 428 })}
         >
-          <div style={titlebar}>
+          <div data-msn-drag="1" className="msn404-drag" style={titlebar}>
             <span>saboteur.one</span>
-            <MsnCaption symbols={['✕']} />
+            <MsnCaption onMin={() => minWin('error')} onClose={() => closeWin('error')} />
           </div>
           <div style={{ background: '#ECE9D8', border: '1px solid #ACA899', borderTop: 'none', padding: '18px 16px 12px' }}>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -4112,40 +4210,65 @@ function Messenger404() {
             </div>
           </div>
         </div>
+        )}
 
-        <div
-          className="msn404-stub"
-          style={{ position: 'absolute', left: 'calc(6% + 34px)', top: 26, width: 452, zIndex: 18, boxShadow: '3px 3px 12px rgba(0,0,0,.5)' }}
-        >
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: 'linear-gradient(180deg,#4D8BEE 0%,#3C7BE0 100%)',
-            border: '1px solid #2163EF', padding: '4px 4px 4px 7px',
-            color: '#E7EEFF', fontSize: 11, fontWeight: 700,
-          }}>
-            <span>backmask_mum - Conversation</span>
-            <span aria-hidden="true" style={{ display: 'flex', gap: 2 }}>
-              <span style={{
-                width: 16, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: '#6C9EF2', border: '1px solid #D8E4FF', fontSize: 9, lineHeight: 1,
-              }}>✕</span>
-            </span>
-          </div>
-          <div style={{ height: 26, background: '#DCE5E0', border: '1px solid #2163EF', borderTop: 'none' }} />
-        </div>
-
+        {wins.backmask.open && !wins.backmask.min && (
         <div
           className="msn404-win"
           data-msn-win="1"
+          data-msn-id="backmask"
           data-msn-jitter="1"
-          style={{ position: 'absolute', left: '6%', top: 60, width: 452, zIndex: 20, boxShadow: '3px 3px 14px rgba(0,0,0,.55)' }}
+          style={winBox('backmask', { left: 'calc(6% + 34px)', top: 26, width: 452 })}
+        >
+          <div data-msn-drag="1" className="msn404-drag" style={{
+            ...titlebar,
+            background: 'linear-gradient(180deg,#4D8BEE 0%,#3C7BE0 100%)',
+          }}>
+            <span>backmask_mum - Conversation</span>
+            <MsnCaption onMin={() => minWin('backmask')} onClose={() => closeWin('backmask')} />
+          </div>
+          <div style={menubar}>
+            <span>File</span><span>Edit</span><span>View</span><span>Actions</span><span>Tools</span><span>Help</span>
+          </div>
+          <div style={{
+            background: '#F8FDFF', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF',
+            borderBottom: '1px solid #B7C7D8', padding: '6px 8px', fontSize: 11, color: '#18181B',
+          }}>To: backmask_mum &lt;mum@hotmail.com&gt;</div>
+          <div style={{ background: '#ECE9D8', border: '1px solid #2163EF', borderTop: 'none', padding: 8 }}>
+            <div className="msn404-log" style={{
+              height: 110, overflowY: 'auto', background: '#FFFFFF',
+              borderTop: '1px solid #7B8A99', borderLeft: '1px solid #7B8A99',
+              borderRight: '1px solid #FFFFFF', borderBottom: '1px solid #FFFFFF',
+              padding: '8px 10px', fontSize: 11, lineHeight: 1.5, color: '#18181B',
+            }}>
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ color: '#0033AA', fontWeight: 700 }}>backmask_mum says:</div>
+                <div style={{ paddingLeft: 10 }}>i played linger backwards</div>
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ color: '#0033AA', fontWeight: 700 }}>backmask_mum says:</div>
+                <div style={{ paddingLeft: 10 }}>it said serve the beast so i binned it</div>
+              </div>
+              <div style={{ color: '#666666', fontStyle: 'italic', marginTop: 8 }}>backmask_mum has been disconnected.</div>
+            </div>
+          </div>
+        </div>
+        )}
+
+        {wins.chat.open && !wins.chat.min && (
+        <div
+          className="msn404-win"
+          data-msn-win="1"
+          data-msn-id="chat"
+          data-msn-jitter="1"
+          style={winBox('chat', { left: '6%', top: 60, width: 452 })}
         >
           <div data-msn-drag="1" className="msn404-drag" style={titlebar}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <MsnIcon name="bubbles" />
               ~*~Assslayer~*~ - Conversation
             </span>
-            <MsnCaption symbols={['_', '▢', '✕']} />
+            <MsnCaption onMin={() => minWin('chat')} onMax={() => maxWin('chat')} onClose={() => closeWin('chat')} />
           </div>
           <div style={menubar}>
             <span>File</span><span>Edit</span><span>View</span><span>Actions</span><span>Tools</span><span>Help</span>
@@ -4202,16 +4325,19 @@ function Messenger404() {
             padding: '4px 8px', fontSize: 11, color: '#4A4A50',
           }}>Last message received on 28/09/2001 at 22:41.</div>
         </div>
+        )}
 
+        {wins.messenger.open && !wins.messenger.min && (
         <div
           className="msn404-win"
           data-msn-win="1"
+          data-msn-id="messenger"
           data-msn-jitter="1"
-          style={{ position: 'absolute', left: 'calc(6% + 476px)', top: 34, width: 244, zIndex: 22, boxShadow: '3px 3px 14px rgba(0,0,0,.55)' }}
+          style={winBox('messenger', { left: 'calc(6% + 476px)', top: 34, width: 244 })}
         >
           <div data-msn-drag="1" className="msn404-drag" style={titlebar}>
             <span>Messenger</span>
-            <MsnCaption symbols={['_', '✕']} />
+            <MsnCaption onMin={() => minWin('messenger')} onClose={() => closeWin('messenger')} />
           </div>
           <div style={{ ...menubar, gap: 12 }}>
             <span>File</span><span>Contacts</span><span>Tools</span><span>Help</span>
@@ -4271,6 +4397,7 @@ function Messenger404() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {startOpen && (
@@ -4347,19 +4474,21 @@ function Messenger404() {
           }}
         >start</button>
         <div style={{ display: 'flex', gap: 4, minWidth: 0, overflow: 'hidden' }}>
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: 6, height: 22,
-            background: '#1F51BC', border: '1px solid #1A46A2', color: '#E7EEFF',
-            fontSize: 11, padding: '0 10px', whiteSpace: 'nowrap',
-          }}>
-            <MsnIcon name="bubbles" size={12} />
-            {tasks} Conversations
-          </span>
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: 6, height: 22,
-            background: '#1F51BC', border: '1px solid #1A46A2', color: '#E7EEFF',
-            fontSize: 11, padding: '0 10px', whiteSpace: 'nowrap',
-          }}>Messenger</span>
+          {wins.error.open && (
+            <button type="button" className={'msn404-task' + (wins.error.min ? ' is-min' : '')} onClick={() => taskClick('error')}>saboteur.one</button>
+          )}
+          {wins.backmask.open && (
+            <button type="button" className={'msn404-task' + (wins.backmask.min ? ' is-min' : '')} onClick={() => taskClick('backmask')}>backmask_mum</button>
+          )}
+          {wins.chat.open && (
+            <button type="button" className={'msn404-task' + (wins.chat.min ? ' is-min' : '')} onClick={() => taskClick('chat')}>
+              <MsnIcon name="bubbles" size={12} />
+              ~*~Assslayer~*~
+            </button>
+          )}
+          {wins.messenger.open && (
+            <button type="button" className={'msn404-task' + (wins.messenger.min ? ' is-min' : '')} onClick={() => taskClick('messenger')}>Messenger</button>
+          )}
         </div>
         <div style={{
           marginLeft: 'auto', display: 'flex', alignItems: 'center', height: 22,
@@ -4381,7 +4510,7 @@ function Messenger404() {
               color: '#FFFFFF', fontSize: 11, fontWeight: 700,
             }}>Shutting down</div>
             <div style={{ padding: '16px 14px', fontSize: 11, color: '#18181B', lineHeight: 1.6 }}>
-              <div style={{ marginBottom: 12 }}>Ending {tasks} conversations...</div>
+              <div style={{ marginBottom: 12 }}>Ending {openWinCount} conversations...</div>
               <div style={{ height: 14, border: '1px solid #7B8A99', background: '#FFFFFF', overflow: 'hidden' }}>
                 <div className="msn404-prog" />
               </div>

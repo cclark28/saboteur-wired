@@ -53,7 +53,7 @@
     --color-error: #C4453F;
     --color-success: #2D8A4E;
 
-    --font-family-display: 'Neue Haas Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-family-display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --font-family-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
     --font-display-size: 6rem;
     --font-h1-size: 2.5rem;
@@ -805,7 +805,7 @@ function SaboteurIcon({ size = 40, onClick }) {
   );
 }
 
-/* Desktop lockup: orange cat + ® + SABOTEUR/COMICS set in R2 Neue Haas. Mobile: icon only. */
+/* Desktop lockup: orange cat + ® + SABOTEUR/COMICS. Mobile: icon only. */
 function goHeaderStoreComics() {
   if (FOOTER_NAV && typeof FOOTER_NAV.comics === 'function') FOOTER_NAV.comics();
   else if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store();

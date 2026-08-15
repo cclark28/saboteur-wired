@@ -633,6 +633,71 @@ function saveShopEmail(email, source) {
   });
 }
 
+const WEB3FORMS_KEY = '8fb4c260-014b-491e-bb90-e6cb6e25ca52';
+
+function extractEmailAddress(text) {
+  const m = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return m ? m[0] : '';
+}
+
+function send404Im(text, replyEmail) {
+  const email = replyEmail || '404@saboteur.one';
+  const page = (typeof location !== 'undefined' && location.href) || '/404';
+  const message = [
+    'From the 404 Messenger page',
+    '',
+    'Page: ' + page,
+    'Time: ' + new Date().toISOString(),
+    replyEmail ? ('Reply-to: ' + replyEmail) : 'No reply email given.',
+    '',
+    String(text || ''),
+  ].join('\n');
+  return new Promise((resolve, reject) => {
+    const frameName = 'msn404w3f' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = frameName;
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;clip:rect(0,0,0,0)';
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://api.web3forms.com/submit';
+    form.target = frameName;
+    form.acceptCharset = 'UTF-8';
+    const add = (n, v) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = n;
+      input.value = v;
+      form.appendChild(input);
+    };
+    add('access_key', WEB3FORMS_KEY);
+    add('subject', 'Saboteur 404 — instant message');
+    add('from_name', '404 Messenger');
+    add('name', '404 Messenger');
+    add('email', email);
+    add('message', message);
+    add('redirect', 'https://web3forms.com/success');
+    let done = false;
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      setTimeout(() => {
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        if (form.parentNode) form.parentNode.removeChild(form);
+      }, 50);
+      if (ok) resolve({ success: true });
+      else reject(new Error('404 IM send failed'));
+    };
+    const timer = setTimeout(() => finish(true), 1800);
+    iframe.onload = () => finish(true);
+    iframe.onerror = () => finish(false);
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    form.submit();
+  });
+}
+
 const SANITY_DATASET = 'production';
 const SANITY_API_DIRECT = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`;
 // Same-origin proxy so Vercel staging/preview can load the live Sanity feed.
@@ -3900,6 +3965,12 @@ function Messenger404() {
     backmask: { open: true, min: false, max: false, z: 20, left: null, top: null },
     messenger: { open: true, min: false, max: false, z: 30, left: null, top: null },
   });
+  const [live, setLive] = useState([]);
+  const [compose, setCompose] = useState('');
+  const [sending, setSending] = useState(false);
+  const [mailNote, setMailNote] = useState(false);
+  const replyEmail = React.useRef('');
+  const sentCount = React.useRef(0);
   const raiseRef = React.useRef(() => {});
 
   const raiseWin = React.useCallback((id) => {
@@ -4047,6 +4118,7 @@ function Messenger404() {
       clearInterval(timers.current.clock);
       clearTimeout(timers.current.msg);
       clearTimeout(timers.current.off);
+      clearTimeout(timers.current.live);
       document.removeEventListener('mousedown', onDown);
       window.removeEventListener('keydown', onKey);
     };
@@ -4054,7 +4126,7 @@ function Messenger404() {
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [shown, typing, ended]);
+  }, [shown, typing, ended, live, sending]);
 
   useEffect(() => {
     if (!startOpen) return;
@@ -4084,13 +4156,61 @@ function Messenger404() {
     setPower('on');
   };
 
+  const sendLive = async () => {
+    const text = compose.trim();
+    if (!text || sending) return;
+    if (sentCount.current >= 5) {
+      setCompose('');
+      setLive((l) => l.concat([{ who: 'A', text: 'ok that is enough. use the contact page if you need more.' }]));
+      return;
+    }
+    clearTimeout(timers.current.msg);
+    setTyping(false);
+    setEnded(true);
+    setCompose('');
+    const found = extractEmailAddress(text);
+    if (found) replyEmail.current = found;
+    setLive((l) => l.concat([{ who: 'you', text }]));
+    setSending(true);
+    raiseWin('chat');
+    try {
+      await send404Im(text, replyEmail.current);
+      sentCount.current += 1;
+      setMailNote(true);
+      if (replyEmail.current) saveShopEmail(replyEmail.current, 'contact');
+      const reply = !replyEmail.current
+        ? (sentCount.current === 1
+          ? 'wait. you can type. i forwarded that. drop an email if you want a real reply.'
+          : 'got that too. still need an email if you want him to write back.')
+        : (sentCount.current === 1
+          ? 'got it. that actually sent. he will see it.'
+          : 'sent that too.');
+      setTyping(true);
+      clearTimeout(timers.current.live);
+      timers.current.live = setTimeout(() => {
+        setTyping(false);
+        setLive((l) => l.concat([{ who: 'A', text: reply }]));
+      }, 700);
+    } catch (err) {
+      console.error('404 IM send failed', err);
+      setTyping(true);
+      clearTimeout(timers.current.live);
+      timers.current.live = setTimeout(() => {
+        setTyping(false);
+        setLive((l) => l.concat([{ who: 'A', text: 'that one bounced. try again.' }]));
+      }, 500);
+    } finally {
+      setSending(false);
+    }
+  };
+
   const script = MSN404_SCRIPTS[si] || MSN404_SCRIPTS[0];
   const err = MSN404_ERRORS[ei] || MSN404_ERRORS[0];
   const msgs = script.slice(0, shown).map((m) => ({
     head: MSN404_NAMES[m[0]] + ' says:',
     text: m[1],
   }));
-  const nextSpeaker = script[shown] ? MSN404_NAMES[script[shown][0]] : MSN404_NAMES.S;
+  const nextSpeaker = live.length ? MSN404_NAMES.A : (script[shown] ? MSN404_NAMES[script[shown][0]] : MSN404_NAMES.S);
   const gone = ended ? dropped.concat([1]) : dropped;
   const onList = MSN404_ONLINE
     .map((c, i) => ({ name: c[0], i, st: c[1] }))
@@ -4295,29 +4415,66 @@ function Messenger404() {
                   <div style={{ paddingLeft: 10 }}>{m.text}</div>
                 </div>
               ))}
+              {ended && (
+                <div style={{ color: '#666666', fontStyle: 'italic', marginTop: 8, marginBottom: live.length ? 6 : 0 }}>
+                  xXSaboteurXx has been disconnected.
+                </div>
+              )}
+              {live.map((m, i) => (
+                <div key={'live-' + i} style={{ marginBottom: 6 }}>
+                  <div style={{ color: m.who === 'you' ? '#006600' : '#0033AA', fontWeight: 700 }}>
+                    {m.who === 'you' ? 'You say:' : '~*~Assslayer~*~ says:'}
+                  </div>
+                  <div style={{ paddingLeft: 10, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.text}</div>
+                </div>
+              ))}
               {typing && (
                 <div className="msn404-typing" style={{ color: '#666666', fontSize: 11 }}>
                   {nextSpeaker} is typing a message.
                 </div>
               )}
-              {ended && (
-                <div style={{ color: '#666666', fontStyle: 'italic', marginTop: 8 }}>
-                  xXSaboteurXx has been disconnected.
-                </div>
-              )}
             </div>
             <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-              <div style={{
-                flex: 1, height: 52, background: '#FFFFFF',
-                borderTop: '1px solid #7B8A99', borderLeft: '1px solid #7B8A99',
-                borderRight: '1px solid #FFFFFF', borderBottom: '1px solid #FFFFFF',
-                padding: '6px 8px', fontSize: 11, color: '#9A9A9A',
-              }}>Type message here</div>
-              <button type="button" disabled style={{
-                background: '#ECE9D8', border: '1px solid #ACA899', borderRadius: 3,
-                padding: '5px 18px', fontSize: 11, color: '#9A9A9A',
-                fontFamily: 'inherit', cursor: 'default',
-              }}>Send</button>
+              <textarea
+                className="msn404-compose"
+                value={compose}
+                onChange={(e) => setCompose(e.target.value)}
+                onFocus={() => raiseWin('chat')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendLive();
+                  }
+                }}
+                placeholder="Type a message here"
+                maxLength={1200}
+                disabled={sending}
+                aria-label="Type a message"
+                style={{
+                  flex: 1, height: 52, background: '#FFFFFF',
+                  borderTop: '1px solid #7B8A99', borderLeft: '1px solid #7B8A99',
+                  borderRight: '1px solid #FFFFFF', borderBottom: '1px solid #FFFFFF',
+                  padding: '6px 8px', fontSize: 11, color: '#18181B',
+                  fontFamily: 'inherit', resize: 'none', outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                className="msn404-send"
+                onClick={sendLive}
+                disabled={sending || !compose.trim()}
+                style={{
+                  background: sending || !compose.trim() ? '#ECE9D8' : 'linear-gradient(180deg,#FDFDFD 0%,#ECE9D8 100%)',
+                  border: '1px solid #ACA899',
+                  borderRadius: 3,
+                  padding: '5px 18px',
+                  fontSize: 11,
+                  color: sending || !compose.trim() ? '#9A9A9A' : '#18181B',
+                  fontFamily: 'inherit',
+                  cursor: sending || !compose.trim() ? 'default' : 'pointer',
+                }}
+              >{sending ? '...' : 'Send'}</button>
             </div>
           </div>
           <div style={{
@@ -4365,7 +4522,7 @@ function Messenger404() {
               </div>
               <div style={{ padding: '6px 8px', fontSize: 11, borderBottom: '1px solid #C7D8E4', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MsnIcon name="mail" />
-                <span style={{ color: '#0033AA' }}>No new e-mail messages</span>
+                <span style={{ color: '#0033AA' }}>{mailNote ? '1 new e-mail message' : 'No new e-mail messages'}</span>
               </div>
               <div style={{ background: '#FFFFFF', padding: '7px 8px 10px', fontSize: 11, minHeight: 250 }}>
                 <div style={{ color: '#1B4F9C', fontWeight: 700, marginBottom: 4 }}>Online ({onList.length})</div>

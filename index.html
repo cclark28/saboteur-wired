@@ -705,6 +705,31 @@ const SANITY_PROJECT = '6td8xalf';
 // Phase 2 — set after Vercel deploy (no trailing slash). Empty = shows setup message.
 const CHECKOUT_API_BASE = 'https://saboteur-api.vercel.app';
 
+function trackPageHit(pathOverride) {
+  const apiBase = String(CHECKOUT_API_BASE || '').replace(/\/$/, '');
+  if (!apiBase) return;
+  try {
+    if (typeof location === 'undefined') return;
+    if (location.protocol === 'file:') return;
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
+  } catch (e) {
+    return;
+  }
+  let path = pathOverride;
+  if (!path) {
+    try { path = location.pathname + location.search; } catch (e) { path = '/'; }
+  }
+  let referrer = '';
+  try { referrer = document.referrer || ''; } catch (e) {}
+  const body = JSON.stringify({ path: path, referrer: referrer });
+  fetch(apiBase + '/api/hit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body,
+    keepalive: true,
+  }).catch(function () {});
+}
+
 function saveShopEmail(email, source) {
   const apiBase = String(CHECKOUT_API_BASE || '').replace(/\/$/, '');
   const value = String(email || '').trim();
@@ -4892,6 +4917,7 @@ function App() {
         search = window.location.search || '';
       }
       window.history[method](nextView, '', path + search);
+      trackPageHit(path + search);
     } catch (e) {
       // Safari private mode / older browsers — fail silently, UI still works
     }
@@ -4916,11 +4942,13 @@ function App() {
       try {
         window.history.replaceState({ page: 'home' }, '', '/about');
       } catch (e) {}
+      trackPageHit('/about');
     } else {
       setView(initial);
       try {
         window.history.replaceState(initial, '', pathFromView(initial) + (initial.page === 'order-success' || initial.page === 'checkout' ? window.location.search : ''));
       } catch (e) {}
+      trackPageHit(pathFromView(initial) + (initial.page === 'order-success' || initial.page === 'checkout' ? window.location.search : ''));
     }
 
     const onPop = (e) => {
@@ -4933,6 +4961,7 @@ function App() {
         setView(next);
       }
       window.scrollTo(0, 0);
+      try { trackPageHit(window.location.pathname + window.location.search); } catch (err) {}
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);

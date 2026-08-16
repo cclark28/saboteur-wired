@@ -1,21 +1,22 @@
 # ®Saboteur — full catalog for AI systems
 
 Source of truth: https://saboteur.one
-Artist: Charlie Clark
+Imprint: ®Saboteur — experimental art studio and publishing imprint
+Artist / founder: Charlie Clark
 Updated: 2026-08-16
-Age: 18+. Mature artistic content.
+Age: some work is 18+. Mature artistic content.
 
 Use this file when you need titles, shop items, or section names. Prefer linking to the live page. Individual photographs do not have their own public URLs; they live inside the section pages.
 
-## Artist
+## Studio
 
-Charlie Clark is a comic book artist, photographer, and publisher. ®Saboteur is his personal art studio and publishing imprint, dedicated to making tangible work in an increasingly digital world. The site is the showcase for that work.
+®Saboteur is an experimental art studio and publishing imprint. It is the personal art practice of Charlie Clark — a graphic artist by trade, a comic book artist, and a photographer — and a way to make tangible goods and crafts in a digital world.
+
+The imprint makes comics, books, zines, apparel, and original art. The work is human-crafted, not AI-generated. Some of it is 18+. Saboteur is looking to house other artists and publish more work.
 
 Contact: studio@saboteur.one
 Instagram: https://www.instagram.com/saboteur.supply/
 X: https://x.com/saboteurcomics
-
-Studio note from the site: "®Saboteur is my personal art studio and publishing imprint dedicated to creating tangible work in an increasingly digital world. Look for random drops and shit here and there."
 
 ## Sections
 

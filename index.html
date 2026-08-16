@@ -383,22 +383,24 @@
   }
   .msn404-off-bg {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    left: 50%;
+    top: 0;
+    width: auto;
+    height: 114%;
+    transform: translate(-50%, -6%);
     object-fit: cover;
-    object-position: 78% 4%;
+    object-position: 50% 20%;
     pointer-events: none;
   }
   @media (min-aspect-ratio: 1/1) {
     .msn404-off-bg {
       inset: auto;
-      top: -8%;
       left: 50%;
-      width: 170%;
-      height: 130%;
-      transform: translateX(-58%);
-      object-position: 82% 2%;
+      top: 0;
+      width: auto;
+      height: 112%;
+      transform: translate(-50%, -8%);
+      object-position: 50% 18%;
     }
   }
   .msn404-off-veil {
@@ -445,7 +447,11 @@
     justify-content: center;
   }
   @media (max-width: 700px) {
-    .msn404-off-bg { object-position: 70% 4%; }
+    .msn404-off-bg {
+      height: 112%;
+      transform: translate(-50%, -5%);
+      object-position: 50% 18%;
+    }
     .msn404-off-copy { margin-bottom: 24px; }
     .msn404-off-actions { margin-bottom: 22px; }
   }

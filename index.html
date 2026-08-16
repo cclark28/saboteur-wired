@@ -2016,24 +2016,25 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark
     <div>
       <TopBar onMenu={onMenu} hero onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{
-        height: '90vh',
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '0 24px',
+        padding: '0 24px 12vh',
         boxSizing: 'border-box',
+        gap: 'clamp(72px, 10vh, 112px)',
       }}>
         <Logo size={220} onClick={onRefresh || onHome} title="Refresh" />
         <p style={{
-          margin: '28px 0 0',
+          margin: 0,
           maxWidth: '28em',
           textAlign: 'center',
           fontFamily: 'var(--font-family-haas)',
           fontWeight: 400,
           fontSize: 'clamp(14px, 1.85vw, 17px)',
-          lineHeight: 1.4,
-          letterSpacing: '-0.015em',
+          lineHeight: 1.65,
+          letterSpacing: '-0.01em',
           color: 'var(--color-ink)',
         }}>
           Experimental art studio and publishing imprint.<br />

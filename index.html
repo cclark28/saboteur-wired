@@ -62,6 +62,7 @@
     --color-success: #2D8A4E;
 
     --font-family-display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-family-haas: 'Neue Haas Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --font-family-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
     --font-display-size: 6rem;
     --font-h1-size: 2.5rem;
@@ -116,6 +117,14 @@
     --logo-filter: none;
     --back-btn-bg: var(--color-ink);
     --back-btn-bg-hover: #2A2A2E;
+  }
+
+  @font-face {
+    font-family: 'Neue Haas Grotesk';
+    src: url('/fonts/NeueHaasDisplay-Roman.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
   }
 
   html, body { margin: 0; background: var(--color-paper); color: var(--color-ink); }
@@ -1974,9 +1983,8 @@ const colBox = {
           lineHeight: 1.5,
           color: 'var(--color-ink-55)',
         }}>
-          <p style={{ margin: '0 0 4px' }}>Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.</p>
           <p style={{ margin: 0 }}>
-            Not AI-generated. Interested parties for publishing,{' '}
+            Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Not AI-generated. Interested parties for publishing,{' '}
             <button
               type="button"
               onClick={goContact}
@@ -2007,8 +2015,30 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark
   return (
     <div>
       <TopBar onMenu={onMenu} hero onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
-      <div style={{ height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{
+        height: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 24px',
+        boxSizing: 'border-box',
+      }}>
         <Logo size={220} onClick={onRefresh || onHome} title="Refresh" />
+        <p style={{
+          margin: '28px 0 0',
+          maxWidth: '28em',
+          textAlign: 'center',
+          fontFamily: 'var(--font-family-haas)',
+          fontWeight: 400,
+          fontSize: 'clamp(14px, 1.85vw, 17px)',
+          lineHeight: 1.4,
+          letterSpacing: '-0.015em',
+          color: 'var(--color-ink)',
+        }}>
+          Experimental art studio and publishing imprint.<br />
+          Human-crafted comics, books, zines, apparel.
+        </p>
       </div>
       <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
         <InfiniteGrid baseItems={items} onOpen={onOpen} />

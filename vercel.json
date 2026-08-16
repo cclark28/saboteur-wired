@@ -28,6 +28,16 @@
       "source": "/cms",
       "destination": "https://saboteur-api.vercel.app/api/cms"
     },
-    { "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt).*)", "destination": "/index.html" }
+    {
+      "source": "/comics",
+      "destination": "/comics.html"
+    },
+    {
+      "source": "/store",
+      "has": [{ "type": "query", "key": "tab", "value": "comics" }],
+      "missing": [{ "type": "query", "key": "from", "value": "share" }],
+      "destination": "/comics.html"
+    },
+    { "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html).*)", "destination": "/index.html" }
   ]
 }

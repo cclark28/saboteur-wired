@@ -401,21 +401,61 @@
       object-position: 82% 2%;
     }
   }
-  .msn404-off-copy {
+  .msn404-off-veil {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(88% 72% at 50% 46%, rgba(0,0,0,.22) 0%, rgba(0,0,0,.42) 52%, rgba(0,0,0,.72) 100%);
+  }
+  .msn404-off-stack {
     position: relative;
     z-index: 1;
-    margin-top: auto;
-    max-width: 16ch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: auto;
+    max-width: min(100%, 52rem);
+    transform: translateY(-2vh);
+  }
+  .msn404-off-copy {
+    margin: 0 0 32px;
+    max-width: none;
     font-family: Tahoma, Verdana, sans-serif;
-    font-size: clamp(22px, 4.2vw, 48px);
+    font-size: clamp(28px, 5.5vw, 72px);
     font-weight: 700;
-    line-height: 1.05;
+    line-height: 1.02;
     letter-spacing: -.02em;
     color: #FFFFFF;
-    text-shadow: 0 2px 18px rgba(0,0,0,.85);
+    text-shadow: 0 2px 24px rgba(0,0,0,.7);
+  }
+  .msn404-off-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0 0 28px;
+  }
+  .msn404-off-actions a {
+    box-sizing: border-box;
+    height: 40px;
+    min-width: 148px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   @media (max-width: 700px) {
     .msn404-off-bg { object-position: 70% 4%; }
+    .msn404-off-copy { margin-bottom: 24px; }
+    .msn404-off-actions { margin-bottom: 22px; }
+  }
+  @media (max-height: 560px) {
+    .msn404-off-stack { transform: none; }
+    .msn404-off-copy {
+      font-size: clamp(24px, 8vh, 48px);
+      margin-bottom: 20px;
+    }
+    .msn404-off-actions { margin-bottom: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .msn404-typing, .msn404-prog { animation: none !important; }
@@ -4715,8 +4755,8 @@ function Messenger404() {
       {power === 'off' && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9600, background: '#000000',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
-          gap: 22, padding: '24px 24px 72px', textAlign: 'center',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: 'max(32px, 6vh) 24px', textAlign: 'center',
           animation: 'msn404-fade .5s ease-out', overflow: 'hidden',
         }}>
           <img
@@ -4725,29 +4765,30 @@ function Messenger404() {
             alt=""
             aria-hidden="true"
           />
-          <div aria-hidden="true" style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.12) 48%, rgba(0,0,0,.78) 100%)',
-          }} />
-          <div className="msn404-off-copy">
-            It is now safe to go <span style={{ color: '#FF4D00' }}>somewhere that exists</span>.
+          <div className="msn404-off-veil" aria-hidden="true" />
+          <div className="msn404-off-stack">
+            <div className="msn404-off-copy">
+              It is now safe to go<br />
+              <span style={{ color: '#FF4D00' }}>somewhere that exists</span>.
+            </div>
+            <div className="msn404-off-actions">
+              <a href="/" className="msn404-primary" style={{ ...xpPrimary, padding: '9px 22px', fontSize: 12 }}>Go to homepage</a>
+              <a href="/store" className="msn404-ghost-dark" style={{
+                background: 'rgba(10,10,12,.75)', border: '1px solid #55555C', borderRadius: 3,
+                padding: '9px 22px', fontSize: 12, color: '#E7E7EA', textDecoration: 'none',
+              }}>Browse the shop</a>
+            </div>
+            <button
+              type="button"
+              onClick={powerOn}
+              style={{
+                background: 'transparent', border: 'none',
+                color: '#C8C8CE', fontFamily: 'inherit', fontSize: 12,
+                minHeight: 44, padding: '10px 8px',
+                cursor: 'pointer', textDecoration: 'underline',
+              }}
+            >Turn it back on</button>
           </div>
-          <div style={{ position: 'relative', display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="/" className="msn404-primary" style={{ ...xpPrimary, padding: '9px 22px', fontSize: 12 }}>Go to homepage</a>
-            <a href="/store" className="msn404-ghost-dark" style={{
-              background: 'rgba(10,10,12,.75)', border: '1px solid #55555C', borderRadius: 3,
-              padding: '9px 22px', fontSize: 12, color: '#E7E7EA', textDecoration: 'none',
-            }}>Browse the shop</a>
-          </div>
-          <button
-            type="button"
-            onClick={powerOn}
-            style={{
-              position: 'relative', background: 'transparent', border: 'none',
-              color: '#9A9AA0', fontFamily: 'inherit', fontSize: 11,
-              cursor: 'pointer', textDecoration: 'underline',
-            }}
-          >Turn it back on</button>
         </div>
       )}
     </div>

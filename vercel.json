@@ -28,6 +28,6 @@
       "source": "/cms",
       "destination": "https://saboteur-api.vercel.app/api/cms"
     },
-    { "source": "/((?!api/|cms|assets/|fonts/|tokens/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt).*)", "destination": "/index.html" }
   ]
 }

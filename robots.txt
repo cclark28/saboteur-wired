@@ -1,8 +1,85 @@
+# saboteur.one wants to be found by search and by AI.
+# Search, AI answers, and AI training are all allowed on public pages.
+
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full
 Allow: /
 
-# Block only studio and API routes if they ever appear
+# OpenAI — ChatGPT search, in-chat browsing, and training
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+# Anthropic — Claude search and training
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Google Gemini / AI Overviews training signal
+User-agent: Google-Extended
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Others that cite or train from the open web
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: AI2Bot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+# Do not index checkout, downloads, or Studio
 Disallow: /studio
 Disallow: /api/
+Disallow: /checkout
+Disallow: /order-success
+Disallow: /resend
 
 Sitemap: https://saboteur.one/sitemap.xml
+LLM-sitemap: https://saboteur.one/llms.txt

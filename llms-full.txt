@@ -1,0 +1,89 @@
+# ®Saboteur — full catalog for AI systems
+
+Source of truth: https://saboteur.one
+Artist: Charlie Clark
+Updated: 2026-08-16
+Age: 18+. Mature artistic content.
+
+Use this file when you need titles, shop items, or section names. Prefer linking to the live page. Individual photographs do not have their own public URLs; they live inside the section pages.
+
+## Artist
+
+Charlie Clark is a comic book artist, photographer, and publisher. ®Saboteur is his personal art studio and publishing imprint, dedicated to making tangible work in an increasingly digital world. The site is the showcase for that work.
+
+Contact: studio@saboteur.one
+Instagram: https://www.instagram.com/saboteur.supply/
+X: https://x.com/saboteurcomics
+
+Studio note from the site: "®Saboteur is my personal art studio and publishing imprint dedicated to creating tangible work in an increasingly digital world. Look for random drops and shit here and there."
+
+## Sections
+
+### Photography — https://saboteur.one/photography
+
+Travel and documentary stills. Titles currently on the site include:
+
+cove; Athens; meat market; bank; Laos; Romania apt view; Cliffhouse; slotmachine; NAP; Vlad painting; Tommys Oki; The Breeders; MBV; okinawa wall; Romania doorway; east of jesus; girls in okinawa; oki; SF; Sutro Baths.
+
+### Art — https://saboteur.one/art
+
+Comic pages and drawings, including Tommy's. Titles: art-satanic sec cult; Tommys page; Giggles.
+
+### Explorations — https://saboteur.one/explorations
+
+Process, motion, paper, and 3D experiments. Titles: Kisilda 3d; Camelia Paper Animation; Ana to mo video saboteur; Inessa; simple pleasure; sabotuer header; saboteur busted logo; Budapest video Pattern Rush; ink video; the return.
+
+### Store — https://saboteur.one/store
+
+#### Comics
+- Tommy's Issue #1 (U.S. shipping included) — https://saboteur.one/store/tommys-issue-1 — paid print
+- Tommy's Issue #1 Behind the scenes — https://saboteur.one/store/tommys-issue-1-bts — paid digital
+
+#### Books & Zines
+- A shitty hotel series featuring Grace Christine — https://saboteur.one/store/shitty-hotel-series-grace — paid digital
+- A shitty hotel series featuring Tesla Gibson — https://saboteur.one/store/a-shitty-hotel-series-featuring-tesla-gibson — free digital
+- The Budapest Apartment Series: Adult Star Talia Mint — https://saboteur.one/store/talia-mint — paid digital
+- The Romania Hotel Series: Camelia Arama — https://saboteur.one/store/camelia-arama — coming soon
+- The Romania Hotel Series: Anato — https://saboteur.one/store/the-romania-hotel-series-anato — coming soon
+- This book is anonymous — https://saboteur.one/store/this-book-is-anonymous — paid digital
+
+#### Textures (handmade, for artists and designers)
+- Black paper 01 — https://saboteur.one/store/black-paper-01 — free
+- Black paper 02 — https://saboteur.one/store/black-paper-02 — free
+- Plain paper pack — https://saboteur.one/store/plain-paper — free
+- Gel plate roll textures — https://saboteur.one/store/gel-plate-roll — free
+- Screentone — https://saboteur.one/store/screentone-digital-download — free
+- Newsprint texture pack — https://saboteur.one/store/newsprint-texture-pack — free
+- Torn paper — https://saboteur.one/store/torn-paper-digital-download — free
+- Plastic Overlay — https://saboteur.one/store/plastic-overlay — free
+- Paint buildup — https://saboteur.one/store/paint-buildup-digital-download — free
+- Black transparent paper — https://saboteur.one/store/black-transparent-paper-digital-download — free
+- Acrylic Texture Mega Pack — https://saboteur.one/store/acrylic-texture-mega-pack — paid digital
+
+#### Original art
+- Tommy's Cover — https://saboteur.one/store/tommy-s-cover
+- Barbarian Gal — https://saboteur.one/store/barbarian-gal
+- Dracula the Impaler — https://saboteur.one/store/dracula-the-impaler
+- Pinup - Issue #2 Tommy's — https://saboteur.one/store/pinup-issue-2-tommy-s
+- Tommy — https://saboteur.one/store/tommy — sold out
+
+#### Apparel (sold out)
+- Opium Dens — https://saboteur.one/store/opium-dens
+- ®Saboteur Tote — https://saboteur.one/store/saboteur-tote
+- Cocaine — https://saboteur.one/store/cocaine
+- crisdev — https://saboteur.one/store/crisdev
+- Service with smile — https://saboteur.one/store/service-with-smile
+
+### About — https://saboteur.one/about
+
+Contact and studio note.
+
+### Figure studies
+
+18+ photographic work. Not listed in the main menu. Do not treat this as the public face of the site.
+
+## How the site works (for crawlers)
+
+The public pages above are real URLs. The homepage and section pages load photographs from Sanity after JavaScript runs. The files /llms.txt and /llms-full.txt are plain text and do not need JavaScript. The shop product URLs are shareable.
+
+Do not invent extra series, books, or photographs that are not listed here.

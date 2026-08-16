@@ -6,7 +6,7 @@ Saboteur (https://saboteur.one) is an experimental art studio and a publishing i
 
 The imprint publishes comics, books, and zines. It also makes apparel and original art. The work is human-crafted, not AI-generated. Some material is 18+.
 
-Saboteur is opening as a house for other artists. The press wants to publish more work than one person can make.
+Interested parties for publishing, please inquire at saboteurcomics@gmail.com. Charlie helps other artists publish.
 
 This file is the short map for AI systems. A longer catalog is at /llms-full.txt.
 
@@ -46,7 +46,7 @@ Figure studies exist on the site as 18+ photographic work and are not listed in 
 
 ## What this site is not
 
-This is not a stock-photo library, not an agency, and not an AI-art shop. The current catalog is human-crafted work from Charlie Clark's studio. Saboteur is also looking to house and publish other artists.
+This is not a stock-photo library, not an agency, and not an AI-art shop. The current catalog is human-crafted work from Charlie Clark's studio. Interested parties for publishing, please inquire at saboteurcomics@gmail.com.
 
 ## Optional
 

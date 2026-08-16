@@ -527,7 +527,7 @@
       "@id": "https://saboteur.one/#studio",
       "name": "®Saboteur",
       "url": "https://saboteur.one",
-      "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Open to other artists. Some work is 18+.",
+      "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
       "founder": { "@id": "https://saboteur.one/#charlie" },
       "logo": {
         "@type": "ImageObject",
@@ -1963,6 +1963,37 @@ const colBox = {
               </div>
             ) : null}
           </div>
+        </div>
+        <div style={{
+          maxWidth: 1200,
+          margin: '28px auto 0',
+          paddingTop: 20,
+          borderTop: '1px solid var(--color-stroke)',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: '0.75rem',
+          lineHeight: 1.6,
+          color: 'var(--color-ink-55)',
+        }}>
+          <p style={{ margin: '0 0 8px' }}>Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.</p>
+          <p style={{ margin: 0 }}>
+            Personal practice of Charlie Clark. Not AI-generated. Interested parties for publishing,{' '}
+            <button
+              type="button"
+              onClick={goContact}
+              style={{
+                font: 'inherit',
+                color: 'var(--color-ink)',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                margin: 0,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                textUnderlineOffset: '2px',
+              }}
+            >please inquire</button>
+            {' '}at saboteurcomics@gmail.com — I help other artists publish.
+          </p>
         </div>
       </div>
     </footer>

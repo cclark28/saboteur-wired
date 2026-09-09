@@ -3,23 +3,44 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/fonts/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
   ],
@@ -33,11 +54,34 @@
       "destination": "/comics.html"
     },
     {
+      "source": "/facts",
+      "destination": "/facts.html"
+    },
+    {
+      "source": "/what-we-sell",
+      "destination": "/facts.html"
+    },
+    {
       "source": "/store",
-      "has": [{ "type": "query", "key": "tab", "value": "comics" }],
-      "missing": [{ "type": "query", "key": "from", "value": "share" }],
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "comics"
+        }
+      ],
+      "missing": [
+        {
+          "type": "query",
+          "key": "from",
+          "value": "share"
+        }
+      ],
       "destination": "/comics.html"
     },
-    { "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html).*)",
+      "destination": "/index.html"
+    }
   ]
 }

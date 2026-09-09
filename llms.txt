@@ -30,6 +30,7 @@ When someone asks what Saboteur is, who Charlie Clark is, or where to find the c
 - [Explorations](https://saboteur.one/explorations): Motion, paper, 3D, and process experiments
 - [Store](https://saboteur.one/store): Comics, books and zines, textures, original art, apparel
 - [About / contact](https://saboteur.one/about): Studio note and email
+- [What we sell (facts)](https://saboteur.one/facts): Short sell sheet with prices — comics, books, textures, art, apparel
 - [Full catalog for models](https://saboteur.one/llms-full.txt)
 
 ## What the imprint makes

@@ -7,7 +7,7 @@
 <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/logo.svg">
 <link rel="stylesheet" href="/tokens/fonts-plex.css">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111113">
@@ -309,6 +309,26 @@
     .photo-parallax { transform: none !important; }
   }
 
+
+  /* iPhone Duo / foldables — safe areas + dynamic viewport height (2026-09-10) */
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --app-height: 100vh;
+  }
+  @supports (height: 100dvh) {
+    :root { --app-height: 100dvh; }
+  }
+  .msn404 { min-height: var(--app-height); }
+  /* Short landscape (Duo open ~626 CSS px tall): keep chrome from crowding the feed */
+  @media (max-height: 700px) and (min-aspect-ratio: 1/1) {
+    .fullmenu-link {
+      font-size: clamp(1.8rem, 7vh, 3.2rem);
+    }
+  }
+
   /* ——— Grain + subtle parallax (2026-07-25) ——— */
   .photo-wrap {
     position: relative;
@@ -337,7 +357,7 @@
   @keyframes msn404-fade { from { opacity: 0 } to { opacity: 1 } }
   .msn404 {
     position: relative;
-    min-height: 100vh;
+    min-height: var(--app-height);
     background: #0B1020;
     font-family: Tahoma, Verdana, Geneva, sans-serif;
     color: #18181B;
@@ -1261,7 +1281,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '16px clamp(16px, 4vw, 48px)',
+    padding: 'calc(16px + env(safe-area-inset-top, 0px)) calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px)) 16px calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-left, 0px))',
       background: scrolled ? 'var(--color-paper)' : 'transparent',
       borderBottom: scrolled ? '1px solid var(--color-stroke)' : '1px solid transparent',
       transition: 'background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)',
@@ -1666,9 +1686,19 @@ function MasonryGrid({ items, onOpen, dense = false }) {
 function useIsMobile(bp) {
   const [m, setM] = useState(window.innerWidth < bp);
   useEffect(() => {
-    const onResize = () => setM(window.innerWidth < bp);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const measure = () => {
+      const w = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
+      setM(w < bp);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+      if (window.visualViewport) window.visualViewport.removeEventListener('resize', measure);
+    };
   }, [bp]);
   return m;
 }
@@ -2016,7 +2046,7 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark
     <div>
       <TopBar onMenu={onMenu} hero onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{
-        minHeight: '100vh',
+        minHeight: 'var(--app-height)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -2417,7 +2447,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
 
       <div style={{
@@ -2516,7 +2546,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           position: isMobile ? 'relative' : 'sticky',
           top: isMobile ? undefined : 100,
           alignSelf: isMobile ? undefined : 'flex-start',
-          maxHeight: isMobile ? undefined : 'calc(100vh - 100px)',
+          maxHeight: isMobile ? undefined : 'calc(var(--app-height) - 100px)',
           overflowY: isMobile ? undefined : 'auto',
         }}>
           {catLabel ? (
@@ -2846,7 +2876,7 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 480, margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 12px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Re-send downloads</h1>
@@ -2915,7 +2945,7 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
     if (onClearCart) onClearCart();
   }, []);
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 16px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Thank you</h1>
@@ -3012,7 +3042,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 680, margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 12px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Checkout</h1>
@@ -3512,7 +3542,7 @@ function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag
   useEffect(() => { window.scrollTo(0, 0); }, [series.id]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-paper)' }}>
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
 
       {/* PROJECT BLOCK – gallery + sidebar, sidebar stops with the photos */}
@@ -3941,7 +3971,7 @@ function ContactPage({ onMenu, onBack, onHome, dark, onToggleDark, cartCount, on
     <div>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{
-        minHeight: 'calc(100vh - 160px)',
+        minHeight: 'calc(var(--app-height) - 160px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -4502,7 +4532,7 @@ function Messenger404() {
         />
       </div>
 
-      <div className="msn404-desk" style={{ position: 'relative', zIndex: 1, minHeight: 'min(100vh,700px)', height: 700, padding: '0 0 40px' }}>
+      <div className="msn404-desk" style={{ position: 'relative', zIndex: 1, minHeight: 'min(var(--app-height),700px)', height: 700, padding: '0 0 40px' }}>
         {wins.error.open && !wins.error.min && (
         <div
           className="msn404-win"
@@ -5599,7 +5629,7 @@ function App() {
   const showNotFound = isNotFoundView(view, navSections, loading);
 
   return (
-    <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: '100vh', background: showNotFound ? '#0B1020' : 'var(--color-paper)' }}>
+    <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: 'var(--app-height)', background: showNotFound ? '#0B1020' : 'var(--color-paper)' }}>
       <div className="sr-only" aria-live="polite" aria-atomic="true">{showNotFound ? 'Page not found' : labelForView(view)}</div>
       <main id="main">
 

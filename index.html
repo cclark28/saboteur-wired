@@ -1973,12 +1973,28 @@ const colBox = {
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
             >Contact</button>
-            {socials.map((s, i) => (
+            {socials.filter((s) => String((s && s.label) || '').toLowerCase() !== 'sfx').map((s, i) => (
               <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
                 onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
               >{s.label}</a>
             ))}
+          </div>
+
+          <div style={colBox}>
+            <div style={colLabel}>SFX</div>
+            <a href="https://pixabay.com/users/saboteurcomics-52281254/" target="_blank" rel="noopener noreferrer" style={linkStyle}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+            >Pixabay</a>
+          </div>
+
+          <div style={colBox}>
+            <div style={colLabel}>Textures</div>
+            <a href="https://saboteurcomics.gumroad.com/" target="_blank" rel="noopener noreferrer" style={linkStyle}
+              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+            >Gumroad</a>
           </div>
 
           <div style={colBox}>

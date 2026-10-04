@@ -2303,7 +2303,8 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               const unavailable = isProductUnavailable(p, physicalOrdersEnabled);
               const paused = isShippingPaused(p, physicalOrdersEnabled);
               const sold = unavailable && !paused && !comingSoon;
-              const badge = comingSoon ? 'Coming soon' : (sold ? 'Sold out' : null);
+              const previewCount = (p.imageUrls || []).filter(Boolean).length;
+              const badge = (comingSoon && previewCount < 2) ? 'Coming soon' : (sold ? 'Sold out' : null);
               return (
                 <button
                   key={p._id || p.slug}
@@ -2520,7 +2521,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
-                  {(comingSoon || soldOnly) ? (
+                  {((comingSoon && imgs.length < 2) || soldOnly) ? (
                     <span
                       style={{
                         position: 'absolute',
@@ -2794,7 +2795,8 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               const rpPrice = rpSoon ? 'Coming soon' : formatPrice(rp.priceCents, rp.fulfillmentType);
               const rpSold = isProductUnavailable(rp, physicalOrdersEnabled);
               const rpPaused = isShippingPaused(rp, physicalOrdersEnabled);
-              const rpBadge = rpSoon ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
+              const rpPreviewCount = (rp.imageUrls || []).filter(Boolean).length;
+              const rpBadge = (rpSoon && rpPreviewCount < 2) ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
               return (
                 <button
                   key={rp._id || rp.slug}

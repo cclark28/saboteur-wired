@@ -2303,7 +2303,8 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               const unavailable = isProductUnavailable(p, physicalOrdersEnabled);
               const paused = isShippingPaused(p, physicalOrdersEnabled);
               const sold = unavailable && !paused && !comingSoon;
-              const badge = comingSoon ? 'Coming soon' : (sold ? 'Sold out' : null);
+              const previewCount = (p.imageUrls || []).filter(Boolean).length;
+              const badge = (comingSoon && previewCount < 2) ? 'Coming soon' : (sold ? 'Sold out' : null);
               return (
                 <button
                   key={p._id || p.slug}
@@ -2520,7 +2521,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
-                  {(comingSoon || soldOnly) ? (
+                  {((comingSoon && imgs.length < 2) || soldOnly) ? (
                     <span
                       style={{
                         position: 'absolute',
@@ -2794,7 +2795,8 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               const rpPrice = rpSoon ? 'Coming soon' : formatPrice(rp.priceCents, rp.fulfillmentType);
               const rpSold = isProductUnavailable(rp, physicalOrdersEnabled);
               const rpPaused = isShippingPaused(rp, physicalOrdersEnabled);
-              const rpBadge = rpSoon ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
+              const rpPreviewCount = (rp.imageUrls || []).filter(Boolean).length;
+              const rpBadge = (rpSoon && rpPreviewCount < 2) ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
               return (
                 <button
                   key={rp._id || rp.slug}
@@ -2997,6 +2999,15 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [checkoutEmail, setCheckoutEmail] = useState(() => { try { return localStorage.getItem('saboteur_checkout_email') || ''; } catch (e) { return ''; } });
+  const [emailError, setEmailError] = useState(false);
+  const newCheckoutId = () => { try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {} return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2); };
+  const cartSig = (cart || []).map((l) => (l.productId || l.id) + ':' + (l.variant || '') + ':' + (l.qty || 1)).join('|');
+  const checkoutIdRef = React.useRef(null);
+  const checkoutSigRef = React.useRef(null);
+  const redirectingRef = React.useRef(false);
+  if (checkoutSigRef.current !== cartSig || !checkoutIdRef.current) { checkoutSigRef.current = cartSig; checkoutIdRef.current = newCheckoutId(); }
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(checkoutEmail.trim());
   const totalCents = (cart || []).reduce((sum, l) => sum + (Number(l.priceCents) || 0) * (l.qty || 1), 0);
   const totalLabel = totalCents === 0 ? 'Free' : '$' + (totalCents / 100).toFixed(2);
   const hasPhysical = (cart || []).some((l) => {
@@ -3019,6 +3030,12 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       setCheckoutError('Free items download from the product page — no payment needed.');
       return;
     }
+    if (!emailValid) {
+      setEmailError(true);
+      setCheckoutError('Enter a valid email so we can send your order.');
+      return;
+    }
+    try { localStorage.setItem('saboteur_checkout_email', checkoutEmail.trim()); } catch (e) {}
     if (!CHECKOUT_API_BASE) {
       setCheckoutError('Stripe is ready on our side next: deploy the API and paste CHECKOUT_API_BASE. Test cards work once that URL is set.');
       return;
@@ -3044,12 +3061,20 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
           successUrl: successUrl,
           cancelUrl: cancelUrl,
           siteUrl: apiBase,
+          customerEmail: checkoutEmail.trim(),
+          checkoutRequestId: checkoutIdRef.current,
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 409 && data.alreadyPurchased) {
+        setCheckoutError(data.message || 'You already bought this. Check your email for the download link.');
+        setCheckoutBusy(false);
+        return;
+      }
       if (!res.ok || !data.url) {
         throw new Error(data.error || 'Could not start checkout');
       }
+      redirectingRef.current = true;
       window.location.href = data.url;
     } catch (err) {
       setCheckoutError(err.message || 'Checkout failed');
@@ -3156,12 +3181,28 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
             Physical items: shipping address is collected on the Stripe payment page (US only).
           </p>
         ) : null}
+        <label htmlFor="checkout-email" style={{ display: 'block', fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 6 }}>Email</label>
+        <input
+          id="checkout-email"
+          type="email"
+          required
+          autoComplete="email"
+          value={checkoutEmail}
+          onChange={(ev) => { setCheckoutEmail(ev.target.value); setEmailError(false); setCheckoutError(''); }}
+          onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); if (!checkoutBusy) placeOrder(); } }}
+          placeholder="you@domain.com"
+          style={{
+            width: '100%', boxSizing: 'border-box', height: 48, padding: '12px 16px', marginBottom: 12,
+            borderRadius: 'var(--radius-sm)', border: emailError ? '2px solid var(--color-error)' : '1px solid var(--color-stroke)',
+            background: 'var(--color-paper)', color: 'var(--color-ink)', fontFamily: 'var(--font-family-mono)', fontSize: '13px', outline: 'none',
+          }}
+        />
         {checkoutError ? (
           <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-error)', marginBottom: 12, lineHeight: 1.45 }}>{checkoutError}</div>
         ) : null}
         <button
           type="button"
-          onClick={placeOrder}
+          onClick={(e) => { if (checkoutBusy) return; const btn = e.currentTarget; btn.disabled = true; placeOrder().finally(() => { if (btn.isConnected && !redirectingRef.current) btn.disabled = false; }); }}
           disabled={checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked}
           style={{
             width: '100%', minHeight: 52, padding: '14px 28px', marginBottom: 10,
@@ -3188,7 +3229,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
             e.currentTarget.style.color = 'var(--color-paper)';
           }}
         >
-          {checkoutBusy ? 'Redirecting to Stripe…' : 'Place order'}
+          {checkoutBusy ? 'Processing...' : 'Place order'}
         </button>
         <button
           onClick={onContinueShopping}
@@ -4610,7 +4651,7 @@ function Messenger404() {
           <div style={{
             background: '#F8FDFF', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF',
             borderBottom: '1px solid #B7C7D8', padding: '6px 8px', fontSize: 11, color: '#18181B',
-          }}>To: backmask_mum &lt;mum@hotmail.com&gt;</div>
+          }}>To: backmask_mum {'<'}mum@hotmail.com{'>'}</div>
           <div style={{ background: '#ECE9D8', border: '1px solid #2163EF', borderTop: 'none', padding: 8 }}>
             <div className="msn404-log" style={{
               height: 110, overflowY: 'auto', background: '#FFFFFF',
@@ -4653,7 +4694,7 @@ function Messenger404() {
           <div style={{
             background: '#F8FDFF', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF',
             borderBottom: '1px solid #B7C7D8', padding: '6px 8px', fontSize: 11, color: '#18181B',
-          }}>To: ~*~Assslayer~*~ &lt;assslayer@hotmail.com&gt;</div>
+          }}>To: ~*~Assslayer~*~ {'<'}assslayer@hotmail.com{'>'}</div>
           <div style={{ background: '#ECE9D8', borderLeft: '1px solid #2163EF', borderRight: '1px solid #2163EF', padding: 8 }}>
             <div
               ref={logRef}

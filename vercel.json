@@ -62,6 +62,27 @@
       "destination": "/facts.html"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html|favicon\\.ico).*)",
+      "destination": "/api/page?__path=/$1"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.saboteur.one"
+        }
+      ],
+      "destination": "https://saboteur.one/:path*",
+      "statusCode": 301
+    },
+    {
       "source": "/store",
       "has": [
         {
@@ -70,22 +91,88 @@
           "value": "comics"
         }
       ],
-      "missing": [
+      "destination": "/store/comics",
+      "statusCode": 301
+    },
+    {
+      "source": "/store",
+      "has": [
         {
           "type": "query",
-          "key": "from",
-          "value": "share"
+          "key": "tab",
+          "value": "prints-and-books"
         }
       ],
-      "destination": "/comics.html"
+      "destination": "/store/books",
+      "statusCode": 301
     },
     {
-      "source": "/policies",
-      "destination": "/policies.html"
+      "source": "/store",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "books"
+        }
+      ],
+      "destination": "/store/books",
+      "statusCode": 301
     },
     {
-      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html|policies\\.html).*)",
-      "destination": "/index.html"
+      "source": "/store",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "textures"
+        }
+      ],
+      "destination": "/store/textures",
+      "statusCode": 301
+    },
+    {
+      "source": "/store",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "original-art"
+        }
+      ],
+      "destination": "/store/original-art",
+      "statusCode": 301
+    },
+    {
+      "source": "/store",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "clothing"
+        }
+      ],
+      "destination": "/store/apparel",
+      "statusCode": 301
+    },
+    {
+      "source": "/store",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "apparel"
+        }
+      ],
+      "destination": "/store/apparel",
+      "statusCode": 301
     }
-  ]
+  ],
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "index.html"
+    },
+    "api/sitemap.js": {
+      "includeFiles": "index.html"
+    }
+  }
 }

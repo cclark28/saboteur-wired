@@ -10,4 +10,4 @@ This repo is the live saboteur.one SPA (`index.html` → Vercel → saboteur.one
 - Photos and product copy are not in this repo. They live in Sanity `6td8xalf` / `production`.
 - Checkout is `https://saboteur-api.vercel.app`, not this repo.
 - Older folders named saboteur / saboteur-one are not live.
-- `policies.html` is generated from `index.html` (own title/canonical/share tags for /policies). After any `index.html` edit run `python3 scripts/build-policies.py` and commit both.
+- Every page route except `/` is served by `api/page.js`: it reads `index.html` and fills in per-page title, description, canonical, share tags, JSON-LD and crawlable text from Sanity. `/sitemap.xml` comes from `api/sitemap.js`. Shared code: `api/_seo.js`. No build step.

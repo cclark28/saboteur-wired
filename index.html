@@ -556,6 +556,7 @@
       "@type": "Organization",
       "@id": "https://saboteur.one/#studio",
       "name": "®Saboteur",
+      "email": "saboteur@mail.grokbot.com",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
       "founder": { "@id": "https://saboteur.one/#charlie" },
@@ -678,6 +679,34 @@ function resolveStoreTab(item) {
   return null;
 }
 
+// Real category URLs (/store/comics …) instead of ?tab= (SEO audit, 21 Oct 2026).
+const STORE_CATEGORY_SLUGS = { comics: 'comics', 'prints-and-books': 'books', textures: 'textures', 'original-art': 'original-art', clothing: 'apparel', all: 'all' };
+function storeCategoryPath(id) {
+  const slug = STORE_CATEGORY_SLUGS[id];
+  return slug ? '/store/' + slug : '/store';
+}
+function storeCategoryFromSlug(slug) {
+  const s = String(slug || '').toLowerCase();
+  const hit = Object.keys(STORE_CATEGORY_SLUGS).find((id) => STORE_CATEGORY_SLUGS[id] === s || id === s);
+  return hit || null;
+}
+// Footer / menu item -> real URL (links stay <a href>; clicks still route in-app).
+function hrefForMapItem(item) {
+  if (!item) return '/';
+  const t = item.linkType;
+  if (t === 'home') return '/';
+  if (t === 'info') return '/about';
+  if (t === 'resend') return '/resend';
+  if (t === 'policies') return '/policies';
+  if (t === 'store') return item.sectionSlug ? storeCategoryPath(item.sectionSlug) : '/store';
+  if (t === 'section' && item.sectionSlug) return '/' + encodeURIComponent(String(item.sectionSlug).trim());
+  if ((t === 'external' || t === 'url') && item.url) return item.url;
+  return '/';
+}
+function isPlainLeftClick(e) {
+  return !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1);
+}
+
 // ---------- Path routing (shareable /store + /store/{slug}) ----------
 function pathFromView(view) {
   if (!view || !view.page) return '/';
@@ -685,7 +714,7 @@ function pathFromView(view) {
   if (p === 'home') return '/';
   if (p === 'store') {
     const cat = view.storeCategory;
-    if (cat && STORE_TABS.some((t) => t.id === cat)) return '/store?tab=' + encodeURIComponent(cat);
+    if (cat && (cat === 'all' || STORE_TABS.some((t) => t.id === cat))) return storeCategoryPath(cat);
     return '/store';
   }
   if (p === 'product') {
@@ -734,6 +763,9 @@ function viewFromPath(pathname, search) {
     return { page: 'store' };
   }
   const storeMatch = path.match(/^\/store\/([^/]+)$/);
+  if (storeMatch && storeCategoryFromSlug(storeMatch[1])) {
+    return { page: 'store', storeCategory: storeCategoryFromSlug(storeMatch[1]) };
+  }
   if (storeMatch) {
     try {
       return { page: 'product', productSlug: decodeURIComponent(storeMatch[1]) };
@@ -1249,7 +1281,7 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   );
   return (
     <a
-      href="/store?tab=comics"
+      href="/store/comics"
       aria-label="Saboteur Comics store"
       title="Store — Comics"
       onClick={handleClick}
@@ -1416,7 +1448,7 @@ function menuHrefFor(label) {
   const meta = (SECTION_META || []).find((s) => s && (s.slug === slug || String(s.title || '').toLowerCase().replace(/\s+/g, '-') === slug));
   if (meta && (meta.isInfoPage || meta.isAbout)) return '/about';
   const tab = (typeof resolveStoreTab === 'function') ? resolveStoreTab({ label: raw, sectionSlug: slug }) : null;
-  if (tab && slug !== 'store') return '/store?tab=' + encodeURIComponent(tab);
+  if (tab && slug !== 'store') return storeCategoryPath(tab);
   return '/' + encodeURIComponent((meta && meta.slug) || slug);
 }
 
@@ -1994,10 +2026,10 @@ const colBox = {
 
           <div style={colBox}>
             <div style={colLabel}>Contact</div>
-            <button type="button" onClick={goContact} style={linkStyle}
+            <a href="/about" onClick={(e) => { if (!isPlainLeftClick(e)) return; goContact(e); }} style={linkStyle}
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-            >Contact</button>
+            >Contact</a>
             {socials.filter((s) => String((s && s.label) || '').toLowerCase() !== 'sfx').map((s, i) => (
               <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
@@ -2024,16 +2056,12 @@ const colBox = {
 
           <div style={colBox}>
             <div style={colLabel}>Site map</div>
-            {displayMap.map((item, i) => item.linkType === 'policies' ? (
-              <a key={i} href="/policies" data-footer-link="policies" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); onMapClick(item); }} style={linkStyle}
+            {displayMap.map((item, i) => (
+              <a key={i} href={hrefForMapItem(item)} data-footer-link={item.linkType === 'policies' ? 'policies' : undefined}
+                onClick={(e) => { if (!isPlainLeftClick(e)) return; if (item.linkType === 'external' || item.linkType === 'url') return; e.preventDefault(); onMapClick(item); }} style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
                 onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
               >{item.label}</a>
-            ) : (
-              <button key={i} type="button" onClick={() => onMapClick(item)} style={linkStyle}
-                onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-              >{item.label}</button>
             ))}
           </div>
 
@@ -2074,9 +2102,9 @@ const colBox = {
         }}>
           <p style={{ margin: 0 }}>
             Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Not AI-generated. Interested parties for publishing,{' '}
-            <button
-              type="button"
-              onClick={goContact}
+            <a
+              href="/about"
+              onClick={(e) => { if (!isPlainLeftClick(e)) return; goContact(e); }}
               style={{
                 font: 'inherit',
                 color: 'var(--color-ink)',
@@ -2088,7 +2116,7 @@ const colBox = {
                 textDecoration: 'underline',
                 textUnderlineOffset: '2px',
               }}
-            >please inquire</button>.
+            >please inquire</a>.
           </p>
         </div>
       </div>
@@ -2267,7 +2295,7 @@ function productImageUrl(p) {
   return null;
 }
 
-function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory }) {
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
   // Honor an explicit deep link (?tab=comics) even if that tab is locked (travel pause).
@@ -2295,7 +2323,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
     <div>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px' }}>
-        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store</h1>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>{(initialCategory && initialCategory !== 'all' && (STORE_CATEGORIES.find((c) => c.id === initialCategory) || {}).label) || 'Store'}</h1>
         {shippingPaused ? (
           <PhysicalPauseNotice message={physicalOrdersPausedMessage} />
         ) : null}
@@ -2305,12 +2333,12 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             const muted = mutedCats[c.id];
             const locked = lockedCats[c.id];
             return (
-              <button
+              <a
                 key={c.id}
-                type="button"
-                disabled={!!locked}
+                href={storeCategoryPath(c.id)}
                 aria-disabled={locked ? 'true' : undefined}
-                onClick={() => { if (!locked) setFilter(c.id); }}
+                aria-current={active ? 'page' : undefined}
+                onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (locked) return; setFilter(c.id); if (onSelectCategory) onSelectCategory(c.id); }}
                 className={'store-cat-btn' + (active ? ' is-active' : '') + (muted ? ' is-muted' : '') + (locked ? ' is-locked' : '')}
                 style={{
                   border: 'none', cursor: locked ? 'not-allowed' : 'pointer',
@@ -2318,8 +2346,9 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                   letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   borderRadius: 'var(--radius-sm)',
                   transition: 'background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease)',
+                  textDecoration: 'none', display: 'inline-block',
                 }}
-              >{c.label}</button>
+              >{c.label}</a>
             );
           })}
         </div>
@@ -2348,12 +2377,13 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               const sold = unavailable && !paused && !comingSoon;
               const badge = comingSoon ? 'Coming soon' : (sold ? 'Sold out' : null);
               return (
-                <button
+                <a
                   key={p._id || p.slug}
-                  onClick={() => onOpenProduct && onOpenProduct(p)}
+                  href={'/store/' + encodeURIComponent(String(p.slug || ''))}
+                  onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(p); }}
                   style={{
                     background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
-                    display: 'flex', flexDirection: 'column', gap: 16,
+                    display: 'flex', flexDirection: 'column', gap: 16, textDecoration: 'none', color: 'inherit',
                   }}
                 >
                   <div style={{
@@ -2411,7 +2441,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                       }}>{price}</span>
                     </div>
                   </div>
-                </button>
+                </a>
               );
             })}
           </div>
@@ -2831,6 +2861,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             marginBottom: 24,
           }}>
             More from the store
+            {p.category && STORE_CATEGORY_SLUGS[p.category] ? (
+              <>
+                {' · '}
+                <a href={storeCategoryPath(p.category)} onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store(p.category); }} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                  All {(STORE_TABS.find((c) => c.id === p.category) || {}).label || 'items'}
+                </a>
+              </>
+            ) : null}
           </div>
           <div style={{
             display: 'grid',
@@ -2845,13 +2883,13 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               const rpPaused = isShippingPaused(rp, physicalOrdersEnabled);
               const rpBadge = rpSoon ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
               return (
-                <button
+                <a
                   key={rp._id || rp.slug}
-                  type="button"
-                  onClick={() => onOpenProduct && onOpenProduct(rp)}
+                  href={'/store/' + encodeURIComponent(String(rp.slug || ''))}
+                  onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(rp); }}
                   style={{
                     background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
-                    display: 'flex', flexDirection: 'column', gap: 12,
+                    display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', color: 'inherit',
                   }}
                 >
                   <div style={{
@@ -2888,7 +2926,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     color: 'var(--color-ink-55)',
                     textDecoration: (rpSold && !rpPaused && !rpSoon) ? 'line-through' : 'none',
                   }}>{rpPrice}</div>
-                </button>
+                </a>
               );
             })}
           </div>
@@ -5826,6 +5864,9 @@ function App() {
           menuOpen={menuOpen}
           onOpenProduct={(p) => {
             navigate({ page: 'product', product: p });
+          }}
+          onSelectCategory={(cat) => {
+            navigate({ page: 'store', storeCategory: cat, storeResetKey: view.storeResetKey });
           }}
         />
       )}

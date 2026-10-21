@@ -155,10 +155,22 @@ function qualifier(p) {
   if (c === 'clothing') return 'Apparel';
   return '';
 }
+// Trim whole sentences from the end before falling back to a mid-sentence clip.
+function fitSentences(s, n) {
+  if (s.length <= n) return s;
+  const parts = s.split(/(?<=[.!?])\s+/);
+  while (parts.length > 1 && parts.join(' ').length > n) parts.pop();
+  const out = parts.join(' ');
+  return out.length <= n ? out : clip(out, n);
+}
 function productDesc(p, settings) {
   // QC: the product's own Sanity seo.description wins; generated copy is only the fallback.
   const own = String(p.seoDesc || '').replace(/\s+/g, ' ').trim();
-  if (own) return clip(noDash(own), 155);
+  if (own) {
+    // Free downloads always say so (Charlie, 21 Oct): append when the Sanity text lacks it.
+    const tail = isFree(p) && !/\bfree\b/i.test(own) ? ' Free download.' : '';
+    return fitSentences(noDash(own), 155 - tail.length) + tail;
+  }
   const name = shortName(p.title);
   const st = status(p, settings);
   const d = details(p);

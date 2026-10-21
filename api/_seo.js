@@ -24,10 +24,10 @@ const FACTS_LASTMOD = '2026-10-21';
 const TOMMYS_PLACEHOLDER = "Tommy's, a " + BRAND + " comic. For mature readers.";
 const CATS = [
   { id: 'comics', slug: 'comics', label: 'Comics',
-    title: "Comics - Tommy's and Indie Adult Comics | " + BRAND,
-    // AWAITING FINAL TOMMY'S COPY: desc + intro.
-    desc: 'Comics by Charlie Clark from ' + BRAND + '. ' + TOMMYS_PLACEHOLDER + ' Print issue and digital extras. Adults only (18+).',
-    intro: 'Comics by Charlie Clark from ' + BRAND + '. ' + TOMMYS_PLACEHOLDER + ' Adults only (18+).',
+    title: 'Comics - Indie Adult Comics | ' + BRAND,
+    // QC copy Rev 3 A1 (no Tommy's plot claims; logline still awaiting Charlie).
+    desc: 'Comics by Charlie Clark from ' + BRAND + ": Tommy's Issue #1 in print and its behind-the-scenes PDF. Print issue and digital extras. Adults only (18+).",
+    intro: 'Comics by Charlie Clark from ' + BRAND + '. Print issue and digital extras. Adults only (18+).',
     og: COMICS_OG },
   { id: 'prints-and-books', slug: 'books', label: 'Books & Zines',
     title: 'Photo Books & Zines - Digital PDFs | ' + BRAND,
@@ -43,8 +43,8 @@ const CATS = [
     intro: 'Original comic covers and pinups by Charlie Clark: pencil, ink and screentone on bristol board.' },
   { id: 'clothing', slug: 'apparel', label: 'Apparel',
     title: 'Apparel - Tees and Totes | ' + BRAND,
-    desc: BRAND + ' apparel: graphic tees and a tote bag in the studio\u2019s comic art style by Charlie Clark. All sold out for now, and physical shipping is paused.',
-    intro: BRAND + ' tees and totes in the studio\u2019s comic art style.' },
+    desc: BRAND + " apparel: graphic tees and a tote bag in the studio's comic art style by Charlie Clark. Sold out for now. Physical shipping is paused.",
+    intro: BRAND + " tees and totes in the studio's comic art style. Sold out. Physical shipping is paused." },
 ];
 const catById = (id) => CATS.find((c) => c.id === id);
 const catBySlug = (s) => CATS.find((c) => c.slug === s);
@@ -138,9 +138,9 @@ function fitDesc(parts, pads) {
 const PADS = ['Human-crafted, not AI-generated.', 'Sold by ' + BRAND + ', an independent art studio and publisher.'];
 // Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
 const SECTION_DESC = {
-  art: 'Original drawings, paintings and comic art by Charlie Clark from ' + BRAND + ', an independent art studio and imprint. Human-crafted, not AI-generated.',
-  photography: 'Photography by Charlie Clark: portrait and travel series from ' + BRAND + ', an independent art studio and publishing imprint. Human-crafted, not AI-generated.',
-  explorations: 'Explorations by Charlie Clark: experiments in ink, video and 3D scanning from ' + BRAND + ', an independent art studio and publisher. Human-crafted work.',
+  art: 'Original drawings, paintings and comic art by Charlie Clark from ' + BRAND + ', an independent art studio and publishing imprint. Pencil, ink and paint.',
+  photography: 'Photography by Charlie Clark from ' + BRAND + ': portraits, street work and figure studies, from an independent art studio and publishing imprint.',
+  explorations: 'Experiments in ink, paper animation, video and 3D scanning by Charlie Clark from ' + BRAND + ', an independent art studio and publishing imprint.',
 };
 function details(p) { return p.productDetails || {}; }
 function pagesOf(p) { const n = parseInt(details(p).pages, 10); return Number.isFinite(n) && n > 0 ? n : null; }
@@ -401,11 +401,11 @@ function policiesRoute(sections) {
   const mail = '<a href="mailto:' + EMAIL + '" style="' + LINK + '">';
   const inner = crumbsHtml([['Home', SITE + '/'], ['Store Policies', SITE + '/policies']]) + '<h1>Store Policies</h1>' +
     '<h2>Age requirement</h2><p>' + esc(BRAND) + ' publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.</p>' +
-    '<h2>Digital downloads</h2><p>Digital products are delivered by email right after purchase. If your download link doesn\'t arrive or stops working, use <a href="/resend" style="' + LINK + '">Re-send downloads</a> at the bottom of the site, or ' + mail + 'contact us</a>.</p>' +
+    '<h2>Digital downloads</h2><p>After payment, your download opens on the confirmation page. Save it. If it does not work, email ' + mail + EMAIL + '</a>.</p>' +
     '<h2>Shipping</h2><p>Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only <a href="/store" style="' + LINK + '">digital downloads</a> are available.</p>' +
     '<h2>Returns and refunds</h2><p>All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn\'t work, ' + mail + 'contact us</a> and we\'ll make it right.</p>' +
     '<h2>Contact</h2><p>Questions about an order? Email ' + mail + EMAIL + '</a>.</p>';
-  const desc = BRAND + ' store policies: 18+ age requirement, digital download delivery, shipping status, returns and refunds, and how to contact us about an order.';
+  const desc = BRAND + ' store policies: 18+ age requirement, how digital downloads work after payment, shipping status, returns, and how to contact us.';
   return base({ title: 'Store Policies - Age, Downloads & Refunds | ' + BRAND, desc, canonical: SITE + '/policies',
     ld: [{ '@type': 'WebPage', '@id': SITE + '/policies#page', url: SITE + '/policies', name: 'Store Policies', description: desc, isPartOf: { '@id': SITE + '/#website' }, publisher: { '@id': SITE + '/#studio' } },
       breadcrumb([['Home', SITE + '/'], ['Store', SITE + '/store'], ['Store Policies', SITE + '/policies']])],

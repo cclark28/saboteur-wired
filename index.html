@@ -2209,7 +2209,7 @@ function isPhysicalFulfillment(ft) {
 // Auto-pause at local midnight Indianapolis on Aug 19, 2026.
 // Sanity switch: false = pause now; true = selling (also the way to resume after the trip); unset = follow this date.
 const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
-const PHYSICAL_PAUSED_COPY = "I'm out of the country, so I can't ship physical goods right now. Digital downloads are still available. Please send me an email for any inquiries.";
+const PHYSICAL_PAUSED_COPY = "Physical shipping is paused right now. Digital downloads are still available. Email saboteur@mail.grokbot.com with any questions.";
 
 function physicalPauseCopy(custom) {
   const c = String(custom || '').trim();
@@ -3108,7 +3108,7 @@ function PolicyStoreLink({ children }) {
 }
 const POLICY_SECTIONS = [
   { title: 'Age requirement', body: () => <>{'\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'}</> },
-  { title: 'Digital downloads', body: () => <>{"Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use "}<PolicyResendLink>Re-send downloads</PolicyResendLink>{" at the bottom of the site, or "}<PolicyMailLink>contact us</PolicyMailLink>{'.'}</> },
+  { title: 'Digital downloads', body: () => <>{'After payment, your download opens on the confirmation page. Save it. If it does not work, email '}<PolicyMailLink>saboteur@mail.grokbot.com</PolicyMailLink>{'.'}</> },
   { title: 'Shipping', body: () => <>{'Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only '}<PolicyStoreLink>digital downloads</PolicyStoreLink>{' are available.'}</> },
   { title: 'Returns and refunds', body: () => <>{"All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, "}<PolicyMailLink>contact us</PolicyMailLink>{" and we'll make it right."}</> },
 ];

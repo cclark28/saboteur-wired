@@ -23,8 +23,9 @@ const FACTS_LASTMOD = '2026-10-21';
 const CATS = [
   { id: 'comics', slug: 'comics', label: 'Comics',
     title: "Comics - Tommy's and Indie Adult Comics | " + BRAND,
-    desc: "Comics from " + BRAND + ", including Tommy's, a 1976 New Mexico desert-festival crime story by Charlie Clark. Print issue and digital extras. Adults only.",
-    intro: "Comics from " + BRAND + ", including Tommy's, a 1976 New Mexico desert-festival crime story by Charlie Clark. Adults only (18+).",
+    // Hard-coded Tommy's wording (code, not Sanity). Writer's final copy goes here.
+    desc: "Comics by Charlie Clark from " + BRAND + ", including Tommy's, a serial killer story about split personalities. Print issue and digital extras. Adults only.",
+    intro: "Comics by Charlie Clark from " + BRAND + ", including Tommy's, a serial killer story about split personalities. Adults only (18+).",
     og: COMICS_OG },
   { id: 'prints-and-books', slug: 'books', label: 'Books & Zines',
     title: 'Photo Books & Zines - Digital PDFs | ' + BRAND,
@@ -133,8 +134,6 @@ function fitDesc(parts, pads) {
   return s.length > 155 ? clip(s, 155) : s;
 }
 const PADS = ['Human-crafted, not AI-generated.', 'Sold by ' + BRAND + ', an independent art studio and publisher.'];
-// "Secure checkout with Stripe." only where the item can actually be bought right now (paid + live).
-const BUY_PADS = ['Human-crafted, not AI-generated.', 'Secure checkout with Stripe.', 'Sold by ' + BRAND + ', an independent art studio and publisher.'];
 // Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
 const SECTION_DESC = {
   art: 'Original drawings, paintings and comic art by Charlie Clark from ' + BRAND + ', an independent art studio and imprint. Human-crafted, not AI-generated.',
@@ -174,7 +173,7 @@ function productDesc(p, settings) {
   else if (c === 'clothing') lead = name + ': ' + BRAND + ' apparel in the studio\u2019s comic art style.';
   else lead = name + ' from ' + BRAND + '.';
   const adult = p.requiresAgeConfirm ? 'Adults only (18+).' : '';
-  return fitDesc([lead, price, avail, adult], st.key === 'live' && !isFree(p) ? BUY_PADS : PADS);
+  return fitDesc([lead, price, avail, adult], PADS);
 }
 function imgAlt(p) {
   const name = shortName(p.title);
@@ -193,6 +192,10 @@ function productOg(p) {
   }
   return Object.assign({ flagged: !!p.imageUrl }, FALLBACK_OG);
 }
+// SafeSearch: <meta name="rating" content="adult"> on pages that can show nudity
+// (https://developers.google.com/search/docs/specialty/explicit/guidelines#add-metadata). When unsure, include.
+function adultImage(p) { return !!(p && (p.requiresAgeConfirm || OG_EXPLICIT_SLUGS[p.slug])); }
+function adultCategory(products, catId) { return products.some((x) => x.category === catId && adultImage(x)); }
 function productUrl(p) { return SITE + '/store/' + encodeURIComponent(p.slug); }
 function catUrl(c) { return SITE + '/store/' + c.slug; }
 
@@ -213,6 +216,7 @@ function productLd(p, settings) {
     brand: { '@type': 'Brand', name: BRAND },
   };
   if (p.imageUrl) ld.image = [p.imageUrl + '?w=1200&fm=jpg&q=85'];
+  if (adultImage(p)) ld.hasAdultConsideration = 'https://schema.org/SexualContentConsideration';
   if (st.schema && p.fulfillmentType) {
     ld.offers = {
       '@type': 'Offer', url: productUrl(p), price: offerPrice(p), priceCurrency: 'USD',
@@ -281,7 +285,7 @@ function productListHtml(list, settings) {
 
 // ---------- routes ----------
 function base(meta) {
-  return Object.assign({ status: 200, robots: null, og: FALLBACK_OG, ogType: 'website', ld: [], body: '' }, meta);
+  return Object.assign({ adult: false, status: 200, robots: null, og: FALLBACK_OG, ogType: 'website', ld: [], body: '' }, meta);
 }
 function resolve(pathname, data) {
   const products = data.products || [];
@@ -302,7 +306,7 @@ function resolve(pathname, data) {
         const list = products.filter((x) => x.category === c.id);
         return list.length ? '<h2><a href="/store/' + c.slug + '" style="' + LINK + '">' + esc(c.label) + '</a></h2>' + productListHtml(list, settings) : '';
       }).join('');
-    return base({ title: 'Store - Comics, Photo Books, Textures & Art | ' + BRAND, desc, canonical: SITE + '/store',
+    return base({ adult: true, title: 'Store - Comics, Photo Books, Textures & Art | ' + BRAND, desc, canonical: SITE + '/store',
       ld: [{ '@type': 'CollectionPage', '@id': SITE + '/store#page', url: SITE + '/store', name: 'Store', isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, store])],
       body: wrapBody(inner, sections) });
   }
@@ -314,7 +318,7 @@ function resolve(pathname, data) {
       const inner = crumbsHtml([home, store, [cat.label, catUrl(cat)]]) + '<h1>' + esc(cat.label) + '</h1><p>' + esc(cat.intro) + '</p>' +
         (list.length ? productListHtml(list, settings) : '<p>Nothing here yet. Check back soon.</p>') +
         '<p><a href="/store" style="' + LINK + '">All categories</a></p>';
-      return base({ title: cat.title, desc: cat.desc, canonical: catUrl(cat), og: cat.og || FALLBACK_OG,
+      return base({ adult: adultCategory(products, cat.id), title: cat.title, desc: cat.desc, canonical: catUrl(cat), og: cat.og || FALLBACK_OG,
         ld: [{ '@type': 'CollectionPage', '@id': catUrl(cat) + '#page', url: catUrl(cat), name: cat.label, isPartOf: { '@id': SITE + '/#website' },
           mainEntity: { '@type': 'ItemList', itemListElement: list.map((x, i) => ({ '@type': 'ListItem', position: i + 1, url: productUrl(x), name: shortName(x.title) })) } },
           breadcrumb([home, store, [cat.label, catUrl(cat)]])],
@@ -330,14 +334,14 @@ function resolve(pathname, data) {
     const inner = crumbsHtml([home, ['About', SITE + '/about']]) + '<h1>' + esc(settings.infoHeadline || 'About') + '</h1>' +
       (settings.infoSubhead ? '<p>' + esc(settings.infoSubhead) + '</p>' : '') + paras.map((x) => '<p>' + esc(x) + '</p>').join('');
     // Title leads with the same words as the H1 (Sanity siteSettings.infoHeadline).
-    return base({ title: (settings.infoHeadline || 'About') + ' - About ' + BRAND + ' and Charlie Clark', desc, canonical: SITE + '/about',
+    return base({ adult: true, title: (settings.infoHeadline || 'About') + ' - About ' + BRAND + ' and Charlie Clark', desc, canonical: SITE + '/about',
       ld: [{ '@type': 'AboutPage', '@id': SITE + '/about#page', url: SITE + '/about', name: 'About ' + BRAND, about: { '@id': SITE + '/#studio' }, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, ['About', SITE + '/about']])],
       body: wrapBody(inner, sections) });
   }
   if (lower === '/policies') return policiesRoute(sections);
   if (lower === '/checkout' || lower === '/resend' || lower === '/order-success') {
     const names = { '/checkout': 'Checkout', '/resend': 'Re-send downloads', '/order-success': 'Order confirmation' };
-    return base({ title: names[lower] + ' | ' + BRAND, desc: BRAND + ' store: ' + names[lower].toLowerCase() + '.', canonical: SITE + lower, robots: 'noindex, follow',
+    return base({ adult: lower !== '/resend', title: names[lower] + ' | ' + BRAND, desc: BRAND + ' store: ' + names[lower].toLowerCase() + '.', canonical: SITE + lower, robots: 'noindex, follow',
       body: wrapBody('<h1>' + esc(names[lower]) + '</h1>', sections) });
   }
   if (lower === '/404' || lower === '/not-found') return notFound(sections);
@@ -350,7 +354,7 @@ function resolve(pathname, data) {
       const desc = SECTION_DESC[sec.slug] || fitDesc([sec.title + ' by Charlie Clark at ' + BRAND + ', an independent art studio and publishing imprint.'], PADS);
       const inner = crumbsHtml([home, [sec.title, SITE + '/' + sec.slug]]) + '<h1>' + esc(sec.title) + '</h1>' +
         (posts.length ? '<ul style="padding-left:18px">' + posts.map((a) => '<li><strong>' + esc(a.headline || a.title || 'Untitled') + '</strong>' + (a.subhead ? ': ' + esc(clip(a.subhead, 160)) : '') + '</li>').join('') + '</ul>' : '');
-      return base({ title: fitTitle(sec.title, 'Charlie Clark'), desc, canonical: SITE + '/' + sec.slug, robots: hidden ? 'noindex, follow' : null,
+      return base({ adult: true, title: fitTitle(sec.title, 'Charlie Clark'), desc, canonical: SITE + '/' + sec.slug, robots: hidden ? 'noindex, follow' : null,
         ld: [{ '@type': 'CollectionPage', '@id': SITE + '/' + sec.slug + '#page', url: SITE + '/' + sec.slug, name: sec.title, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, [sec.title, SITE + '/' + sec.slug]])],
         body: wrapBody(inner, sections) });
     }
@@ -381,6 +385,8 @@ function productRoute(p, products, sections, settings) {
     (cat ? '<p>More in <a href="' + catUrl(cat).replace(SITE, '') + '" style="' + LINK + '">' + esc(cat.label) + '</a>' : '<p>') +
     (related.length ? ': ' + related.map((x) => '<a href="/store/' + encodeURIComponent(x.slug) + '" style="' + LINK + '">' + esc(shortName(x.title)) + '</a>').join(', ') : '') + '</p>';
   return base({
+    // Related thumbnails come from the same category, so an adult category marks the page too.
+    adult: adultImage(p) || adultCategory(products, p.category),
     title: fitTitle(shortName(p.title), qualifier(p)), desc: productDesc(p, settings), canonical: productUrl(p), og, ogType: 'product',
     ld: [productLd(p, settings), breadcrumb(crumbs)], body: wrapBody(inner, sections),
     extraHead: (st.schema && p.fulfillmentType ? '<meta property="product:price:amount" content="' + offerPrice(p) + '"><meta property="product:price:currency" content="USD">' : ''),
@@ -401,7 +407,8 @@ function policiesRoute(sections) {
     body: wrapBody(inner, sections) });
 }
 function notFound(sections) {
-  return base({ status: 404, title: 'Page not found | ' + BRAND, desc: 'This page does not exist on ' + BRAND + '. Browse the store, photography and art from the homepage.', canonical: null, robots: 'noindex, follow',
+  // 404 background art may show partial nudity: marked adult (noindex anyway).
+  return base({ adult: true, status: 404, title: 'Page not found | ' + BRAND, desc: 'This page does not exist on ' + BRAND + '. Browse the store, photography and art from the homepage.', canonical: null, robots: 'noindex, follow',
     body: wrapBody('<h1>Page not found</h1><p>This page does not exist. <a href="/" style="' + LINK + '">Go to the homepage</a> or <a href="/store" style="' + LINK + '">the store</a>.</p>', sections) });
 }
 
@@ -416,6 +423,7 @@ function render(meta) {
   const t = esc(meta.title), d = esc(meta.desc);
   h = sub(h, /<title>[^<]*<\/title>/, '<title>' + t + '</title>');
   h = sub(h, /<link rel="canonical" href="[^"]*">/, meta.canonical ? '<link rel="canonical" href="' + esc(meta.canonical) + '">' : '');
+  h = sub(h, /<meta name="rating" content="adult">\n?/, meta.adult ? '<meta name="rating" content="adult">\n' : '');
   h = sub(h, /<meta name="description" content="[^"]*">/, '<meta name="description" content="' + d + '">' + (meta.robots ? '<meta name="robots" content="' + esc(meta.robots) + '">' : ''));
   h = sub(h, /<meta property="og:type" content="[^"]*">/, '<meta property="og:type" content="' + esc(meta.ogType) + '">');
   h = sub(h, /<meta property="og:title" content="[^"]*">/, '<meta property="og:title" content="' + t + '">');
@@ -460,4 +468,4 @@ function sitemap(data) {
     urls.map((u) => '  <url>\n    <loc>' + esc(u.loc) + '</loc>\n' + (u.lastmod ? '    <lastmod>' + u.lastmod + '</lastmod>\n' : '') + '  </url>').join('\n') + '\n</urlset>\n';
 }
 
-module.exports = { loadData, resolve, render, sitemap, productOg, productDesc, fitTitle, shortName, qualifier, CATS, SITE, status, OG_EXPLICIT_SLUGS };
+module.exports = { adultImage, loadData, resolve, render, sitemap, productOg, productDesc, fitTitle, shortName, qualifier, CATS, SITE, status, OG_EXPLICIT_SLUGS };

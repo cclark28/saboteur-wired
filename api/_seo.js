@@ -228,6 +228,8 @@ function productLd(p, settings) {
       '@type': 'Offer', url: productUrl(p), price: offerPrice(p), priceCurrency: 'USD',
       availability: st.schema, itemCondition: 'https://schema.org/NewCondition',
       seller: { '@id': SITE + '/#studio' },
+      // Matches /policies: "All sales are final".
+      hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US', returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted', merchantReturnLink: SITE + '/policies' },
     };
   }
   const pages = pagesOf(p);

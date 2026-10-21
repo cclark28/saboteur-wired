@@ -1883,12 +1883,13 @@ function formatClock(date, timeZone) {
 }
 
 // One footer clock block. Fixed size so every city looks uniform (Charlie 14:37).
-const CLOCK_BLOCK_HEIGHT = 64;
+// Room for a 2-line city label so narrow columns (1024px) wrap instead of cutting the city off.
+const CLOCK_BLOCK_HEIGHT = 78;
 function ClockBlock({ label, clock, local }) {
   const line = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
   return (
     <div data-clock-block title={label} style={{ boxSizing: 'border-box', width: '100%', height: CLOCK_BLOCK_HEIGHT, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', overflow: 'hidden' }}>
-      <div style={Object.assign({ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }, line)}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflowWrap: 'anywhere' }}>{label}</div>
       <div style={Object.assign({ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', fontWeight: local ? 500 : 400, color: 'var(--color-ink)', lineHeight: 1.5 }, line)}>{clock}</div>
     </div>
   );

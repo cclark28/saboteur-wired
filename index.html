@@ -787,24 +787,27 @@ function viewFromPath(pathname, search) {
 // Home head values (static index.html), restored on client navigation back to home.
 const HOME_CANONICAL = 'https://saboteur.one/';
 const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
-// ONE source for nudity (visual check of the Sanity images, 2026-10-21). It drives BOTH the "Nude art" pill and
+// ONE source for nudity (visual check of the Sanity images, 2026-10-21). It drives BOTH the "18+" label and
 // <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
 // Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
 const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
-// "Nude art" pill. Own color (deep violet, white text 10:1) so it never reads as the orange coming-soon / sold-out label.
-const NUDE_PILL_LABEL = 'Nude art';
-function NudePill({ small }) {
+// "18+" label (Charlie 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
+// section "Tags / Badges", variant "Paid / Price": --color-card background, --color-ink text, 4px radius, 4px 8px padding,
+// --font-label (IBM Plex Mono 500, 0.8125rem, 0.02em tracking), no uppercase transform. Sits below the copy, not on the image.
+const ADULT_LABEL = '18+';
+const ADULT_LABEL_ARIA = 'Adult content, 18+';
+function AdultLabel() {
   return (
-    <span data-nude-pill style={{
-      position: 'absolute', top: small ? 10 : 12, left: small ? 10 : 12,
-      fontFamily: 'var(--font-family-mono)', fontSize: small ? 10 : 11, fontWeight: 500,
-      letterSpacing: '0.04em', textTransform: 'uppercase',
-      padding: small ? '6px 10px' : '7px 12px', borderRadius: 9999, lineHeight: 1,
-      whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none', zIndex: 2,
-      background: '#4C1D95', color: '#FFFFFF',
-    }}>{NUDE_PILL_LABEL}</span>
+    <span data-adult-label role="img" aria-label={ADULT_LABEL_ARIA} style={{
+      display: 'inline-block', alignSelf: 'flex-start',
+      background: 'var(--color-card)', color: 'var(--color-ink)',
+      borderRadius: 'var(--radius-sm, 4px)', padding: '4px 8px',
+      fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size, 0.8125rem)',
+      fontWeight: 'var(--font-label-weight, 500)', letterSpacing: 'var(--font-label-tracking, 0.02em)',
+      lineHeight: 1.4, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+    }}>{ADULT_LABEL}</span>
   );
 }
 
@@ -2481,7 +2484,6 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         {p.title || 'Product'}
                       </span>
                     )}
-                    {isAdultProduct(p) ? <NudePill /> : null}
                     {badge && (
                       <span
                         style={{
@@ -2524,6 +2526,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         textDecoration: sold ? 'line-through' : 'none',
                       }}>{price}</span>
                     </div>
+                    {isAdultProduct(p) ? <div style={{ marginTop: 12 }}><AdultLabel /></div> : null}
                   </div>
                 </a>
               );
@@ -2677,7 +2680,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
-                  {isAdultProduct(p) ? <NudePill /> : null}
                   {(comingSoon || soldOnly) ? (
                     <span
                       style={{
@@ -2745,6 +2747,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           }}>
             {price}
           </div>
+          {isAdultProduct(p) ? <div style={{ margin: '-16px 0 28px' }}><AdultLabel /></div> : null}
 
           {p.description ? (
             <p style={{
@@ -2991,7 +2994,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: rpPaused ? 0.4 : 1 }}
                       />
                     ) : null}
-                    {isAdultProduct(rp) ? <NudePill small /> : null}
                     {rpBadge ? (
                       <span style={{
                         position: 'absolute', top: 10, right: 10,
@@ -3013,6 +3015,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     color: 'var(--color-ink-55)',
                     textDecoration: (rpSold && !rpPaused && !rpSoon) ? 'line-through' : 'none',
                   }}>{rpPrice}</div>
+                  {isAdultProduct(rp) ? <AdultLabel /> : null}
                 </a>
               );
             })}

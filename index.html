@@ -533,6 +533,7 @@
   "@graph": [
     {
       "@type": "WebSite",
+      "@id": "https://saboteur.one/#website",
       "name": "®Saboteur",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.",
@@ -3041,11 +3042,24 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
   );
 }
 
+const POLICY_LINK_STYLE = { color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' };
+function PolicyMailLink({ children }) {
+  return <a href={'mailto:' + CONTACT_EMAIL} style={POLICY_LINK_STYLE}>{children}</a>;
+}
+function PolicyStoreLink({ children }) {
+  return (
+    <a href="/store" data-policies-link="store" style={POLICY_LINK_STYLE} onClick={(e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store(); else window.location.href = '/store';
+    }}>{children}</a>
+  );
+}
 const POLICY_SECTIONS = [
-  { title: 'Age requirement', body: ['\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'] },
-  { title: 'Digital downloads', body: ["Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use Re-send downloads at the bottom of the site, or contact us."] },
-  { title: 'Shipping', body: ['Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only digital downloads are available.'] },
-  { title: 'Returns and refunds', body: ["All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, contact us and we'll make it right."] },
+  { title: 'Age requirement', body: () => <>{'\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'}</> },
+  { title: 'Digital downloads', body: () => <>{"Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use Re-send downloads at the bottom of the site, or "}<PolicyMailLink>contact us</PolicyMailLink>{'.'}</> },
+  { title: 'Shipping', body: () => <>{'Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only '}<PolicyStoreLink>digital downloads</PolicyStoreLink>{' are available.'}</> },
+  { title: 'Returns and refunds', body: () => <>{"All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, "}<PolicyMailLink>contact us</PolicyMailLink>{" and we'll make it right."}</> },
 ];
 
 function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
@@ -3061,12 +3075,12 @@ function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggle
           {POLICY_SECTIONS.map((sec) => (
             <section key={sec.title} style={{ paddingBottom: 28, borderBottom: '1px solid var(--color-stroke)' }}>
               <h2 style={h2}>{sec.title}</h2>
-              {sec.body.map((t, i) => <p key={i} style={para}>{t}</p>)}
+              <p style={para}>{sec.body()}</p>
             </section>
           ))}
           <section>
             <h2 style={h2}>Contact</h2>
-            <p style={para}>Questions about an order? Email <a href={'mailto:' + CONTACT_EMAIL} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>{CONTACT_EMAIL}</a>.</p>
+            <p style={para}>Questions about an order? Email <PolicyMailLink>{CONTACT_EMAIL}</PolicyMailLink>.</p>
           </section>
         </div>
       </div>

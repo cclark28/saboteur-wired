@@ -19,16 +19,16 @@
 <meta property="og:title" content="Store Policies — Age, Downloads &amp; Refunds | ®Saboteur">
 <meta property="og:description" content="®Saboteur store policies: 18+ age requirement, digital download delivery, shipping status, returns and refunds, and how to contact us about an order.">
 <meta property="og:url" content="https://saboteur.one/policies">
-<meta property="og:image" content="https://saboteur.one/assets/og-amelia.jpg">
-<meta property="og:image:width" content="1080">
-<meta property="og:image:height" content="1080">
+<meta property="og:image" content="https://cdn.sanity.io/images/6td8xalf/production/c4d5ceafb640a2b49546b700c1f16814c440cc14-719x1280.jpg?w=1200&amp;h=630&amp;fit=crop&amp;fm=jpg&amp;q=85">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:alt" content="®Saboteur — IRONING, Amelia">
+<meta property="og:image:alt" content="®Saboteur tote bag with the SABOTEUR logo, hanging on a white chair">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Store Policies — Age, Downloads &amp; Refunds | ®Saboteur">
 <meta name="twitter:description" content="®Saboteur store policies: 18+ age requirement, digital download delivery, shipping status, returns and refunds, and how to contact us about an order.">
-<meta name="twitter:image" content="https://saboteur.one/assets/og-amelia.jpg">
-<meta name="twitter:image:alt" content="®Saboteur — IRONING, Amelia">
+<meta name="twitter:image" content="https://cdn.sanity.io/images/6td8xalf/production/c4d5ceafb640a2b49546b700c1f16814c440cc14-719x1280.jpg?w=1200&amp;h=630&amp;fit=crop&amp;fm=jpg&amp;q=85">
+<meta name="twitter:image:alt" content="®Saboteur tote bag with the SABOTEUR logo, hanging on a white chair">
 <!-- Vercel Web Analytics (enabled in dashboard) -->
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -533,6 +533,7 @@
   "@graph": [
     {
       "@type": "WebSite",
+      "@id": "https://saboteur.one/#website",
       "name": "®Saboteur",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.",
@@ -582,11 +583,11 @@
     <h2>Age requirement</h2>
     <p>&reg;Saboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.</p>
     <h2>Digital downloads</h2>
-    <p>Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use <a href="/resend">Re-send downloads</a> at the bottom of the site, or contact us.</p>
+    <p>Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use Re-send downloads at the bottom of the site, or <a href="mailto:saboteur@mail.grokbot.com">contact us</a>.</p>
     <h2>Shipping</h2>
-    <p>Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only digital downloads are available.</p>
+    <p>Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only <a href="/store">digital downloads</a> are available.</p>
     <h2>Returns and refunds</h2>
-    <p>All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, contact us and we'll make it right.</p>
+    <p>All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, <a href="mailto:saboteur@mail.grokbot.com">contact us</a> and we'll make it right.</p>
     <h2>Contact</h2>
     <p>Questions about an order? Email <a href="mailto:saboteur@mail.grokbot.com">saboteur@mail.grokbot.com</a>.</p>
     <p><a href="/store">Store</a> &middot; <a href="/">Home</a></p>
@@ -3046,11 +3047,24 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
   );
 }
 
+const POLICY_LINK_STYLE = { color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' };
+function PolicyMailLink({ children }) {
+  return <a href={'mailto:' + CONTACT_EMAIL} style={POLICY_LINK_STYLE}>{children}</a>;
+}
+function PolicyStoreLink({ children }) {
+  return (
+    <a href="/store" data-policies-link="store" style={POLICY_LINK_STYLE} onClick={(e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store(); else window.location.href = '/store';
+    }}>{children}</a>
+  );
+}
 const POLICY_SECTIONS = [
-  { title: 'Age requirement', body: ['\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'] },
-  { title: 'Digital downloads', body: ["Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use Re-send downloads at the bottom of the site, or contact us."] },
-  { title: 'Shipping', body: ['Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only digital downloads are available.'] },
-  { title: 'Returns and refunds', body: ["All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, contact us and we'll make it right."] },
+  { title: 'Age requirement', body: () => <>{'\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'}</> },
+  { title: 'Digital downloads', body: () => <>{"Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use Re-send downloads at the bottom of the site, or "}<PolicyMailLink>contact us</PolicyMailLink>{'.'}</> },
+  { title: 'Shipping', body: () => <>{'Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only '}<PolicyStoreLink>digital downloads</PolicyStoreLink>{' are available.'}</> },
+  { title: 'Returns and refunds', body: () => <>{"All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, "}<PolicyMailLink>contact us</PolicyMailLink>{" and we'll make it right."}</> },
 ];
 
 function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
@@ -3066,12 +3080,12 @@ function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggle
           {POLICY_SECTIONS.map((sec) => (
             <section key={sec.title} style={{ paddingBottom: 28, borderBottom: '1px solid var(--color-stroke)' }}>
               <h2 style={h2}>{sec.title}</h2>
-              {sec.body.map((t, i) => <p key={i} style={para}>{t}</p>)}
+              <p style={para}>{sec.body()}</p>
             </section>
           ))}
           <section>
             <h2 style={h2}>Contact</h2>
-            <p style={para}>Questions about an order? Email <a href={'mailto:' + CONTACT_EMAIL} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>{CONTACT_EMAIL}</a>.</p>
+            <p style={para}>Questions about an order? Email <PolicyMailLink>{CONTACT_EMAIL}</PolicyMailLink>.</p>
           </section>
         </div>
       </div>

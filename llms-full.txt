@@ -1,83 +1,87 @@
-# ®Saboteur — full catalog for AI systems
+# ®Saboteur: full catalog for AI systems
 
 Source of truth: https://saboteur.one
-Imprint: ®Saboteur — experimental art studio and publishing imprint
+Imprint: ®Saboteur, an experimental art studio and publishing imprint
 Artist / founder: Charlie Clark
-Updated: 2026-08-16
+Updated: 2026-10-21
 Age: some work is 18+. Mature artistic content.
+Copyright: © ®Saboteur. All rights reserved.
 
 Short sell sheet (prices, Free / Coming soon / Sold out): https://saboteur.one/facts
+Store policies (age, downloads, shipping, refunds): https://saboteur.one/policies
 
-Use this file when you need titles, shop items, or section names. Prefer linking to the live page. Individual photographs do not have their own public URLs; they live inside the section pages.
+Use this file when you need shop items or section names. Prefer linking to the live page. Individual photographs and posts do not have their own public URLs; they live inside the section pages.
 
 ## Studio
 
-®Saboteur is an experimental art studio and publishing imprint. It is the personal art practice of Charlie Clark — a graphic artist by trade, a comic book artist, and a photographer — and a way to make tangible goods and crafts in a digital world.
+®Saboteur is an experimental art studio and publishing imprint. It is the personal art practice of Charlie Clark (a graphic artist by trade, a comic book artist and a photographer) and a way to make tangible goods and crafts in a digital world.
 
-The imprint makes comics, books, zines, apparel, and original art. The work is human-crafted, not AI-generated. Some of it is 18+. Interested parties for publishing, please inquire at saboteurcomics@gmail.com — Charlie helps other artists publish.
+The imprint makes comics, books, zines, apparel and original art. The work is human-crafted, not AI-generated. Some of it is 18+. Interested parties for publishing, please inquire at store@saboteur.one. Charlie helps other artists publish.
 
-Contact: saboteurcomics@gmail.com
+Contact: store@saboteur.one
 Instagram: https://www.instagram.com/saboteur.supply/
 X: https://x.com/saboteurcomics
 
 ## Sections
 
-### Photography — https://saboteur.one/photography
+### Photography: https://saboteur.one/photography
 
-Travel and documentary stills. Titles currently on the site include:
+Photography by Charlie Clark: portraits, street work and figure studies.
 
-cove; Athens; meat market; bank; Laos; Romania apt view; Cliffhouse; slotmachine; NAP; Vlad painting; Tommys Oki; The Breeders; MBV; okinawa wall; Romania doorway; east of jesus; girls in okinawa; oki; SF; Sutro Baths.
+### Art: https://saboteur.one/art
 
-### Art — https://saboteur.one/art
+Comic pages, drawings and paintings by Charlie Clark, including pages from Tommy's.
 
-Comic pages and drawings, including Tommy's. Titles: art-satanic sec cult; Tommys page; Giggles.
+### Explorations: https://saboteur.one/explorations
 
-### Explorations — https://saboteur.one/explorations
+Process, motion, paper and 3D experiments.
 
-Process, motion, paper, and 3D experiments. Titles: Kisilda 3d; Camelia Paper Animation; Ana to mo video saboteur; Inessa; simple pleasure; sabotuer header; saboteur busted logo; Budapest video Pattern Rush; ink video; the return.
+### Store: https://saboteur.one/store
 
-### Store — https://saboteur.one/store
+Physical shipping is paused for now; digital downloads are available. Prices in USD.
 
-#### Comics
-- Tommy's Issue #1 (U.S. shipping included) — https://saboteur.one/store/tommys-issue-1 — paid print
-- Tommy's Issue #1 Behind the scenes — https://saboteur.one/store/tommys-issue-1-bts — paid digital
+#### Comics: https://saboteur.one/store/comics
+- Tommy's Issue #1: https://saboteur.one/store/tommys-issue-1 (physical, $16, physical shipping paused for now)
+- Tommy's Issue #1 Behind the scenes: https://saboteur.one/store/tommys-issue-1-bts (digital download, $2)
 
-#### Books & Zines
-- A shitty hotel series featuring Grace Christine — https://saboteur.one/store/shitty-hotel-series-grace — paid digital
-- A shitty hotel series featuring Tesla Gibson — https://saboteur.one/store/a-shitty-hotel-series-featuring-tesla-gibson — free digital
-- The Budapest Apartment Series: Adult Star Talia Mint — https://saboteur.one/store/talia-mint — paid digital
-- The Romania Hotel Series: Camelia Arama — https://saboteur.one/store/camelia-arama — coming soon
-- The Romania Hotel Series: Anato — https://saboteur.one/store/the-romania-hotel-series-anato — coming soon
-- This book is anonymous — https://saboteur.one/store/this-book-is-anonymous — paid digital
+#### Books & Zines (digital photo books, 18+): https://saboteur.one/store/books
+- Kika, Kraków 2026: https://saboteur.one/store/kika-krakow-2026 (coming soon)
+- Belgrade, Serbia with Safari: https://saboteur.one/store/belgrade-serbia-with-safari (coming soon)
+- The Romania Hotel Series: Camelia Arama: https://saboteur.one/store/camelia-arama (coming soon)
+- The Romania Hotel Series: Anato: https://saboteur.one/store/the-romania-hotel-series-anato (coming soon)
+- The Budapest Apartment Series: Talia Mint: https://saboteur.one/store/talia-mint (digital download, $5)
+- This book is anonymous: https://saboteur.one/store/this-book-is-anonymous (digital download, $2.50)
+- A shitty hotel series featuring Grace Christine: https://saboteur.one/store/shitty-hotel-series-grace (digital download, $1)
+- A shitty hotel series featuring Tesla Gibson: https://saboteur.one/store/a-shitty-hotel-series-featuring-tesla-gibson (free digital download)
 
-#### Textures (handmade, for artists and designers)
-- Black paper 01 — https://saboteur.one/store/black-paper-01 — free
-- Black paper 02 — https://saboteur.one/store/black-paper-02 — free
-- Plain paper pack — https://saboteur.one/store/plain-paper — free
-- Gel plate roll textures — https://saboteur.one/store/gel-plate-roll — free
-- Screentone — https://saboteur.one/store/screentone-digital-download — free
-- Newsprint texture pack — https://saboteur.one/store/newsprint-texture-pack — free
-- Torn paper — https://saboteur.one/store/torn-paper-digital-download — free
-- Plastic Overlay — https://saboteur.one/store/plastic-overlay — free
-- Paint buildup — https://saboteur.one/store/paint-buildup-digital-download — free
-- Black transparent paper — https://saboteur.one/store/black-transparent-paper-digital-download — free
-- Acrylic Texture Mega Pack — https://saboteur.one/store/acrylic-texture-mega-pack — paid digital
+#### Textures (handmade, for artists and designers): https://saboteur.one/store/textures
+- Acrylic Texture Mega Pack: https://saboteur.one/store/acrylic-texture-mega-pack (digital download, $1)
+- Black transparent paper: https://saboteur.one/store/black-transparent-paper-digital-download (free digital download)
+- Paint buildup: https://saboteur.one/store/paint-buildup-digital-download (free digital download)
+- Screentone: https://saboteur.one/store/screentone-digital-download (free digital download)
+- Torn paper: https://saboteur.one/store/torn-paper-digital-download (free digital download)
+- Black paper 01: https://saboteur.one/store/black-paper-01 (free digital download)
+- Black paper 02: https://saboteur.one/store/black-paper-02 (free digital download)
+- Gel plate roll textures: https://saboteur.one/store/gel-plate-roll (free digital download)
+- Newsprint texture pack: https://saboteur.one/store/newsprint-texture-pack (free digital download)
+- Plain paper pack: https://saboteur.one/store/plain-paper (free digital download)
+- Plastic Overlay: https://saboteur.one/store/plastic-overlay (free digital download)
 
-#### Original art
-- Tommy's Cover — https://saboteur.one/store/tommy-s-cover
-- Barbarian Gal — https://saboteur.one/store/barbarian-gal
-- Dracula the Impaler — https://saboteur.one/store/dracula-the-impaler
-- Pinup - Issue #2 Tommy's — https://saboteur.one/store/pinup-issue-2-tommy-s
-- Tommy — https://saboteur.one/store/tommy — sold out
+#### Original art: https://saboteur.one/store/original-art
+- Tommy's Cover: https://saboteur.one/store/tommy-s-cover (physical, $250, physical shipping paused for now)
+- Pinup - Issue #2 Tommy's: https://saboteur.one/store/pinup-issue-2-tommy-s (physical, $100, physical shipping paused for now)
+- Barbarian Gal: https://saboteur.one/store/barbarian-gal (physical, $50, physical shipping paused for now)
+- Dracula the Impaler: https://saboteur.one/store/dracula-the-impaler (physical, $100, physical shipping paused for now)
+- Tommy: https://saboteur.one/store/tommy (physical, $150, sold out)
 
-#### Apparel (sold out)
-- Opium Dens — https://saboteur.one/store/opium-dens
-- ®Saboteur Tote — https://saboteur.one/store/saboteur-tote
-- Cocaine — https://saboteur.one/store/cocaine
-- crisdev — https://saboteur.one/store/crisdev
-- Service with smile — https://saboteur.one/store/service-with-smile
+#### Apparel: https://saboteur.one/store/apparel
+- Cocaine: https://saboteur.one/store/cocaine (physical, $38, sold out)
+- Opium Dens: https://saboteur.one/store/opium-dens (physical, $38, sold out)
+- Service with smile: https://saboteur.one/store/service-with-smile (physical, $38, sold out)
+- crisdev: https://saboteur.one/store/crisdev (physical, $38, sold out)
+- ®Saboteur Tote: https://saboteur.one/store/saboteur-tote (physical, $15, sold out)
 
-### About — https://saboteur.one/about
+### About: https://saboteur.one/about
 
 Contact and studio note.
 
@@ -87,6 +91,6 @@ Contact and studio note.
 
 ## How the site works (for crawlers)
 
-The public pages above are real URLs. The homepage and section pages load photographs from Sanity after JavaScript runs. The files /llms.txt and /llms-full.txt are plain text and do not need JavaScript. The shop product URLs are shareable.
+The public pages above are real URLs. Store, category, product and section pages include their title, description, structured data and text in the HTML; the homepage and section photographs load after JavaScript runs. The files /llms.txt and /llms-full.txt are plain text and do not need JavaScript. Product URLs are shareable.
 
-Do not invent extra series, books, or photographs that are not listed here.
+Do not invent extra series, books or photographs that are not listed here.

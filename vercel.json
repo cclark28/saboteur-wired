@@ -50,10 +50,6 @@
       "destination": "https://saboteur-api.vercel.app/api/cms"
     },
     {
-      "source": "/comics",
-      "destination": "/comics.html"
-    },
-    {
       "source": "/facts",
       "destination": "/facts.html"
     },
@@ -62,26 +58,57 @@
       "destination": "/facts.html"
     },
     {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "comics"
-        }
-      ],
-      "missing": [
-        {
-          "type": "query",
-          "key": "from",
-          "value": "share"
-        }
-      ],
-      "destination": "/comics.html"
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
     },
     {
-      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html).*)",
-      "destination": "/index.html"
+      "source": "/og/saboteur-logo.png",
+      "destination": "/api/og-logo"
+    },
+    {
+      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|facts\\.html|favicon\\.ico).*)",
+      "destination": "/api/page?__path=/$1"
     }
-  ]
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.saboteur.one"
+        }
+      ],
+      "destination": "https://saboteur.one/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/comics",
+      "destination": "/store/comics",
+      "statusCode": 301
+    },
+    {
+      "source": "/comics.html",
+      "destination": "/store/comics",
+      "statusCode": 301
+    },
+    {
+      "source": "/figure-studies",
+      "destination": "/photography",
+      "statusCode": 301
+    },
+    {
+      "source": "/figure-studies/",
+      "destination": "/photography",
+      "statusCode": 301
+    }
+  ],
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "index.html"
+    },
+    "api/sitemap.js": {
+      "includeFiles": "index.html"
+    }
+  }
 }

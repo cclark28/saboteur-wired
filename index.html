@@ -1882,6 +1882,18 @@ function formatClock(date, timeZone) {
   }
 }
 
+// One footer clock block. Fixed size so every city looks uniform (Charlie 14:37).
+const CLOCK_BLOCK_HEIGHT = 64;
+function ClockBlock({ label, clock, local }) {
+  const line = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+  return (
+    <div data-clock-block title={label} style={{ boxSizing: 'border-box', width: '100%', height: CLOCK_BLOCK_HEIGHT, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', overflow: 'hidden' }}>
+      <div style={Object.assign({ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }, line)}>{label}</div>
+      <div style={Object.assign({ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', fontWeight: local ? 500 : 400, color: 'var(--color-ink)', lineHeight: 1.5 }, line)}>{clock}</div>
+    </div>
+  );
+}
+
 function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -2101,25 +2113,16 @@ const colBox = {
 
           <div style={Object.assign({}, colBox, { paddingRight: 0 })}>
             <div style={colLabel}>Local time</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6, lineHeight: 1.2 }}>{localStr}</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink-55)', marginBottom: 16, lineHeight: 1.5 }}>{localLabel}</div>
-            {(upcomingAll && upcomingAll.length) ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                {upcomingAll.map((stop, i) => {
-                  return (
-                    <div key={stop._key || (stop.startDate + i)} style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-                      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {stop.city || stop.label}</div>
-                      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{formatClock(time, stop.timezone)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : nextLocation ? (
-              <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {nextLocation}</div>
-                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{nextStr}</div>
-              </div>
-            ) : null}
+            {/* Charlie 14:37: every clock block (local + upcoming) is the same size. Equal widths via a
+                one-column grid, fixed height, long city names truncate with the full name in the title. */}
+            <div data-footer-clocks style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, width: '100%' }}>
+              <ClockBlock label={localLabel} clock={localStr} local />
+              {(upcomingAll && upcomingAll.length)
+                ? upcomingAll.map((stop, i) => (
+                    <ClockBlock key={stop._key || (stop.startDate + i)} label={'Upcoming: ' + (stop.city || stop.label)} clock={formatClock(time, stop.timezone)} />
+                  ))
+                : nextLocation ? <ClockBlock label={'Upcoming: ' + nextLocation} clock={nextStr} /> : null}
+            </div>
           </div>
         </div>
         <div style={{

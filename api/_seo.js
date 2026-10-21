@@ -20,14 +20,14 @@ const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
 const POLICIES_LASTMOD = '2026-10-21';
 const FACTS_LASTMOD = '2026-10-21';
 
-// Approved Tommy's copy (Tommy's writer + QC, 2026-10-21). Exact text, do not add em dashes.
-const TOMMYS_LOGLINE = "Bitter Creek, New Mexico, 1976. Tommy runs the meat counter. His mother runs Tommy. She has been dead for thirty-two years.";
-const TOMMYS_STORE = "Tommy's is a serial killer comic about a small-town butcher with split personalities, set on Highway 13 in the summer of 1976. Two girls pass through Bitter Creek and don't leave. An FBI agent from Laredo starts pinning photographs to a motel wall, and the voices in Tommy's head start arguing about what comes next. For mature readers.";
+// Tommy's placeholder (AWAITING FINAL TOMMY'S COPY, see FIXES.md). Minimal and non-descriptive on purpose.
+const TOMMYS_PLACEHOLDER = "Tommy's, a " + BRAND + " comic. For mature readers.";
 const CATS = [
   { id: 'comics', slug: 'comics', label: 'Comics',
     title: "Comics - Tommy's and Indie Adult Comics | " + BRAND,
-    desc: TOMMYS_LOGLINE + ' Adults only (18+).',
-    intro: TOMMYS_STORE + ' Adults only (18+).',
+    // AWAITING FINAL TOMMY'S COPY: desc + intro.
+    desc: 'Comics by Charlie Clark from ' + BRAND + '. ' + TOMMYS_PLACEHOLDER + ' Print issue and digital extras. Adults only (18+).',
+    intro: 'Comics by Charlie Clark from ' + BRAND + '. ' + TOMMYS_PLACEHOLDER + ' Adults only (18+).',
     og: COMICS_OG },
   { id: 'prints-and-books', slug: 'books', label: 'Books & Zines',
     title: 'Photo Books & Zines - Digital PDFs | ' + BRAND,
@@ -175,8 +175,6 @@ function productDesc(p, settings) {
   else if (c === 'clothing') lead = name + ': ' + BRAND + ' apparel in the studio\u2019s comic art style.';
   else lead = name + ' from ' + BRAND + '.';
   const adult = p.requiresAgeConfirm ? 'Adults only (18+).' : '';
-  // Tommy's comic issues: approved logline + price + 18+ marker.
-  if (c === 'comics' && isTommys(p)) return fitDesc([TOMMYS_LOGLINE, price, adult], []);
   return fitDesc([lead, price, avail, adult], PADS);
 }
 function imgAlt(p) {
@@ -235,14 +233,14 @@ function productLd(p, settings) {
     ld.publisher = { '@id': SITE + '/#studio' };
     ld.bookFormat = isPhysical(p.fulfillmentType) ? 'https://schema.org/Paperback' : 'https://schema.org/EBook';
     if (pages) ld.numberOfPages = pages;
-    if (p.category === 'comics' && isTommys(p)) ld.about = { '@type': 'ComicSeries', name: "Tommy's", description: TOMMYS_STORE, publisher: { '@id': SITE + '/#studio' } };
+    if (p.category === 'comics' && isTommys(p)) ld.about = { '@type': 'ComicSeries', name: "Tommy's", publisher: { '@id': SITE + '/#studio' } };
   } else if (p.category === 'comics') {
     types.push('ComicIssue');
     const m = /#\s*(\d+)/.exec(p.title || '');
     if (m) ld.issueNumber = Number(m[1]);
     ld.author = { '@id': SITE + '/#charlie' };
     ld.publisher = { '@id': SITE + '/#studio' };
-    if (isTommys(p)) ld.isPartOf = { '@type': 'ComicSeries', name: "Tommy's", description: TOMMYS_STORE, publisher: { '@id': SITE + '/#studio' } };
+    if (isTommys(p)) ld.isPartOf = { '@type': 'ComicSeries', name: "Tommy's", publisher: { '@id': SITE + '/#studio' } };
   } else if (p.category === 'original-art') {
     ld.material = details(p).format || undefined;
   }

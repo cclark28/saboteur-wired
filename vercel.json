@@ -91,6 +91,11 @@
       "source": "/comics.html",
       "destination": "/store/comics",
       "statusCode": 301
+    },
+    {
+      "source": "/figure-studies",
+      "destination": "/photography",
+      "statusCode": 301
     }
   ],
   "functions": {

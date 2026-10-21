@@ -796,7 +796,7 @@ const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing i
 // ONE source for nudity (visual check of the Sanity images, 2026-10-21; Charlie 13:54: every book has nudity except Tesla). It drives BOTH the "18+" label and
 // <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
 // Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
-const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
+const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
 // "18+" label (Charlie 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",

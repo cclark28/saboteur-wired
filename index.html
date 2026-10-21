@@ -544,7 +544,7 @@
       "name": "Charlie Clark",
       "url": "https://saboteur.one",
       "jobTitle": "Graphic artist, comic book artist, photographer",
-      "email": "saboteurcomics@gmail.com",
+      "email": "saboteur@mail.grokbot.com",
       "worksFor": { "@id": "https://saboteur.one/#studio" },
       "sameAs": [
         "https://www.instagram.com/saboteur.supply/",
@@ -584,7 +584,7 @@
       <li><a href="/store">Store</a></li>
       <li><a href="/about">About / contact</a></li>
     </ul>
-    <p>Email: <a href="mailto:saboteurcomics@gmail.com">saboteurcomics@gmail.com</a>. For AI systems: <a href="/llms.txt">llms.txt</a> and <a href="/llms-full.txt">llms-full.txt</a>.</p>
+    <p>Email: <a href="mailto:saboteur@mail.grokbot.com">saboteur@mail.grokbot.com</a>. Store policies: <a href="/policies">/policies</a>. For AI systems: <a href="/llms.txt">llms.txt</a> and <a href="/llms-full.txt">llms-full.txt</a>.</p>
   </main>
 </noscript>
 <div id="root"></div>
@@ -604,8 +604,12 @@ function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; 
 let NAV_LINKS = [];
 let ALL_TAGS = [];
 let FOOTER_DATA = null;
-let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null };
+let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null, policies: null };
 let SECTION_META = [];
+
+// Charlie-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the product 18+ checkbox.
+const ADULT_CONTENT_LINE = 'This work contains nudity, violence and other adult material. You must be 18 or older to view or buy it.';
+const CONTACT_EMAIL = 'saboteur@mail.grokbot.com';
 
 const STORE_TABS = [
   { id: 'comics', label: 'Comics' },
@@ -689,6 +693,7 @@ function pathFromView(view) {
   }
   if (p === 'info' || p === 'about') return '/about';
   if (p === 'resend') return '/resend';
+  if (p === 'policies') return '/policies';
   if (p === 'checkout') return '/checkout';
   if (p === 'order-success') return '/order-success';
   if (p === 'not-found') {
@@ -737,6 +742,7 @@ function viewFromPath(pathname, search) {
   }
   if (path === '/about' || path === '/info' || path === '/contact') return { page: 'about' };
   if (path === '/resend') return { page: 'resend' };
+  if (path === '/policies' || path === '/store-policies') return { page: 'policies' };
   if (path === '/checkout') return { page: 'checkout' };
   if (path === '/order-success') return { page: 'order-success' };
   const parts = path.split('/').filter(Boolean);
@@ -746,7 +752,7 @@ function viewFromPath(pathname, search) {
 
 const KNOWN_VIEW_PAGES = {
   home: 1, store: 1, product: 1, about: 1, info: 1, contact: 1,
-  resend: 1, checkout: 1, 'order-success': 1, tag: 1, item: 1, 'not-found': 1,
+  resend: 1, policies: 1, checkout: 1, 'order-success': 1, tag: 1, item: 1, 'not-found': 1,
 };
 
 // Real section slugs stay pages even if Sanity is slow or /cms is missing (local serve).
@@ -1400,6 +1406,19 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
   );
 }
 
+// Real URLs for the big menu links (was href="#"). Clicks still route in-app via onSelect.
+function menuHrefFor(label) {
+  const raw = String(label || '').trim();
+  const slug = raw.toLowerCase().replace(/\s+/g, '-');
+  if (slug === 'store') return '/store';
+  if (slug === 'about' || slug === 'info' || slug === 'info-contact' || slug === 'contact') return '/about';
+  const meta = (SECTION_META || []).find((s) => s && (s.slug === slug || String(s.title || '').toLowerCase().replace(/\s+/g, '-') === slug));
+  if (meta && (meta.isInfoPage || meta.isAbout)) return '/about';
+  const tab = (typeof resolveStoreTab === 'function') ? resolveStoreTab({ label: raw, sectionSlug: slug }) : null;
+  if (tab && slug !== 'store') return '/store?tab=' + encodeURIComponent(tab);
+  return '/' + encodeURIComponent((meta && meta.slug) || slug);
+}
+
 function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding = false, links }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -1603,9 +1622,9 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
           return (
             <a
               key={l}
-              href="#"
+              href={menuHrefFor(l)}
               className={'fullmenu-link' + (isActive ? ' is-active' : '')}
-              onClick={(e) => { e.preventDefault(); onSelect(key); }}
+              onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); onSelect(key); }}
             >
               {l}
             </a>
@@ -1882,6 +1901,10 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
       if (onResend) onResend();
       else if (FOOTER_NAV && FOOTER_NAV.resend) FOOTER_NAV.resend();
     }
+    else if (t === 'policies') {
+      if (FOOTER_NAV && FOOTER_NAV.policies) FOOTER_NAV.policies();
+      else window.location.href = '/policies';
+    }
     else if (t === 'section' && item.sectionSlug) goSection(String(item.sectionSlug).trim());
     else if ((t === 'external' || t === 'url') && item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
   };
@@ -1898,6 +1921,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const extraMap = STORE_TABS.map((c) => ({ label: c.label, linkType: 'store', sectionSlug: c.id })).concat([
     { label: 'Store', linkType: 'store' },
     { label: 'Re-send downloads', linkType: 'resend' },
+    { label: 'Store Policies', linkType: 'policies' },
   ]);
   const baseMap = rewritten.length ? rewritten : [
     { label: 'Home', linkType: 'home' },
@@ -1999,7 +2023,12 @@ const colBox = {
 
           <div style={colBox}>
             <div style={colLabel}>Site map</div>
-            {displayMap.map((item, i) => (
+            {displayMap.map((item, i) => item.linkType === 'policies' ? (
+              <a key={i} href="/policies" data-footer-link="policies" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); onMapClick(item); }} style={linkStyle}
+                onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+              >{item.label}</a>
+            ) : (
               <button key={i} type="button" onClick={() => onMapClick(item)} style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
                 onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
@@ -2645,8 +2674,9 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           ) : null}
 
           {!isSoldOut && needsAge ? (
+            <div style={{ marginBottom: 28 }}>
             <label style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 28, cursor: 'pointer',
+              display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, cursor: 'pointer',
               fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.45,
             }}>
               <input
@@ -2657,6 +2687,11 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               />
               <span>I confirm I am 18 years of age or older. This product may contain artistic adult content.</span>
             </label>
+            <p data-adult-line="product" style={{
+              fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
+              margin: '0 0 0 30px', lineHeight: 1.5,
+            }}>{ADULT_CONTENT_LINE}</p>
+            </div>
           ) : null}
           {!isSoldOut && needsSize ? (
             <div style={{ marginBottom: 32 }}>
@@ -3006,6 +3041,40 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
   );
 }
 
+const POLICY_SECTIONS = [
+  { title: 'Age requirement', body: ['\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'] },
+  { title: 'Digital downloads', body: ["Digital products are delivered by email right after purchase. If your download link doesn't arrive or stops working, use Re-send downloads at the bottom of the site, or contact us."] },
+  { title: 'Shipping', body: ['Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only digital downloads are available.'] },
+  { title: 'Returns and refunds', body: ["All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, contact us and we'll make it right."] },
+];
+
+function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const h2 = { fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: '20px', margin: '0 0 10px', color: 'var(--color-ink)', letterSpacing: '-0.01em' };
+  const para = { fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: 0, lineHeight: 1.6 };
+  return (
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
+      <div data-page="policies" style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 680, margin: '0 auto' }}>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 48px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store Policies</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+          {POLICY_SECTIONS.map((sec) => (
+            <section key={sec.title} style={{ paddingBottom: 28, borderBottom: '1px solid var(--color-stroke)' }}>
+              <h2 style={h2}>{sec.title}</h2>
+              {sec.body.map((t, i) => <p key={i} style={para}>{t}</p>)}
+            </section>
+          ))}
+          <section>
+            <h2 style={h2}>Contact</h2>
+            <p style={para}>Questions about an order? Email <a href={'mailto:' + CONTACT_EMAIL} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>{CONTACT_EMAIL}</a>.</p>
+          </section>
+        </div>
+      </div>
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+    </div>
+  );
+}
+
 function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping, onUpdateQty, onRemoveLine }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
@@ -3099,7 +3168,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 680, margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 12px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Checkout</h1>
         <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: '0 0 48px', lineHeight: 1.55 }}>
-          Review your bag. When Stripe is live, payment collects card details and — for physical items (comics, apparel) — the shipping address in the same checkout.
+          Review your bag, enter your email, then Place order to pay on Stripe's secure checkout page (card, Apple Pay, Google Pay or Link where available).
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, marginBottom: 48 }}>
           {(cart || []).length === 0 ? (
@@ -3253,6 +3322,10 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
         >
           Continue shopping
         </button>
+        <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '20px 0 0', lineHeight: 1.5 }}>
+          By placing an order you agree to our{' '}
+          <a href="/policies" data-checkout-link="policies" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); if (FOOTER_NAV && FOOTER_NAV.policies) FOOTER_NAV.policies(); else window.location.href = '/policies'; }} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Store Policies</a>.
+        </p>
       </div>
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
@@ -3810,6 +3883,19 @@ function AgeGate({ onConfirm, data }) {
       }}>
         {entryMessage}
       </p>
+      {String(entryMessage || '').trim() !== ADULT_CONTENT_LINE ? (
+        <p data-adult-line="gate" style={{
+          maxWidth: '42ch',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: 'var(--font-ui-size)',
+          lineHeight: 1.55,
+          color: '#5C5C66',
+          margin: '-24px 0 0',
+          textWrap: 'pretty',
+        }}>
+          {ADULT_CONTENT_LINE}
+        </p>
+      ) : null}
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
@@ -4073,6 +4159,7 @@ function labelForView(view) {
   if (view.page === 'info' || view.page === 'contact') return 'About';
   if (view.page === 'checkout') return 'Checkout';
   if (view.page === 'resend') return 'Re-send downloads';
+  if (view.page === 'policies') return 'Store Policies';
   if (view.page === 'order-success') return 'Order confirmation';
   if (view.page === 'not-found') return 'Page not found';
   return view.page || 'Home';
@@ -5595,6 +5682,7 @@ function App() {
     },
     comics: goStoreComics,
     resend: () => { closeMenu(); setAboutOpen(false); navigate({ page: 'resend' }); window.scrollTo(0, 0); },
+    policies: () => { closeMenu(); setAboutOpen(false); setCartOpen(false); navigate({ page: 'policies' }); window.scrollTo(0, 0); },
   };
   // Phase 2 return from Stripe (kept for safety; initial path parse also reads the query)
   useEffect(() => {
@@ -5766,6 +5854,22 @@ function App() {
         />
       )}
       
+      {!loading && view.page === 'policies' && (
+        <PoliciesPage
+          onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
+          onBack={back}
+          onHome={goHome}
+          onContact={goContact}
+          onTag={goTag}
+          dark={dark}
+          onToggleDark={toggleDark}
+          cartCount={cartCount}
+          onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }}
+          cartOpen={cartOpen}
+          menuOpen={menuOpen}
+        />
+      )}
+
       {!loading && view.page === 'order-success' && (
         <OrderSuccessPage
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}

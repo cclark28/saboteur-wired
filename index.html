@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111113">
+<meta name="rating" content="adult">
 <meta name="description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
 <meta name="author" content="Charlie Clark">
 <link rel="alternate" type="text/plain" href="https://saboteur.one/llms.txt" title="llms.txt">
@@ -18,17 +19,17 @@
 <meta property="og:site_name" content="®Saboteur">
 <meta property="og:title" content="®Saboteur">
 <meta property="og:description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
-<meta property="og:url" content="https://saboteur.one">
+<meta property="og:url" content="https://saboteur.one/">
 <meta property="og:image" content="https://saboteur.one/assets/og-amelia.jpg">
 <meta property="og:image:width" content="1080">
 <meta property="og:image:height" content="1080">
 <meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:alt" content="®Saboteur — IRONING, Amelia">
+<meta property="og:image:alt" content="IRONING poster by ®Saboteur, featuring Amelia">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="®Saboteur">
 <meta name="twitter:description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
 <meta name="twitter:image" content="https://saboteur.one/assets/og-amelia.jpg">
-<meta name="twitter:image:alt" content="®Saboteur — IRONING, Amelia">
+<meta name="twitter:image:alt" content="IRONING poster by ®Saboteur, featuring Amelia">
 <!-- Vercel Web Analytics (enabled in dashboard) -->
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -89,8 +90,14 @@
     --z-nav: 100;
     --z-overlay: 200;
     --z-modal: 300;
+    /* 18+ label: brand palette is white, black, orange, blue only (Charlie 13:54). Orange = coming soon; brand blue
+       --color-link #4D80E6 gives white text 3.79:1 (fails AA at 13px), so the label is black/white: 17.72:1. */
+    --color-adult-bg: #18181B;
+    --color-adult-text: #FFFFFF;
   }
   [data-theme="dark"] {
+    --color-adult-bg: #FFFFFF;
+    --color-adult-text: #18181B;
     --color-accent: #FF6119;
     --color-accent-hover: #FF7940;
     --color-link: #6B9AFF;
@@ -533,6 +540,7 @@
   "@graph": [
     {
       "@type": "WebSite",
+      "@id": "https://saboteur.one/#website",
       "name": "®Saboteur",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.",
@@ -544,7 +552,7 @@
       "name": "Charlie Clark",
       "url": "https://saboteur.one",
       "jobTitle": "Graphic artist, comic book artist, photographer",
-      "email": "saboteurcomics@gmail.com",
+      "email": "store@saboteur.one",
       "worksFor": { "@id": "https://saboteur.one/#studio" },
       "sameAs": [
         "https://www.instagram.com/saboteur.supply/",
@@ -555,6 +563,7 @@
       "@type": "Organization",
       "@id": "https://saboteur.one/#studio",
       "name": "®Saboteur",
+      "email": "store@saboteur.one",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
       "founder": { "@id": "https://saboteur.one/#charlie" },
@@ -584,7 +593,7 @@
       <li><a href="/store">Store</a></li>
       <li><a href="/about">About / contact</a></li>
     </ul>
-    <p>Email: <a href="mailto:saboteurcomics@gmail.com">saboteurcomics@gmail.com</a>. For AI systems: <a href="/llms.txt">llms.txt</a> and <a href="/llms-full.txt">llms-full.txt</a>.</p>
+    <p>Email: <a href="mailto:store@saboteur.one">store@saboteur.one</a>. Store policies: <a href="/policies">/policies</a>. For AI systems: <a href="/llms.txt">llms.txt</a> and <a href="/llms-full.txt">llms-full.txt</a>.</p>
   </main>
 </noscript>
 <div id="root"></div>
@@ -604,8 +613,12 @@ function randomSize() { return SIZES[Math.floor(Math.random() * SIZES.length)]; 
 let NAV_LINKS = [];
 let ALL_TAGS = [];
 let FOOTER_DATA = null;
-let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null };
+let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null, policies: null };
 let SECTION_META = [];
+
+// Charlie-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the product 18+ checkbox.
+const ADULT_CONTENT_LINE = 'This work contains nudity, violence and other adult material. You must be 18 or older to view or buy it.';
+const CONTACT_EMAIL = 'store@saboteur.one';
 
 const STORE_TABS = [
   { id: 'comics', label: 'Comics' },
@@ -673,6 +686,34 @@ function resolveStoreTab(item) {
   return null;
 }
 
+// Real category URLs (/store/comics …) instead of ?tab= (SEO audit, 21 Oct 2026).
+const STORE_CATEGORY_SLUGS = { comics: 'comics', 'prints-and-books': 'books', textures: 'textures', 'original-art': 'original-art', clothing: 'apparel', all: 'all' };
+function storeCategoryPath(id) {
+  const slug = STORE_CATEGORY_SLUGS[id];
+  return slug ? '/store/' + slug : '/store';
+}
+function storeCategoryFromSlug(slug) {
+  const s = String(slug || '').toLowerCase();
+  const hit = Object.keys(STORE_CATEGORY_SLUGS).find((id) => STORE_CATEGORY_SLUGS[id] === s || id === s);
+  return hit || null;
+}
+// Footer / menu item -> real URL (links stay <a href>; clicks still route in-app).
+function hrefForMapItem(item) {
+  if (!item) return '/';
+  const t = item.linkType;
+  if (t === 'home') return '/';
+  if (t === 'info') return '/about';
+  if (t === 'resend') return '/resend';
+  if (t === 'policies') return '/policies';
+  if (t === 'store') return item.sectionSlug ? storeCategoryPath(item.sectionSlug) : '/store';
+  if (t === 'section' && item.sectionSlug) return '/' + encodeURIComponent(String(item.sectionSlug).trim());
+  if ((t === 'external' || t === 'url') && item.url) return item.url;
+  return '/';
+}
+function isPlainLeftClick(e) {
+  return !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1);
+}
+
 // ---------- Path routing (shareable /store + /store/{slug}) ----------
 function pathFromView(view) {
   if (!view || !view.page) return '/';
@@ -680,7 +721,7 @@ function pathFromView(view) {
   if (p === 'home') return '/';
   if (p === 'store') {
     const cat = view.storeCategory;
-    if (cat && STORE_TABS.some((t) => t.id === cat)) return '/store?tab=' + encodeURIComponent(cat);
+    if (cat && (cat === 'all' || STORE_TABS.some((t) => t.id === cat))) return storeCategoryPath(cat);
     return '/store';
   }
   if (p === 'product') {
@@ -689,6 +730,7 @@ function pathFromView(view) {
   }
   if (p === 'info' || p === 'about') return '/about';
   if (p === 'resend') return '/resend';
+  if (p === 'policies') return '/policies';
   if (p === 'checkout') return '/checkout';
   if (p === 'order-success') return '/order-success';
   if (p === 'not-found') {
@@ -728,6 +770,9 @@ function viewFromPath(pathname, search) {
     return { page: 'store' };
   }
   const storeMatch = path.match(/^\/store\/([^/]+)$/);
+  if (storeMatch && storeCategoryFromSlug(storeMatch[1])) {
+    return { page: 'store', storeCategory: storeCategoryFromSlug(storeMatch[1]) };
+  }
   if (storeMatch) {
     try {
       return { page: 'product', productSlug: decodeURIComponent(storeMatch[1]) };
@@ -737,6 +782,7 @@ function viewFromPath(pathname, search) {
   }
   if (path === '/about' || path === '/info' || path === '/contact') return { page: 'about' };
   if (path === '/resend') return { page: 'resend' };
+  if (path === '/policies') return { page: 'policies' };
   if (path === '/checkout') return { page: 'checkout' };
   if (path === '/order-success') return { page: 'order-success' };
   const parts = path.split('/').filter(Boolean);
@@ -744,9 +790,49 @@ function viewFromPath(pathname, search) {
   return { page: 'not-found' };
 }
 
+// Home head values (static index.html), restored on client navigation back to home.
+const HOME_CANONICAL = 'https://saboteur.one/';
+const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
+// ONE source for nudity (visual check of the Sanity images, 2026-10-21; Charlie 13:54: every book has nudity except Tesla). It drives BOTH the "18+" label and
+// <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
+// Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
+const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
+function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
+function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
+// "18+" label (Charlie 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
+// section "Tags / Badges": 4px radius, 4px 8px padding, --font-label (IBM Plex Mono 500, 0.8125rem, 0.02em tracking),
+// no uppercase transform. Colors: black #18181B / white #FFFFFF (inverted in dark mode), see --color-adult-*. Below the copy, not on the image.
+const ADULT_LABEL = '18+';
+const ADULT_LABEL_ARIA = 'Adult content, 18+';
+function AdultLabel() {
+  return (
+    <span data-adult-label role="img" aria-label={ADULT_LABEL_ARIA} style={{
+      display: 'inline-block', alignSelf: 'flex-start',
+      background: 'var(--color-adult-bg)', color: 'var(--color-adult-text)',
+      borderRadius: 'var(--radius-sm, 4px)', padding: '4px 8px',
+      fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size, 0.8125rem)',
+      fontWeight: 'var(--font-label-weight, 500)', letterSpacing: 'var(--font-label-tracking, 0.02em)',
+      lineHeight: 1.4, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+    }}>{ADULT_LABEL}</span>
+  );
+}
+
+// Alt text for posts whose Sanity schema has no alt field (writer copy, QC Rev 3/4). Keyed by asset document _id.
+const LOAD_ALT = "Comic story art previewed in LOAD magazine, from Tommy's Issue #2";
+const ASSET_ALT = {
+  '7cd11d45-74d1-4f18-ad0c-ebe84c539336': LOAD_ALT,
+  '03d13660-095e-4666-aecf-97a8a0f8ab5c': 'Framed painted figure study',
+  '59371b5f-2421-49b0-b6e3-1e0818076a31': 'Night photo of an urban cinema storefront',
+  '6f02c138-dfa9-4458-b426-e9433fd37b21': 'Model in a white cropped tee holding a flowering branch',
+  '6604af2d-8360-4e89-8b5e-da39ffd03e4d': 'Model in a dark \u00aeSaboteur hoodie',
+  'bd479d2f-411a-464f-8481-bba7d06203bd': 'Portrait of a model in a black \u00aeSaboteur tee',
+  'ab8b2715-3e9b-45ab-b07d-780472109c8b': 'Printed phone case on a retail display',
+  '31092f02-2e27-4e0d-b65d-0d60b7984450': 'Figure drawing on a wall behind caution tape',
+};
+
 const KNOWN_VIEW_PAGES = {
   home: 1, store: 1, product: 1, about: 1, info: 1, contact: 1,
-  resend: 1, checkout: 1, 'order-success': 1, tag: 1, item: 1, 'not-found': 1,
+  resend: 1, policies: 1, checkout: 1, 'order-success': 1, tag: 1, item: 1, 'not-found': 1,
 };
 
 // Real section slugs stay pages even if Sanity is slow or /cms is missing (local serve).
@@ -850,7 +936,7 @@ function send404Im(text, replyEmail) {
       form.appendChild(input);
     };
     add('access_key', WEB3FORMS_KEY);
-    add('subject', 'Saboteur 404 — instant message');
+    add('subject', 'Saboteur 404, instant message');
     add('from_name', '404 Messenger');
     add('name', '404 Messenger');
     add('email', email);
@@ -1006,6 +1092,7 @@ function assetToSeries(asset, index) {
 
   return {
     id: asset._id || ('asset-' + index),
+    alt: ASSET_ALT[asset._id] || null,
     size,
     hasInfo,
     title: asset.title || null,
@@ -1040,7 +1127,7 @@ function makeSeries(id, opts = {}) {
     size: randomSize(),
     hasInfo,
     headline: hasInfo ? `Study No. ${id + 1}` : null,
-    subhead: hasInfo ? 'Street Photography — Tokyo 2024' : null,
+    subhead: hasInfo ? 'Street Photography, Tokyo 2024' : null,
     body: hasInfo ? 'Shot on 35mm over three nights near Shinjuku station. Part of an ongoing series on transient light and motion in dense urban space.' : null,
     tags: hasInfo ? ['Street', 'Night', '35mm'] : [],
     gallery: Array.from({ length: galleryCount }, () => randomSize()),
@@ -1094,7 +1181,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   const img = (
     <img
       src="/assets/logo.svg"
-      alt="Saboteur"
+      alt="®Saboteur"
       style={{
         width: size, display: 'block',
         filter: forceLight ? 'none' : 'var(--logo-filter, none)',
@@ -1107,7 +1194,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
     return (
       <img
         src="/assets/logo.svg"
-        alt="Saboteur"
+        alt="®Saboteur"
         style={{
           width: size, display: 'block', cursor: 'default',
           filter: forceLight ? 'none' : 'var(--logo-filter, none)',
@@ -1118,7 +1205,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   return (
     <a
       href="/"
-      aria-label={title === 'Refresh' ? 'Refresh homepage' : 'Saboteur home'}
+      aria-label={title === 'Refresh' ? 'Refresh homepage' : '®Saboteur home'}
       title={title}
       onClick={(e) => {
         e.preventDefault();
@@ -1135,7 +1222,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   );
 }
 
-/* Saboteur comics icon — orange circle + black cat face. Always brand orange (never filtered). Scales with size prop. */
+/* Saboteur comics icon, orange circle + black cat face. Always brand orange (never filtered). Scales with size prop. */
 function SaboteurIcon({ size = 40, onClick }) {
   const [pressed, setPressed] = useState(false);
   const handleClick = onClick ? () => { setPressed(true); setTimeout(() => setPressed(false), 200); onClick(); } : undefined;
@@ -1242,9 +1329,9 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   );
   return (
     <a
-      href="/store?tab=comics"
-      aria-label="Saboteur Comics store"
-      title="Store — Comics"
+      href="/store/comics"
+      aria-label="®Saboteur store"
+      title="Store, Comics"
       onClick={handleClick}
       style={{
         display: 'block',
@@ -1295,8 +1382,8 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Search pill + results — own relative wrapper so dropdown aligns under the pill only.
-            RULE: no drop shadow on search — border only when open, pure icon when closed. */}
+        {/* Search pill + results, own relative wrapper so dropdown aligns under the pill only.
+            RULE: no drop shadow on search, border only when open, pure icon when closed. */}
         <div style={{ position: 'relative' }}>
           <div className="search-pill" style={{
             display: 'flex', alignItems: 'center', gap: 10,
@@ -1338,7 +1425,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
               />
             )}
           </div>
-          {/* RULE: no drop shadow on search / menu panels — border only */}
+          {/* RULE: no drop shadow on search / menu panels, border only */}
           {searchOpen && (
             <div className="search-results" style={{
               position: 'absolute', top: '100%', left: 0, marginTop: 6,
@@ -1398,6 +1485,19 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
       </div>
     </div>
   );
+}
+
+// Real URLs for the big menu links (was href="#"). Clicks still route in-app via onSelect.
+function menuHrefFor(label) {
+  const raw = String(label || '').trim();
+  const slug = raw.toLowerCase().replace(/\s+/g, '-');
+  if (slug === 'store') return '/store';
+  if (slug === 'about' || slug === 'info' || slug === 'info-contact' || slug === 'contact') return '/about';
+  const meta = (SECTION_META || []).find((s) => s && (s.slug === slug || String(s.title || '').toLowerCase().replace(/\s+/g, '-') === slug));
+  if (meta && (meta.isInfoPage || meta.isAbout)) return '/about';
+  const tab = (typeof resolveStoreTab === 'function') ? resolveStoreTab({ label: raw, sectionSlug: slug }) : null;
+  if (tab && slug !== 'store') return storeCategoryPath(tab);
+  return '/' + encodeURIComponent((meta && meta.slug) || slug);
 }
 
 function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding = false, links }) {
@@ -1486,7 +1586,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
           <SaboteurComicsLogo height={48} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Search pill + results — relative so the dropdown aligns exactly under the pill */}
+          {/* Search pill + results, relative so the dropdown aligns exactly under the pill */}
           <div style={{ position: 'relative' }}>
             <div className="search-pill" style={{
               display: 'flex',
@@ -1537,7 +1637,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
               )}
             </div>
 
-            {/* Results panel — flush under the pill. RULE: no drop shadow — border only */}
+            {/* Results panel, flush under the pill. RULE: no drop shadow, border only */}
             {searchOpen && (
               <div className="search-results" style={{
                 position: 'absolute',
@@ -1603,9 +1703,9 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
           return (
             <a
               key={l}
-              href="#"
+              href={menuHrefFor(l)}
               className={'fullmenu-link' + (isActive ? ' is-active' : '')}
-              onClick={(e) => { e.preventDefault(); onSelect(key); }}
+              onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); onSelect(key); }}
             >
               {l}
             </a>
@@ -1649,7 +1749,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             }}
           >
             <div style={{ position: 'relative' }}>
-              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.title || s.headline || s.subhead || ''} />
+              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span
                   style={{
@@ -1721,7 +1821,7 @@ function InfiniteGrid({ baseItems, onOpen }) {
     const io = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !loading && items.length < 200) {
         const hasReal = items.some((it) => it.imageUrl);
-        if (hasReal) return; // real Sanity assets — do not invent more or show loading
+        if (hasReal) return; // real Sanity assets, do not invent more or show loading
         setLoading(true);
         setTimeout(() => {
           setItems((prev) => {
@@ -1748,27 +1848,12 @@ function InfiniteGrid({ baseItems, onOpen }) {
 }
 
 const SHOW_MARQUEE = true; // toggle from Sanity CMS
-const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · ®SABOTEUR.ONE — ';
+const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE · INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · © ®SABOTEUR · ';
 
 // Calendar-derived travel stops. Local clock follows the current stop; Upcoming is the next one.
-const DEFAULT_ITINERARY = [
-  { startDate: '2026-01-01', city: 'Indianapolis', label: 'Indianapolis, Indiana', timezone: 'America/Indiana/Indianapolis' },
-  { startDate: '2026-08-20', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-08-24', city: 'Prague', label: 'Prague, Czechia', timezone: 'Europe/Prague' },
-  { startDate: '2026-08-29', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-09-04', city: 'Brașov', label: 'Brașov, Romania', timezone: 'Europe/Bucharest' },
-  { startDate: '2026-09-08', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-09-11', city: 'Bratislava', label: 'Bratislava, Slovakia', timezone: 'Europe/Bratislava' },
-  { startDate: '2026-09-14', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-09-20', city: 'Belgrade', label: 'Belgrade, Serbia', timezone: 'Europe/Belgrade' },
-  { startDate: '2026-10-05', city: 'Skopje', label: 'Skopje, North Macedonia', timezone: 'Europe/Skopje' },
-  { startDate: '2026-10-09', city: 'Sofia', label: 'Sofia, Bulgaria', timezone: 'Europe/Sofia' },
-  { startDate: '2026-10-12', city: 'Istanbul', label: 'Istanbul, Turkey', timezone: 'Europe/Istanbul' },
-  { startDate: '2026-10-16', city: 'Skopje', label: 'Skopje, North Macedonia', timezone: 'Europe/Skopje' },
-  { startDate: '2026-10-19', city: 'Sofia', label: 'Sofia, Bulgaria', timezone: 'Europe/Sofia' },
-  { startDate: '2026-10-23', city: 'Istanbul', label: 'Istanbul, Turkey', timezone: 'Europe/Istanbul' },
-  { startDate: '2026-11-15', city: 'Indianapolis', label: 'Indianapolis, Indiana', timezone: 'America/Indiana/Indianapolis' },
-];
+// No hard-coded fallback stops (Charlie 14:27: city clocks stay, dates go). With no CMS itinerary the
+// footer falls back to footer.localLabel / nextLocation from Sanity, then the Indianapolis default.
+const DEFAULT_ITINERARY = [];
 
 function resolveItinerary(stops, now) {
   const list = (Array.isArray(stops) ? stops : [])
@@ -1793,8 +1878,21 @@ function formatClock(date, timeZone) {
       second: '2-digit',
     });
   } catch (err) {
-    return '—';
+    return '-';
   }
+}
+
+// One footer clock block. Fixed size so every city looks uniform (Charlie 14:37).
+// Room for a 2-line city label so narrow columns (1024px) wrap instead of cutting the city off.
+const CLOCK_BLOCK_HEIGHT = 78;
+function ClockBlock({ label, clock, local }) {
+  const line = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+  return (
+    <div data-clock-block title={label} style={{ boxSizing: 'border-box', width: '100%', height: CLOCK_BLOCK_HEIGHT, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', overflow: 'hidden' }}>
+      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflowWrap: 'anywhere' }}>{label}</div>
+      <div style={Object.assign({ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', fontWeight: local ? 500 : 400, color: 'var(--color-ink)', lineHeight: 1.5 }, line)}>{clock}</div>
+    </div>
+  );
 }
 
 function Footer({ onContact, onTag, onHome, onStore, onResend }) {
@@ -1806,7 +1904,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
 
   const f = FOOTER_DATA || {};
   const subhead = f.logoSubhead || 'Experimental creative house';
-  const copyright = f.copyright || '© 2026 ®Saboteur LLC — All rights reserved';
+  const copyright = f.copyright || '© ®Saboteur. All rights reserved.';
   const cmsItinerary = Array.isArray(f.itinerary) ? f.itinerary : [];
   const { current, upcoming, upcomingAll } = resolveItinerary(cmsItinerary.length ? cmsItinerary : DEFAULT_ITINERARY, time);
   const localLabel = (current && (current.label || current.city)) || f.localLabel || 'Indianapolis, Indiana';
@@ -1818,7 +1916,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const marquee = (f.marqueeText || '').trim();
 
   const localStr = formatClock(time, localTimezone);
-  const nextStr = nextTimezone ? formatClock(time, nextTimezone) : '—';
+  const nextStr = nextTimezone ? formatClock(time, nextTimezone) : '-';
 
   const colLabel = {
     fontFamily: 'var(--font-family-mono)',
@@ -1882,6 +1980,10 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
       if (onResend) onResend();
       else if (FOOTER_NAV && FOOTER_NAV.resend) FOOTER_NAV.resend();
     }
+    else if (t === 'policies') {
+      if (FOOTER_NAV && FOOTER_NAV.policies) FOOTER_NAV.policies();
+      else window.location.href = '/policies';
+    }
     else if (t === 'section' && item.sectionSlug) goSection(String(item.sectionSlug).trim());
     else if ((t === 'external' || t === 'url') && item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
   };
@@ -1889,6 +1991,8 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   // Drop figure studies, send Info/Contact to About, and treat store categories as store tabs
   const rewritten = siteMap
     .filter((item) => !isFigureStudiesItem(item))
+    // QC: no footer link to /resend until email delivery (email-downloads) merges.
+    .filter((item) => !(item && (item.linkType === 'resend' || /re-?send/i.test(String(item.label || '')))))
     .map((item) => {
       if (isInfoMapItem(item)) return Object.assign({}, item, { linkType: 'info', sectionSlug: null });
       const tab = resolveStoreTab(item);
@@ -1897,7 +2001,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
     });
   const extraMap = STORE_TABS.map((c) => ({ label: c.label, linkType: 'store', sectionSlug: c.id })).concat([
     { label: 'Store', linkType: 'store' },
-    { label: 'Re-send downloads', linkType: 'resend' },
+    { label: 'Store Policies', linkType: 'policies' },
   ]);
   const baseMap = rewritten.length ? rewritten : [
     { label: 'Home', linkType: 'home' },
@@ -1944,14 +2048,16 @@ const colBox = {
             color: 'var(--color-ink)',
             textTransform: 'uppercase',
           }}>
-            {marquee} — {marquee} —
+            {marquee} · {marquee} ·
           </div>
           <style>{'@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}'}</style>
         </div>
       ) : null}
 
       <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
-       <div style={{
+       {/* QC 14:45: all 6 footer columns on one row from 1000px up (1280 used to wrap LOCAL TIME). Below that the auto-fit 200px grid is unchanged. */}
+       <style>{'@media (min-width: 1000px){[data-footer-grid]{grid-template-columns:repeat(6,minmax(0,1fr))!important}}'}</style>
+       <div data-footer-grid style={{
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
   gap: 0,
@@ -1960,19 +2066,19 @@ const colBox = {
   alignItems: 'stretch',
 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingRight: 24, minHeight: '100%', boxSizing: 'border-box' }}>
-            <button type="button" onClick={goHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginBottom: 12 }} aria-label="Home">
+            <div style={{ marginBottom: 12 }}>
               <Logo size={72} onClick={goHome} />
-            </button>
+            </div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--color-ink-55)', marginBottom: 16 }}>{subhead}</div>
             <div style={{ marginTop: 'auto', fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--color-ink-55)' }}>{copyright}</div>
           </div>
 
           <div style={colBox}>
             <div style={colLabel}>Contact</div>
-            <button type="button" onClick={goContact} style={linkStyle}
+            <a href="/about" onClick={(e) => { if (!isPlainLeftClick(e)) return; goContact(e); }} style={linkStyle}
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-            >Contact</button>
+            >Contact</a>
             {socials.filter((s) => String((s && s.label) || '').toLowerCase() !== 'sfx').map((s, i) => (
               <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
@@ -2000,36 +2106,26 @@ const colBox = {
           <div style={colBox}>
             <div style={colLabel}>Site map</div>
             {displayMap.map((item, i) => (
-              <button key={i} type="button" onClick={() => onMapClick(item)} style={linkStyle}
+              <a key={i} href={hrefForMapItem(item)} data-footer-link={item.linkType === 'policies' ? 'policies' : undefined}
+                onClick={(e) => { if (!isPlainLeftClick(e)) return; if (item.linkType === 'external' || item.linkType === 'url') return; e.preventDefault(); onMapClick(item); }} style={linkStyle}
                 onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
                 onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-              >{item.label}</button>
+              >{item.label}</a>
             ))}
           </div>
 
           <div style={Object.assign({}, colBox, { paddingRight: 0 })}>
             <div style={colLabel}>Local time</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'clamp(1.35rem, 2.5vw, 1.75rem)', fontWeight: 500, color: 'var(--color-ink)', letterSpacing: '-0.02em', marginBottom: 6, lineHeight: 1.2 }}>{localStr}</div>
-            <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink-55)', marginBottom: 16, lineHeight: 1.5 }}>{localLabel}</div>
-            {(upcomingAll && upcomingAll.length) ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                {upcomingAll.map((stop, i) => {
-                  const d = new Date(String(stop.startDate) + 'T12:00:00Z');
-                  const dStr = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-                  return (
-                    <div key={stop._key || (stop.startDate + i)} style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-                      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {stop.city || stop.label}{dStr ? ' · ' + dStr : ''}</div>
-                      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{formatClock(time, stop.timezone)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : nextLocation ? (
-              <div style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {nextLocation}</div>
-                <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{nextStr}</div>
-              </div>
-            ) : null}
+            {/* Charlie 14:37: every clock block (local + upcoming) is the same size. Equal widths via a
+                one-column grid, fixed height, long city names truncate with the full name in the title. */}
+            <div data-footer-clocks style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, width: '100%' }}>
+              <ClockBlock label={localLabel} clock={localStr} local />
+              {(upcomingAll && upcomingAll.length)
+                ? upcomingAll.map((stop, i) => (
+                    <ClockBlock key={stop._key || (stop.startDate + i)} label={'Upcoming: ' + (stop.city || stop.label)} clock={formatClock(time, stop.timezone)} />
+                  ))
+                : nextLocation ? <ClockBlock label={'Upcoming: ' + nextLocation} clock={nextStr} /> : null}
+            </div>
           </div>
         </div>
         <div style={{
@@ -2044,9 +2140,9 @@ const colBox = {
         }}>
           <p style={{ margin: 0 }}>
             Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Not AI-generated. Interested parties for publishing,{' '}
-            <button
-              type="button"
-              onClick={goContact}
+            <a
+              href="/about"
+              onClick={(e) => { if (!isPlainLeftClick(e)) return; goContact(e); }}
               style={{
                 font: 'inherit',
                 color: 'var(--color-ink)',
@@ -2058,7 +2154,7 @@ const colBox = {
                 textDecoration: 'underline',
                 textUnderlineOffset: '2px',
               }}
-            >please inquire</button>.
+            >please inquire</a>.
           </p>
         </div>
       </div>
@@ -2069,6 +2165,51 @@ const colBox = {
 
 
 
+
+// Home hero taglines, [heading, subline]. Line 1 is the static default: the first render (and SEO/caching) always shows it,
+// then the client swaps in a random line after mount. Add new lines to the end. Plain strings so React escapes the faces.
+const HERO_TAGLINES = [
+  ["Experimental art studio and publishing imprint.", "Human-crafted comics, books, zines, apparel."],
+  ["Experimental art studio and publishing imprint.", "Human-centipeded comics, books, zines, apparel. <( '.')>"],
+  ["Comics. Books. Zines. Shirts.", "Made by humans. Allegedly."],
+  ["NO AI. NO REFUNDS.", "Just comics, books, zines and apparel. Love ya."],
+  ["Welcome back, weirdo.", "We drew you something. <( ' ')^"],
+  ["Comics your mother warned you about.", "Now in your size."],
+  ["Experimental art studio and publishing imprint.", "Not a cult. Mostly."],
+  ["SIGNED. NUMBERED. SLIGHTLY UNHINGED.", "Comics, books, zines, apparel."],
+  ["Hand-drawn by a real person", "in a real hotel room. 10/10."],
+  ["Publishing imprint.", "Also stickers. Don't ask."],
+];
+const HERO_TAGLINE_KEY = 'sab_hero_tagline';
+function pickHeroTagline() {
+  let last = -1;
+  try { last = parseInt(window.localStorage.getItem(HERO_TAGLINE_KEY), 10); } catch (e) {}
+  const pool = HERO_TAGLINES.map((_, i) => i).filter((i) => i !== last);
+  const next = pool[Math.floor(Math.random() * pool.length)];
+  try { window.localStorage.setItem(HERO_TAGLINE_KEY, String(next)); } catch (e) {}
+  return next;
+}
+function HeroTagline() {
+  const [idx, setIdx] = useState(0);
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    const next = pickHeroTagline();
+    if (next === 0) return;
+    let reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduce) { setIdx(next); return; }
+    setShown(false);
+    const t = setTimeout(() => { setIdx(next); setShown(true); }, 320);
+    return () => clearTimeout(t);
+  }, []);
+  const line = HERO_TAGLINES[idx] || HERO_TAGLINES[0];
+  return (
+    <span data-hero-tagline={idx + 1} style={{ display: 'block', opacity: shown ? 1 : 0, transition: 'opacity 320ms ease' }}>
+      {line[0]}<br />
+      {line[1]}
+    </span>
+  );
+}
 
 function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
   return (
@@ -2096,8 +2237,7 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark
           letterSpacing: '-0.01em',
           color: 'var(--color-ink)',
         }}>
-          Experimental art studio and publishing imprint.<br />
-          Human-crafted comics, books, zines, apparel.
+          <HeroTagline />
         </p>
       </div>
       <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
@@ -2150,13 +2290,12 @@ function isPhysicalFulfillment(ft) {
 // Auto-pause at local midnight Indianapolis on Aug 19, 2026.
 // Sanity switch: false = pause now; true = selling (also the way to resume after the trip); unset = follow this date.
 const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
-const PHYSICAL_PAUSED_COPY = "I'm out of the country, so I can't ship physical goods right now. Digital downloads are still available. Please send me an email for any inquiries.";
+const PHYSICAL_PAUSED_COPY = "Physical shipping is paused right now. Digital downloads are still available. Email store@saboteur.one with any questions.";
 
 function physicalPauseCopy(custom) {
   const c = String(custom || '').trim();
   if (!c) return PHYSICAL_PAUSED_COPY;
-  if (/please send me an email/i.test(c)) return c;
-  return c.replace(/\s+$/, '') + ' Please send me an email for any inquiries.';
+  return c;
 }
 
 function arePhysicalOrdersLive(flag) {
@@ -2237,7 +2376,7 @@ function productImageUrl(p) {
   return null;
 }
 
-function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory }) {
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
   // Honor an explicit deep link (?tab=comics) even if that tab is locked (travel pause).
@@ -2265,7 +2404,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
     <div>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px' }}>
-        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store</h1>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>{(initialCategory && initialCategory !== 'all' && (STORE_CATEGORIES.find((c) => c.id === initialCategory) || {}).label) || 'Store'}</h1>
         {shippingPaused ? (
           <PhysicalPauseNotice message={physicalOrdersPausedMessage} />
         ) : null}
@@ -2275,12 +2414,12 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             const muted = mutedCats[c.id];
             const locked = lockedCats[c.id];
             return (
-              <button
+              <a
                 key={c.id}
-                type="button"
-                disabled={!!locked}
+                href={storeCategoryPath(c.id)}
                 aria-disabled={locked ? 'true' : undefined}
-                onClick={() => { if (!locked) setFilter(c.id); }}
+                aria-current={active ? 'page' : undefined}
+                onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (locked) return; setFilter(c.id); if (onSelectCategory) onSelectCategory(c.id); }}
                 className={'store-cat-btn' + (active ? ' is-active' : '') + (muted ? ' is-muted' : '') + (locked ? ' is-locked' : '')}
                 style={{
                   border: 'none', cursor: locked ? 'not-allowed' : 'pointer',
@@ -2288,8 +2427,9 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                   letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   borderRadius: 'var(--radius-sm)',
                   transition: 'background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease)',
+                  textDecoration: 'none', display: 'inline-block',
                 }}
-              >{c.label}</button>
+              >{c.label}</a>
             );
           })}
         </div>
@@ -2318,12 +2458,13 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               const sold = unavailable && !paused && !comingSoon;
               const badge = comingSoon ? 'Coming soon' : (sold ? 'Sold out' : null);
               return (
-                <button
+                <a
                   key={p._id || p.slug}
-                  onClick={() => onOpenProduct && onOpenProduct(p)}
+                  href={'/store/' + encodeURIComponent(String(p.slug || ''))}
+                  onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(p); }}
                   style={{
                     background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
-                    display: 'flex', flexDirection: 'column', gap: 16,
+                    display: 'flex', flexDirection: 'column', gap: 16, textDecoration: 'none', color: 'inherit',
                   }}
                 >
                   <div style={{
@@ -2380,8 +2521,9 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         textDecoration: sold ? 'line-through' : 'none',
                       }}>{price}</span>
                     </div>
+                    {isAdultProduct(p) ? <div style={{ marginTop: 12 }}><AdultLabel /></div> : null}
                   </div>
-                </button>
+                </a>
               );
             })}
           </div>
@@ -2485,7 +2627,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         paddingTop: isMobile ? 88 : 100,
         borderBottom: '1px solid var(--color-stroke)',
       }}>
-        {/* Images — centered like editorial project view, no grey plate */}
+        {/* Images, centered like editorial project view, no grey plate */}
         <div style={{
           flex: 1,
           minWidth: 0,
@@ -2521,7 +2663,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                 }}>
                   <img
                     src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
-                    alt={p.title ? `${p.title}${i > 0 ? ` — ${i + 1}` : ''}` : ''}
+                    alt={p.title ? `${p.title}${i > 0 ? `, ${i + 1}` : ''}` : ''}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     style={{
                       width: '100%',
@@ -2600,6 +2742,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           }}>
             {price}
           </div>
+          {isAdultProduct(p) ? <div style={{ margin: '-16px 0 28px' }}><AdultLabel /></div> : null}
 
           {p.description ? (
             <p style={{
@@ -2619,7 +2762,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             </div>
           )}
 
-          {details.notes ? (
+          {details.notes && !(shippingPaused && /shipping/i.test(String(details.notes))) ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 24px', lineHeight: 1.5,
@@ -2633,20 +2776,21 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 20px', lineHeight: 1.5,
             }}>
-              Preview — this item is not available yet.
+              Preview, this item is not available yet.
             </p>
           ) : (p.fulfillmentType === 'paid_physical' || p.fulfillmentType === 'paid_physical_variant') ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 20px', lineHeight: 1.5,
             }}>
-              Physical item — shipping address is collected at checkout when you pay (Stripe). US shipping only.
+              Physical item, shipping address is collected at checkout when you pay (Stripe). US shipping only.
             </p>
           ) : null}
 
           {!isSoldOut && needsAge ? (
+            <div style={{ marginBottom: 28 }}>
             <label style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 28, cursor: 'pointer',
+              display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, cursor: 'pointer',
               fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.45,
             }}>
               <input
@@ -2657,6 +2801,11 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               />
               <span>I confirm I am 18 years of age or older. This product may contain artistic adult content.</span>
             </label>
+            <p data-adult-line="product" style={{
+              fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
+              margin: '0 0 0 30px', lineHeight: 1.5,
+            }}>{ADULT_CONTENT_LINE}</p>
+            </div>
           ) : null}
           {!isSoldOut && needsSize ? (
             <div style={{ marginBottom: 32 }}>
@@ -2691,14 +2840,15 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
 
           {isFree && !isSoldOut && (
             <div style={{ marginBottom: 20 }}>
-              <label style={{
+              <label htmlFor="download-email" style={{
                 display: 'block', fontFamily: 'var(--font-family-mono)', fontSize: '12px',
                 color: 'var(--color-ink-55)', marginBottom: 6,
               }}>Email</label>
               <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', margin: '0 0 8px', lineHeight: 1.4 }}>
-                We capture your email to stay in touch. The file stays available here — this is not a lock.
+                We capture your email to stay in touch. The file stays available here, this is not a lock.
               </p>
               <input
+                id="download-email"
                 type="email"
                 name="download-email"
                 autoComplete="email"
@@ -2768,7 +2918,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-success)',
               margin: '12px 0 0',
-            }}>Thanks — email saved. Your download is starting.</p>
+            }}>Thanks, email saved. Your download is starting.</p>
           ) : null}
           {isFree && !comingSoon && !p.digitalFileUrl ? (
             <p style={{
@@ -2795,6 +2945,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             marginBottom: 24,
           }}>
             More from the store
+            {p.category && STORE_CATEGORY_SLUGS[p.category] ? (
+              <>
+                {' · '}
+                <a href={storeCategoryPath(p.category)} onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store(p.category); }} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                  All {(STORE_TABS.find((c) => c.id === p.category) || {}).label || 'items'}
+                </a>
+              </>
+            ) : null}
           </div>
           <div style={{
             display: 'grid',
@@ -2809,13 +2967,13 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               const rpPaused = isShippingPaused(rp, physicalOrdersEnabled);
               const rpBadge = rpSoon ? 'Coming soon' : ((rpSold && !rpPaused) ? 'Sold out' : null);
               return (
-                <button
+                <a
                   key={rp._id || rp.slug}
-                  type="button"
-                  onClick={() => onOpenProduct && onOpenProduct(rp)}
+                  href={'/store/' + encodeURIComponent(String(rp.slug || ''))}
+                  onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(rp); }}
                   style={{
                     background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
-                    display: 'flex', flexDirection: 'column', gap: 12,
+                    display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', color: 'inherit',
                   }}
                 >
                   <div style={{
@@ -2852,7 +3010,8 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     color: 'var(--color-ink-55)',
                     textDecoration: (rpSold && !rpPaused && !rpSoon) ? 'line-through' : 'none',
                   }}>{rpPrice}</div>
-                </button>
+                  {isAdultProduct(rp) ? <AdultLabel /> : null}
+                </a>
               );
             })}
           </div>
@@ -2912,9 +3071,11 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
         <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: '0 0 40px', lineHeight: 1.55 }}>
           Free files also stay on their product pages. This page lists downloads tied to your email on this browser. Full email delivery comes with Phase 2.
         </p>
-        <label style={{ display: 'block', fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 6 }}>Email</label>
+        <label htmlFor="resend-email" style={{ display: 'block', fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 6 }}>Email</label>
         <input
+          id="resend-email"
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(ev) => { setEmail(ev.target.value); setError(''); setMessage(''); }}
           onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); submit(); } }}
@@ -2949,14 +3110,14 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
                   // Prefer stored URL if we saved it; otherwise user re-opens from product
                   const url = row.digitalFileUrl;
                   if (url) window.open(url, '_blank', 'noopener,noreferrer');
-                  else setMessage('Open the product page to download again — link was not stored with this entry.');
+                  else setMessage('Open the product page to download again, link was not stored with this entry.');
                 }}
                 style={{
                   background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                   fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-link)', textDecoration: 'underline',
                 }}
               >
-                {row.digitalFileUrl ? 'Download again' : 'Link not stored — use product page'}
+                {row.digitalFileUrl ? 'Download again' : 'Link not stored, use product page'}
               </button>
             </div>
           ))}
@@ -2979,7 +3140,7 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 16px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Thank you</h1>
         <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '14px', color: 'var(--color-ink-55)', margin: '0 0 12px', lineHeight: 1.55 }}>
-          Payment received. A confirmation email comes from Stripe. Physical orders ship after we pack them — address was collected at checkout.
+          Payment received. A confirmation email comes from Stripe. Physical orders ship after we pack them, address was collected at checkout.
         </p>
         {sessionId ? (
           <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 32px' }}>
@@ -3000,6 +3161,62 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
         >
           Back to home
         </button>
+      </div>
+      <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
+    </div>
+  );
+}
+
+const POLICY_LINK_STYLE = { color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' };
+function PolicyMailLink({ children }) {
+  return <a href={'mailto:' + CONTACT_EMAIL} style={POLICY_LINK_STYLE}>{children}</a>;
+}
+function PolicyResendLink({ children }) {
+  return (
+    <a href="/resend" data-policies-link="resend" style={POLICY_LINK_STYLE} onClick={(e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      if (FOOTER_NAV && typeof FOOTER_NAV.resend === 'function') FOOTER_NAV.resend(); else window.location.href = '/resend';
+    }}>{children}</a>
+  );
+}
+function PolicyStoreLink({ children }) {
+  return (
+    <a href="/store" data-policies-link="store" style={POLICY_LINK_STYLE} onClick={(e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store(); else window.location.href = '/store';
+    }}>{children}</a>
+  );
+}
+const POLICY_SECTIONS = [
+  { title: 'Age requirement', body: () => <>{'\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'}</> },
+  { title: 'Digital downloads', body: () => <>{'After payment, your download opens on the confirmation page. Save it. If it does not work, email '}<PolicyMailLink>store@saboteur.one</PolicyMailLink>{'.'}</> },
+  { title: 'Shipping', body: () => <>{'Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only '}<PolicyStoreLink>digital downloads</PolicyStoreLink>{' are available.'}</> },
+  { title: 'Returns and refunds', body: () => <>{"All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, "}<PolicyMailLink>contact us</PolicyMailLink>{" and we'll make it right."}</> },
+];
+
+function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const h2 = { fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: '20px', margin: '0 0 10px', color: 'var(--color-ink)', letterSpacing: '-0.01em' };
+  const para = { fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: 0, lineHeight: 1.6 };
+  return (
+    <div style={{ minHeight: 'var(--app-height)', background: 'var(--color-paper)' }}>
+      <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
+      <div data-page="policies" style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 680, margin: '0 auto' }}>
+        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 48px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Store Policies</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+          {POLICY_SECTIONS.map((sec) => (
+            <section key={sec.title} style={{ paddingBottom: 28, borderBottom: '1px solid var(--color-stroke)' }}>
+              <h2 style={h2}>{sec.title}</h2>
+              <p style={para}>{sec.body()}</p>
+            </section>
+          ))}
+          <section>
+            <h2 style={h2}>Contact</h2>
+            <p style={para}>Questions about an order? Email <PolicyMailLink>{CONTACT_EMAIL}</PolicyMailLink>.</p>
+          </section>
+        </div>
       </div>
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
@@ -3038,7 +3255,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       return;
     }
     if (totalCents <= 0) {
-      setCheckoutError('Free items download from the product page — no payment needed.');
+      setCheckoutError('Free items download from the product page, no payment needed.');
       return;
     }
     if (!emailValid) {
@@ -3099,7 +3316,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 680, margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 12px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Checkout</h1>
         <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: '0 0 48px', lineHeight: 1.55 }}>
-          Review your bag. When Stripe is live, payment collects card details and — for physical items (comics, apparel) — the shipping address in the same checkout.
+          Review your bag, enter your email, then Place order to pay on Stripe's secure checkout page (card, Apple Pay, Google Pay or Link where available).
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, marginBottom: 48 }}>
           {(cart || []).length === 0 ? (
@@ -3253,6 +3470,10 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
         >
           Continue shopping
         </button>
+        <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '20px 0 0', lineHeight: 1.5 }}>
+          By placing an order you agree to our{' '}
+          <a href="/policies" data-checkout-link="policies" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); if (FOOTER_NAV && FOOTER_NAV.policies) FOOTER_NAV.policies(); else window.location.href = '/policies'; }} style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Store Policies</a>.
+        </p>
       </div>
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
@@ -3589,7 +3810,7 @@ function GalleryPanel({ series }) {
               ) : (
                 <img
                   src={item.src}
-                  alt={series.title || series.headline || ''}
+                  alt={series.alt || series.title || series.headline || ''}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   style={{ ...style, margin: 0, maxWidth: '100%' }}
                   onLoad={(e) => setDims(item.src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
@@ -3810,6 +4031,19 @@ function AgeGate({ onConfirm, data }) {
       }}>
         {entryMessage}
       </p>
+      {String(entryMessage || '').trim() !== ADULT_CONTENT_LINE ? (
+        <p data-adult-line="gate" style={{
+          maxWidth: '42ch',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: 'var(--font-ui-size)',
+          lineHeight: 1.55,
+          color: '#5C5C66',
+          margin: '-24px 0 0',
+          textWrap: 'pretty',
+        }}>
+          {ADULT_CONTENT_LINE}
+        </p>
+      ) : null}
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
@@ -3923,7 +4157,7 @@ function ContactForm() {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           access_key: '8fb4c260-014b-491e-bb90-e6cb6e25ca52',
-          subject: 'Saboteur site — contact',
+          subject: 'Saboteur site, contact',
           from_name: name,
           name: name,
           email: email,
@@ -3992,16 +4226,16 @@ function ContactForm() {
   return (
     <form onSubmit={onSubmit} style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ width: '100%' }}>
-        <label style={labelStyle}>Name</label>
-        <input required name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} style={fieldStyle} />
+        <label htmlFor="contact-name" style={labelStyle}>Name</label>
+        <input id="contact-name" required name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} style={fieldStyle} />
       </div>
       <div style={{ width: '100%' }}>
-        <label style={labelStyle}>Email</label>
-        <input required type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
+        <label htmlFor="contact-email" style={labelStyle}>Email</label>
+        <input id="contact-email" required type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
       </div>
       <div style={{ width: '100%' }}>
-        <label style={labelStyle}>Message</label>
-        <textarea required name="message" rows={6} value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...fieldStyle, resize: 'vertical', minHeight: 140 }} />
+        <label htmlFor="contact-message" style={labelStyle}>Message</label>
+        <textarea id="contact-message" required name="message" rows={6} value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...fieldStyle, resize: 'vertical', minHeight: 140 }} />
       </div>
       {status === 'error' && (
         <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', color: 'var(--color-accent)' }}>
@@ -4073,6 +4307,7 @@ function labelForView(view) {
   if (view.page === 'info' || view.page === 'contact') return 'About';
   if (view.page === 'checkout') return 'Checkout';
   if (view.page === 'resend') return 'Re-send downloads';
+  if (view.page === 'policies') return 'Store Policies';
   if (view.page === 'order-success') return 'Order confirmation';
   if (view.page === 'not-found') return 'Page not found';
   return view.page || 'Home';
@@ -4088,14 +4323,14 @@ const MSN404_SCRIPTS = [
 ];
 
 const MSN404_ERRORS = [
-  ['Error 404 — page not found', "This page was here. Now it isn't. We're not saying anything happened to it."],
-  ['Error 404 — page not found', 'The address is wrong, the page moved, or your email client put a dash in the middle of the URL again.'],
+  ['Error 404, page not found', "This page was here. Now it isn't. We're not saying anything happened to it."],
+  ['Error 404, page not found', 'The address is wrong, the page moved, or your email client put a dash in the middle of the URL again.'],
   ['Cannot find server', 'The page might be unavailable. You might also just be wrong.'],
-  ['Error 404 — page not found', 'This page has left the conversation.'],
-  ['Error 404 — page not found', "The item you're looking for has been removed by somebody's mother."],
-  ['Error 404 — page not found', "We checked twice. Kev checked once, but Kev also can't do fractions."],
-  ['Error 404 — page not found', 'The resource is unavailable. It may have evolved into a different page.'],
-  ['Error 404 — page not found', 'Nothing is here. The homepage, by contrast, is extremely here.']
+  ['Error 404, page not found', 'This page has left the conversation.'],
+  ['Error 404, page not found', "The item you're looking for has been removed by somebody's mother."],
+  ['Error 404, page not found', "We checked twice. Kev checked once, but Kev also can't do fractions."],
+  ['Error 404, page not found', 'The resource is unavailable. It may have evolved into a different page.'],
+  ['Error 404, page not found', 'Nothing is here. The homepage, by contrast, is extremely here.']
 ];
 
 const MSN404_NAMES = { A: '~*~Assslayer~*~', S: 'xXSaboteurXx' };
@@ -4306,7 +4541,7 @@ function Messenger404() {
 
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = '404 — Saboteur';
+    document.title = '404, page not found | ®Saboteur';
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -5120,6 +5355,61 @@ function App() {
     }
   }, []);
 
+  // Keep <title> and the adult-rating meta in step with client-side route changes (QC).
+  // The server already renders the right head for a direct load; this mirrors it after in-app navigation.
+  const headSeq = React.useRef(0);
+  useEffect(() => {
+    if (!view || !view.page) return;
+    const path = aboutOpen ? '/about' : pathFromView(view);
+    const seq = ++headSeq.current;
+    const setRating = (adult) => {
+      try {
+        let m = document.querySelector('meta[name="rating"]');
+        if (adult) {
+          if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'rating'); document.head.appendChild(m); }
+          m.setAttribute('content', 'adult');
+        } else if (m) {
+          m.parentNode.removeChild(m);
+        }
+      } catch (e) {}
+    };
+    const fallbackTitle = () => (view.page === 'home' && !aboutOpen ? '\u00aeSaboteur' : (aboutOpen ? 'About' : labelForView(view)) + ' | \u00aeSaboteur');
+    if (view.page === 'not-found') { setRating(false); return; } // the 404 screen sets its own title
+    // Home is the static index.html head (title \u00aeSaboteur, rating adult); the server resolver has no '/' route.
+    const setHead = (canonical, desc) => {
+      try {
+        let l = document.querySelector('link[rel="canonical"]');
+        if (canonical) {
+          if (!l) { l = document.createElement('link'); l.setAttribute('rel', 'canonical'); document.head.appendChild(l); }
+          l.setAttribute('href', canonical);
+        } else if (l) { l.parentNode.removeChild(l); }
+        if (desc) {
+          let d = document.querySelector('meta[name="description"]');
+          if (!d) { d = document.createElement('meta'); d.setAttribute('name', 'description'); document.head.appendChild(d); }
+          d.setAttribute('content', desc);
+        }
+      } catch (e) {}
+    };
+    if (view.page === 'home' && !aboutOpen) { document.title = '\u00aeSaboteur'; setRating(true); setHead(HOME_CANONICAL, HOME_DESC); return; }
+    // Post overlays live at '/' (no server route): rating follows the post's own images.
+    if (view.page === 'item' && !aboutOpen) {
+      const s = view.series || {};
+      document.title = (s.headline || s.title ? (s.headline || s.title) + ' | ' : '') + '\u00aeSaboteur';
+      setRating(isAdultAsset(s.id));
+      setHead(HOME_CANONICAL, HOME_DESC);
+      return;
+    }
+    fetch('/api/page?__path=' + encodeURIComponent(path) + '&__meta=1', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => {
+        if (seq !== headSeq.current) return;
+        if (m && m.title) document.title = m.title; else document.title = fallbackTitle();
+        setRating(!!(m && m.adult));
+        if (m) setHead(m.canonical, m.desc);
+      })
+      .catch(() => { if (seq === headSeq.current) document.title = fallbackTitle(); });
+  }, [view, aboutOpen]);
+
   // Initial path parse + popstate listener
   useEffect(() => {
     let initial = viewFromPath(window.location.pathname, window.location.search);
@@ -5193,7 +5483,7 @@ function App() {
               _id: 'fallback-bts',
               title: "Tommy's BTS",
               slug: 'tommys-bts',
-              description: 'Behind-the-scenes digital pack. Free download — we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
+              description: 'Behind-the-scenes digital pack. Free download, we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
               priceCents: 0,
               fulfillmentType: 'free_digital',
               category: 'comics',
@@ -5207,7 +5497,7 @@ function App() {
               _id: 'fallback-comic',
               title: "Tommy's Comic",
               slug: 'tommys-comic',
-              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout) — not on this page.',
+              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout), not on this page.',
               priceCents: 1800,
               fulfillmentType: 'paid_physical',
               category: 'comics',
@@ -5243,7 +5533,7 @@ function App() {
               ],
             },
           ];
-            try { console.warn('[saboteur] No products from Sanity — using fallback cards'); } catch (e) {}
+            try { console.warn('[saboteur] No products from Sanity, using fallback cards'); } catch (e) {}
           } else {
             try { console.log('[saboteur] products from Sanity:', list.length, list); } catch (e) {}
           }
@@ -5365,7 +5655,7 @@ function App() {
               _id: 'fallback-bts',
               title: "Tommy's BTS",
               slug: 'tommys-bts',
-              description: 'Behind-the-scenes digital pack. Free download — we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
+              description: 'Behind-the-scenes digital pack. Free download, we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
               priceCents: 0,
               fulfillmentType: 'free_digital',
               category: 'comics',
@@ -5379,7 +5669,7 @@ function App() {
               _id: 'fallback-comic',
               title: "Tommy's Comic",
               slug: 'tommys-comic',
-              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout) — not on this page.',
+              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout), not on this page.',
               priceCents: 1800,
               fulfillmentType: 'paid_physical',
               category: 'comics',
@@ -5595,6 +5885,7 @@ function App() {
     },
     comics: goStoreComics,
     resend: () => { closeMenu(); setAboutOpen(false); navigate({ page: 'resend' }); window.scrollTo(0, 0); },
+    policies: () => { closeMenu(); setAboutOpen(false); setCartOpen(false); navigate({ page: 'policies' }); window.scrollTo(0, 0); },
   };
   // Phase 2 return from Stripe (kept for safety; initial path parse also reads the query)
   useEffect(() => {
@@ -5654,7 +5945,7 @@ function App() {
         if (rect.bottom < -100 || rect.top > vh + 100) return;
         const center = rect.top + rect.height / 2;
         const offset = (center - vh / 2) / vh; // -0.5 … 0.5 roughly
-        const move = Math.max(-12, Math.min(12, offset * -18)); // max ±12px — approved subtle parallax
+        const move = Math.max(-12, Math.min(12, offset * -18)); // max ±12px, approved subtle parallax
         el.style.transform = `translate3d(0, ${move.toFixed(1)}px, 0)`;
 
 
@@ -5700,6 +5991,8 @@ function App() {
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: 'var(--app-height)', background: showNotFound ? '#0B1020' : 'var(--color-paper)' }}>
       <div className="sr-only" aria-live="polite" aria-atomic="true">{showNotFound ? 'Page not found' : labelForView(view)}</div>
       <main id="main">
+      {/* Visually hidden homepage H1 (SEO): no visual change. */}
+      {!showNotFound && view.page === 'home' && !aboutOpen && <h1 className="sr-only">®Saboteur: comics, photography and art by Charlie Clark</h1>}
 
       {showNotFound && <Messenger404 />}
       {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
@@ -5724,6 +6017,9 @@ function App() {
           menuOpen={menuOpen}
           onOpenProduct={(p) => {
             navigate({ page: 'product', product: p });
+          }}
+          onSelectCategory={(cat) => {
+            navigate({ page: 'store', storeCategory: cat, storeResetKey: view.storeResetKey });
           }}
         />
       )}
@@ -5766,6 +6062,22 @@ function App() {
         />
       )}
       
+      {!loading && view.page === 'policies' && (
+        <PoliciesPage
+          onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
+          onBack={back}
+          onHome={goHome}
+          onContact={goContact}
+          onTag={goTag}
+          dark={dark}
+          onToggleDark={toggleDark}
+          cartCount={cartCount}
+          onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }}
+          cartOpen={cartOpen}
+          menuOpen={menuOpen}
+        />
+      )}
+
       {!loading && view.page === 'order-success' && (
         <OrderSuccessPage
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}

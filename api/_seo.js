@@ -168,7 +168,8 @@ function productDesc(p, settings) {
   const own = String(p.seoDesc || '').replace(/\s+/g, ' ').trim();
   if (own) {
     // Free downloads always say so (Charlie, 21 Oct): append when the Sanity text lacks it.
-    const tail = isFree(p) && !/\bfree\b/i.test(own) ? ' Free download.' : '';
+    // Coming-soon items with no price yet are not free downloads (Kika, 21 Oct).
+    const tail = isFree(p) && !isComingSoon(p) && !/\bfree\b/i.test(own) ? ' Free download.' : '';
     return fitSentences(noDash(own), 155 - tail.length) + tail;
   }
   const name = shortName(p.title);

@@ -4,6 +4,15 @@ const seo = require('./_seo');
 module.exports = async function handler(req, res) {
   const url = new URL(req.url, 'https://saboteur.one');
   const pathname = url.searchParams.get('__path') || url.pathname;
+  // Old /store?tab=<id> links: 301 to the clean category URL with no query string (QC).
+  const tab = url.searchParams.get('tab');
+  if (tab !== null && /^\/store\/?$/i.test(pathname)) {
+    const TABS = { comics: 'comics', 'prints-and-books': 'books', books: 'books', textures: 'textures', 'original-art': 'original-art', clothing: 'apparel', apparel: 'apparel' };
+    const slug = TABS[String(tab).toLowerCase()];
+    res.setHeader('Location', (slug ? '/store/' + slug : '/store'));
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.status(301).end();
+  }
   let meta;
   try {
     const data = await seo.loadData();

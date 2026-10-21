@@ -23,12 +23,12 @@
 <meta property="og:image:width" content="1080">
 <meta property="og:image:height" content="1080">
 <meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:alt" content="®Saboteur — IRONING, Amelia">
+<meta property="og:image:alt" content="IRONING poster by ®Saboteur, featuring Amelia">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="®Saboteur">
 <meta name="twitter:description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
 <meta name="twitter:image" content="https://saboteur.one/assets/og-amelia.jpg">
-<meta name="twitter:image:alt" content="®Saboteur — IRONING, Amelia">
+<meta name="twitter:image:alt" content="IRONING poster by ®Saboteur, featuring Amelia">
 <!-- Vercel Web Analytics (enabled in dashboard) -->
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -1283,7 +1283,7 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
     <a
       href="/store/comics"
       aria-label="Saboteur Comics store"
-      title="Store — Comics"
+      title="Store, Comics"
       onClick={handleClick}
       style={{
         display: 'block',
@@ -2017,9 +2017,9 @@ const colBox = {
   alignItems: 'stretch',
 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingRight: 24, minHeight: '100%', boxSizing: 'border-box' }}>
-            <button type="button" onClick={goHome} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginBottom: 12 }} aria-label="Home">
+            <div style={{ marginBottom: 12 }}>
               <Logo size={72} onClick={goHome} />
-            </button>
+            </div>
             <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--color-ink-55)', marginBottom: 16 }}>{subhead}</div>
             <div style={{ marginTop: 'auto', fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--color-ink-55)' }}>{copyright}</div>
           </div>
@@ -2581,7 +2581,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                 }}>
                   <img
                     src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
-                    alt={p.title ? `${p.title}${i > 0 ? ` — ${i + 1}` : ''}` : ''}
+                    alt={p.title ? `${p.title}${i > 0 ? `, ${i + 1}` : ''}` : ''}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     style={{
                       width: '100%',
@@ -4445,7 +4445,7 @@ function Messenger404() {
 
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = '404 — Saboteur';
+    document.title = '404, page not found | ®Saboteur';
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -5840,6 +5840,8 @@ function App() {
     <div data-theme={dark ? 'dark' : 'light'} style={{ minHeight: 'var(--app-height)', background: showNotFound ? '#0B1020' : 'var(--color-paper)' }}>
       <div className="sr-only" aria-live="polite" aria-atomic="true">{showNotFound ? 'Page not found' : labelForView(view)}</div>
       <main id="main">
+      {/* Visually hidden homepage H1 (SEO): no visual change. */}
+      {!showNotFound && view.page === 'home' && <h1 className="sr-only">®Saboteur: comics, photography and art by Charlie Clark</h1>}
 
       {showNotFound && <Messenger404 />}
       {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}

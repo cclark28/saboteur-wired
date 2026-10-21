@@ -9,11 +9,8 @@ const SITE = 'https://saboteur.one';
 const BRAND = '\u00aeSaboteur';
 const EMAIL = 'saboteur@mail.grokbot.com';
 const SANITY = 'https://6td8xalf.apicdn.sanity.io/v2024-01-01/data/query/production';
-// Non-explicit fallback share image: the (R)Saboteur Tote product photo, cropped 1200x630.
-const FALLBACK_OG = {
-  url: 'https://cdn.sanity.io/images/6td8xalf/production/c4d5ceafb640a2b49546b700c1f16814c440cc14-719x1280.jpg?w=1200&h=630&fit=crop&fm=jpg&q=85',
-  w: 1200, h: 630, alt: BRAND + ' tote bag with the SABOTEUR logo, hanging on a white chair',
-};
+// Non-explicit fallback share image: the full (R)SABOTEUR logo on white, 1200x630 PNG served by api/og-logo.js.
+const FALLBACK_OG = { url: SITE + '/og/saboteur-logo.png', w: 1200, h: 630, alt: 'The ' + BRAND + ' logo, black on white' };
 const COMICS_OG = { url: SITE + '/assets/og-tommys-cover.jpg', w: 1080, h: 1080, alt: "Tommy's Issue #1 comic cover" };
 // Product images reviewed as non-explicit even though the product asks for 18+ confirmation.
 const OG_SAFE_AGE_SLUGS = { 'tommys-issue-1': 1, 'tommys-issue-1-bts': 1 };
@@ -25,25 +22,25 @@ const FACTS_LASTMOD = '2026-10-21';
 
 const CATS = [
   { id: 'comics', slug: 'comics', label: 'Comics',
-    title: "Comics \u2014 Tommy's and Indie Adult Comics | " + BRAND,
+    title: "Comics - Tommy's and Indie Adult Comics | " + BRAND,
     desc: "Comics from " + BRAND + ", including Tommy's, a 1976 New Mexico desert-festival crime story by Charlie Clark. Print issue and digital extras. Adults only.",
     intro: "Comics from " + BRAND + ", including Tommy's, a 1976 New Mexico desert-festival crime story by Charlie Clark. Adults only (18+).",
     og: COMICS_OG },
   { id: 'prints-and-books', slug: 'books', label: 'Books & Zines',
-    title: 'Photo Books & Zines \u2014 Digital PDFs | ' + BRAND,
+    title: 'Photo Books & Zines - Digital PDFs | ' + BRAND,
     desc: 'Digital photo books and zines by Charlie Clark, published by ' + BRAND + '. Fine art photography series delivered as PDF downloads. Adults only (18+).',
     intro: 'Digital photo books and zines by Charlie Clark, published by ' + BRAND + '. Fine art photography for adults (18+), delivered as PDF.' },
   { id: 'textures', slug: 'textures', label: 'Textures',
-    title: 'Textures \u2014 Scanned Paper, Screentone & Paint | ' + BRAND,
+    title: 'Textures - Scanned Paper, Screentone & Paint | ' + BRAND,
     desc: 'High-resolution scanned textures for illustrators and designers: paper, screentone, newsprint, gel plate and paint. Many are free downloads from ' + BRAND + '.',
     intro: 'High-resolution scanned textures for illustrators and designers: paper, screentone, newsprint, gel plate, paint and more. Many are free.' },
   { id: 'original-art', slug: 'original-art', label: 'Original Art',
-    title: 'Original Comic Art for Sale \u2014 Covers & Pinups | ' + BRAND,
+    title: 'Original Comic Art for Sale - Covers & Pinups | ' + BRAND,
     desc: 'Original comic covers and pinups by Charlie Clark: pencil, ink and screentone on bristol board, 11x17. One of a kind pieces from ' + BRAND + '.',
     intro: 'Original comic covers and pinups by Charlie Clark: pencil, ink and screentone on bristol board.' },
   { id: 'clothing', slug: 'apparel', label: 'Apparel',
-    title: 'Apparel \u2014 Tees and Totes | ' + BRAND,
-    desc: BRAND + ' apparel: graphic tees and a tote bag in the studio\u2019s comic art style. Human-crafted designs by Charlie Clark. U.S. shipping only.',
+    title: 'Apparel - Tees and Totes | ' + BRAND,
+    desc: BRAND + ' apparel: graphic tees and a tote bag in the studio\u2019s comic art style by Charlie Clark. All sold out for now, and physical shipping is paused.',
     intro: BRAND + ' tees and totes in the studio\u2019s comic art style.' },
 ];
 const catById = (id) => CATS.find((c) => c.id === id);
@@ -77,7 +74,9 @@ async function loadData() {
 }
 
 // ---------- helpers ----------
-const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// No em dashes in anything we emit (QC): Sanity text with an em dash gets a comma instead.
+const noDash = (s) => String(s == null ? '' : s).replace(/\s*\u2014\s*/g, ', ');
+const esc = (s) => noDash(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const isPhysical = (ft) => ft === 'paid_physical' || ft === 'paid_physical_variant';
 const isComingSoon = (p) => p.comingSoon === true || p.comingSoon === 'true';
 const isSoldOut = (p) => {
@@ -115,7 +114,7 @@ function clip(s, n) {
 }
 function fitTitle(name, qualifier) {
   const tail = ' | ' + BRAND;
-  const D = ' \u2014 ';
+  const D = ' - ';
   const cands = [name + (qualifier ? D + qualifier : ''), name];
   const ci = name.indexOf(': ');
   if (ci > 0) {
@@ -124,15 +123,25 @@ function fitTitle(name, qualifier) {
     if (qualifier) cands.push(after + D + qualifier);
     cands.push(after);
   }
-  for (const c of cands) if ((c + tail).length <= 60) return c + tail;
-  return clip(name, 60 - tail.length) + tail;
+  // Titles stay under 60 characters (QC).
+  for (const c of cands) if ((c + tail).length < 60) return c + tail;
+  return clip(name, 59 - tail.length) + tail;
 }
 function fitDesc(parts, pads) {
   let s = parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
   for (const p of pads) { if (s.length >= 120) break; if ((s + ' ' + p).length <= 155) s += ' ' + p; }
   return s.length > 155 ? clip(s, 155) : s;
 }
-const PADS = ['Human-crafted, not AI-generated.', 'Sold by ' + BRAND + ', an independent art studio and publisher.', 'Secure checkout with Stripe.'];
+const PADS = ['Human-crafted, not AI-generated.', 'Sold by ' + BRAND + ', an independent art studio and publisher.'];
+// "Secure checkout with Stripe." only where the item can actually be bought right now (paid + live).
+const BUY_PADS = ['Human-crafted, not AI-generated.', 'Secure checkout with Stripe.', 'Sold by ' + BRAND + ', an independent art studio and publisher.'];
+// Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
+const SECTION_DESC = {
+  art: 'Original drawings, paintings and comic art by Charlie Clark from ' + BRAND + ', an independent art studio and imprint. Human-crafted, not AI-generated.',
+  photography: 'Photography by Charlie Clark: portrait and travel series from ' + BRAND + ', an independent art studio and publishing imprint. Human-crafted, not AI-generated.',
+  explorations: 'Explorations by Charlie Clark: experiments in ink, video and 3D scanning from ' + BRAND + ', an independent art studio and publisher. Human-crafted work.',
+  'figure-studies': 'Figure studies by Charlie Clark: drawing and figure work from ' + BRAND + ', an independent art studio and publishing imprint. Human-crafted, not AI-generated.',
+};
 function details(p) { return p.productDetails || {}; }
 function pagesOf(p) { const n = parseInt(details(p).pages, 10); return Number.isFinite(n) && n > 0 ? n : null; }
 function isTommys(p) { return /tommy/i.test(p.title || '') || /tommy/i.test(p.slug || ''); }
@@ -152,19 +161,20 @@ function productDesc(p, settings) {
   const d = details(p);
   const pages = pagesOf(p);
   const price = st.key === 'coming' ? 'Coming soon.' : (isFree(p) ? 'Free download.' : priceText(p) + '.');
-  const avail = st.key === 'sold' ? 'Sold out.' : st.key === 'paused' ? 'Physical shipping is paused for now.' : '';
+  const shipPaused = isPhysical(p.fulfillmentType) && !physicalLive(settings && settings.physicalOrdersEnabled);
+  const avail = st.key === 'sold' ? (shipPaused ? 'Sold out, and physical shipping is paused for now.' : 'Sold out.') : st.key === 'paused' ? 'Physical shipping is paused for now.' : '';
   const c = p.category;
   let lead;
   if (c === 'prints-and-books') lead = name + ': a ' + (pages ? pages + '-page ' : '') + 'digital photo book (PDF) by Charlie Clark, published by ' + BRAND + '.';
   else if (c === 'comics') lead = isPhysical(p.fulfillmentType)
-    ? name + ': ' + (pages ? 'a ' + pages + '-page ' : 'a ') + 'print comic book from ' + BRAND + ', U.S. shipping included.'
+    ? name + ': ' + (pages ? 'a ' + pages + '-page ' : 'a ') + 'print comic book from ' + BRAND + '.'
     : name + ': ' + (pages ? 'a ' + pages + '-page ' : 'a ') + "digital PDF from " + BRAND + (isTommys(p) ? ", the making of Tommy's." : '.');
   else if (c === 'textures') lead = name + ': ' + (d.format ? d.format + ' of ' : '') + 'high-resolution texture scans for artists and designers from ' + BRAND + '.';
   else if (c === 'original-art') lead = name + ': original ' + (d.size || d.resolution ? String(d.size || d.resolution).trim() + ' ' : '') + 'art by Charlie Clark' + (d.format ? ' (' + String(d.format).trim() + ')' : '') + '.';
   else if (c === 'clothing') lead = name + ': ' + BRAND + ' apparel in the studio\u2019s comic art style.';
   else lead = name + ' from ' + BRAND + '.';
   const adult = p.requiresAgeConfirm ? 'Adults only (18+).' : '';
-  return fitDesc([lead, price, avail, adult], PADS);
+  return fitDesc([lead, price, avail, adult], st.key === 'live' && !isFree(p) ? BUY_PADS : PADS);
 }
 function imgAlt(p) {
   const name = shortName(p.title);
@@ -232,7 +242,7 @@ function productLd(p, settings) {
   return ld;
 }
 function ldScript(graph) {
-  const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c');
+  const json = noDash(JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })).replace(/</g, '\\u003c');
   return '<script type="application/ld+json" data-page-ld>' + json + '</script>';
 }
 
@@ -265,7 +275,7 @@ function productListHtml(list, settings) {
     const st = status(p, settings);
     const price = st.key === 'coming' ? 'Coming soon' : priceText(p);
     const extra = (st.key === 'sold' || st.key === 'paused') ? ' \u00b7 ' + st.text : '';
-    return '<li><a href="/store/' + encodeURIComponent(p.slug) + '" style="' + LINK + '">' + esc(p.title) + '</a> \u2014 ' + esc(price) + esc(extra) + '</li>';
+    return '<li><a href="/store/' + encodeURIComponent(p.slug) + '" style="' + LINK + '">' + esc(p.title) + '</a>, ' + esc(price) + esc(extra) + '</li>';
   }).join('') + '</ul>';
 }
 
@@ -292,7 +302,7 @@ function resolve(pathname, data) {
         const list = products.filter((x) => x.category === c.id);
         return list.length ? '<h2><a href="/store/' + c.slug + '" style="' + LINK + '">' + esc(c.label) + '</a></h2>' + productListHtml(list, settings) : '';
       }).join('');
-    return base({ title: 'Store \u2014 Comics, Photo Books, Textures & Art | ' + BRAND, desc, canonical: SITE + '/store',
+    return base({ title: 'Store - Comics, Photo Books, Textures & Art | ' + BRAND, desc, canonical: SITE + '/store',
       ld: [{ '@type': 'CollectionPage', '@id': SITE + '/store#page', url: SITE + '/store', name: 'Store', isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, store])],
       body: wrapBody(inner, sections) });
   }
@@ -319,7 +329,8 @@ function resolve(pathname, data) {
     const desc = fitDesc([(paras[0] || BRAND + ' is the art studio and publishing imprint of Charlie Clark.')], ['Contact: ' + EMAIL + '.', 'Comics, photo books, original art and apparel.']);
     const inner = crumbsHtml([home, ['About', SITE + '/about']]) + '<h1>' + esc(settings.infoHeadline || 'About') + '</h1>' +
       (settings.infoSubhead ? '<p>' + esc(settings.infoSubhead) + '</p>' : '') + paras.map((x) => '<p>' + esc(x) + '</p>').join('');
-    return base({ title: 'About ' + BRAND + ' \u2014 Art Studio & Publishing Imprint', desc, canonical: SITE + '/about',
+    // Title leads with the same words as the H1 (Sanity siteSettings.infoHeadline).
+    return base({ title: (settings.infoHeadline || 'About') + ' - About ' + BRAND + ' and Charlie Clark', desc, canonical: SITE + '/about',
       ld: [{ '@type': 'AboutPage', '@id': SITE + '/about#page', url: SITE + '/about', name: 'About ' + BRAND, about: { '@id': SITE + '/#studio' }, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, ['About', SITE + '/about']])],
       body: wrapBody(inner, sections) });
   }
@@ -336,9 +347,9 @@ function resolve(pathname, data) {
     if (sec && sec.slug !== 'store') {
       const posts = (data.assets || []).filter((a) => (a.secs || []).indexOf(sec.slug) >= 0);
       const hidden = sec.showInNav === false;
-      const desc = fitDesc([sec.title + ' by Charlie Clark at ' + BRAND + ':', posts.slice(0, 3).map((a) => a.headline || a.title).filter(Boolean).join(', ') + '.'], PADS);
+      const desc = SECTION_DESC[sec.slug] || fitDesc([sec.title + ' by Charlie Clark at ' + BRAND + ', an independent art studio and publishing imprint.'], PADS);
       const inner = crumbsHtml([home, [sec.title, SITE + '/' + sec.slug]]) + '<h1>' + esc(sec.title) + '</h1>' +
-        (posts.length ? '<ul style="padding-left:18px">' + posts.map((a) => '<li><strong>' + esc(a.headline || a.title || 'Untitled') + '</strong>' + (a.subhead ? ' \u2014 ' + esc(clip(a.subhead, 160)) : '') + '</li>').join('') + '</ul>' : '');
+        (posts.length ? '<ul style="padding-left:18px">' + posts.map((a) => '<li><strong>' + esc(a.headline || a.title || 'Untitled') + '</strong>' + (a.subhead ? ': ' + esc(clip(a.subhead, 160)) : '') + '</li>').join('') + '</ul>' : '');
       return base({ title: fitTitle(sec.title, 'Charlie Clark'), desc, canonical: SITE + '/' + sec.slug, robots: hidden ? 'noindex, follow' : null,
         ld: [{ '@type': 'CollectionPage', '@id': SITE + '/' + sec.slug + '#page', url: SITE + '/' + sec.slug, name: sec.title, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, [sec.title, SITE + '/' + sec.slug]])],
         body: wrapBody(inner, sections) });
@@ -359,7 +370,7 @@ function productRoute(p, products, sections, settings) {
   if (d.size) facts.push(['Size', d.size]);
   if (d.resolution) facts.push(['Resolution', d.resolution]);
   if (d.material) facts.push(['Material', d.material]);
-  facts.push(['Delivery', isPhysical(p.fulfillmentType) ? 'Physical item, U.S. shipping only' : 'Digital download']);
+  facts.push(['Delivery', !isPhysical(p.fulfillmentType) ? 'Digital download' : (physicalLive(settings && settings.physicalOrdersEnabled) ? 'Physical item, ships within the U.S.' : 'Physical item, shipping is paused for now')]);
   const inner = crumbsHtml(crumbs) +
     '<h1>' + esc(p.title) + '</h1>' +
     (p.imageUrl ? '<img src="' + esc(p.imageUrl + '?w=800&fm=jpg&q=80') + '" alt="' + esc(imgAlt(p)) + '" width="400" loading="lazy" style="max-width:100%;height:auto;display:block;margin:0 0 16px">' : '') +
@@ -379,12 +390,12 @@ function policiesRoute(sections) {
   const mail = '<a href="mailto:' + EMAIL + '" style="' + LINK + '">';
   const inner = crumbsHtml([['Home', SITE + '/'], ['Store Policies', SITE + '/policies']]) + '<h1>Store Policies</h1>' +
     '<h2>Age requirement</h2><p>' + esc(BRAND) + ' publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.</p>' +
-    '<h2>Digital downloads</h2><p>Digital products are delivered by email right after purchase. If your download link doesn\'t arrive or stops working, use Re-send downloads at the bottom of the site, or ' + mail + 'contact us</a>.</p>' +
+    '<h2>Digital downloads</h2><p>Digital products are delivered by email right after purchase. If your download link doesn\'t arrive or stops working, use <a href="/resend" style="' + LINK + '">Re-send downloads</a> at the bottom of the site, or ' + mail + 'contact us</a>.</p>' +
     '<h2>Shipping</h2><p>Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only <a href="/store" style="' + LINK + '">digital downloads</a> are available.</p>' +
     '<h2>Returns and refunds</h2><p>All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn\'t work, ' + mail + 'contact us</a> and we\'ll make it right.</p>' +
     '<h2>Contact</h2><p>Questions about an order? Email ' + mail + EMAIL + '</a>.</p>';
   const desc = BRAND + ' store policies: 18+ age requirement, digital download delivery, shipping status, returns and refunds, and how to contact us about an order.';
-  return base({ title: 'Store Policies \u2014 Age, Downloads & Refunds | ' + BRAND, desc, canonical: SITE + '/policies',
+  return base({ title: 'Store Policies - Age, Downloads & Refunds | ' + BRAND, desc, canonical: SITE + '/policies',
     ld: [{ '@type': 'WebPage', '@id': SITE + '/policies#page', url: SITE + '/policies', name: 'Store Policies', description: desc, isPartOf: { '@id': SITE + '/#website' }, publisher: { '@id': SITE + '/#studio' } },
       breadcrumb([['Home', SITE + '/'], ['Store', SITE + '/store'], ['Store Policies', SITE + '/policies']])],
     body: wrapBody(inner, sections) });

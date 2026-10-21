@@ -5307,6 +5307,8 @@ function App() {
     };
     const fallbackTitle = () => (view.page === 'home' && !aboutOpen ? '\u00aeSaboteur' : (aboutOpen ? 'About' : labelForView(view)) + ' | \u00aeSaboteur');
     if (view.page === 'not-found') { setRating(false); return; } // the 404 screen sets its own title
+    // Home is the static index.html head (title \u00aeSaboteur, rating adult); the server resolver has no '/' route.
+    if (view.page === 'home' && !aboutOpen) { document.title = '\u00aeSaboteur'; setRating(true); return; }
     fetch('/api/page?__path=' + encodeURIComponent(path) + '&__meta=1', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {

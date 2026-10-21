@@ -2277,6 +2277,39 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
 
 const STORE_CATEGORIES = STORE_TABS.concat([{ id: 'all', label: 'All' }]);
 
+// Product descriptions: [text](https://url) and bare http(s) URLs become links (Charlie, 21 Oct: Katherine's AdultFolio).
+// Built as React nodes, so every other character stays escaped text; only http(s) hrefs are allowed.
+const DESC_LINK_RE = /\[([^\[\]\n]{1,200})\]\((https?:\/\/[^\s()<>]+)\)|(https?:\/\/[^\s<>()\[\]"]+)/g;
+function safeHttpUrl(u) {
+  try { const x = new URL(u); return (x.protocol === 'http:' || x.protocol === 'https:') ? x.href : null; } catch (e) { return null; }
+}
+function linkifyDescription(text) {
+  const s = String(text || '');
+  const out = [];
+  let last = 0, m, k = 0;
+  DESC_LINK_RE.lastIndex = 0;
+  while ((m = DESC_LINK_RE.exec(s))) {
+    let url = m[2] || m[3];
+    let label = m[1] || url;
+    let trail = '';
+    if (!m[2]) {
+      const t = url.match(/[.,;:!?'\u2019]+$/);
+      if (t) { trail = t[0]; url = url.slice(0, -trail.length); label = url; }
+    }
+    const href = safeHttpUrl(url);
+    if (m.index > last) out.push(s.slice(last, m.index));
+    if (href) {
+      out.push(<a key={'dl' + (k++)} href={href} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-ink)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>{label}</a>);
+    } else {
+      out.push(m[0].slice(0, m[0].length - trail.length));
+    }
+    if (trail) out.push(trail);
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) out.push(s.slice(last));
+  return out.length ? out : s;
+}
+
 function formatPrice(cents, fulfillmentType) {
   if (fulfillmentType === 'free_digital' || !cents) return 'Free';
   return '$' + (Number(cents) / 100).toFixed(2).replace(/\.00$/, '');
@@ -2747,7 +2780,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <p style={{
               fontSize: 'var(--font-body-sm-size)', lineHeight: 1.55,
               color: 'var(--color-ink)', margin: '0 0 32px', maxWidth: 'var(--max-prose)',
-            }}>{p.description}</p>
+            }}>{linkifyDescription(p.description)}</p>
           ) : null}
 
           {detailRows.length > 0 && (

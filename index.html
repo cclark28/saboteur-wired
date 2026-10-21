@@ -787,8 +787,26 @@ function viewFromPath(pathname, search) {
 // Home head values (static index.html), restored on client navigation back to home.
 const HOME_CANONICAL = 'https://saboteur.one/';
 const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
-// Posts (asset docs) whose own images show nudity: adult rating when the post is open (QC, visual check 2026-10-21).
-const NUDITY_ASSET_IDS = { 'c3b3368f-d9ce-426b-96b2-35226b0e9ba4': 1 };
+// ONE source for nudity (visual check of the Sanity images, 2026-10-21). It drives BOTH the "Nude art" pill and
+// <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
+// Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
+const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
+function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
+function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
+// "Nude art" pill. Own color (deep violet, white text 10:1) so it never reads as the orange coming-soon / sold-out label.
+const NUDE_PILL_LABEL = 'Nude art';
+function NudePill({ small }) {
+  return (
+    <span data-nude-pill style={{
+      position: 'absolute', top: small ? 10 : 12, left: small ? 10 : 12,
+      fontFamily: 'var(--font-family-mono)', fontSize: small ? 10 : 11, fontWeight: 500,
+      letterSpacing: '0.04em', textTransform: 'uppercase',
+      padding: small ? '6px 10px' : '7px 12px', borderRadius: 9999, lineHeight: 1,
+      whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none', zIndex: 2,
+      background: '#4C1D95', color: '#FFFFFF',
+    }}>{NUDE_PILL_LABEL}</span>
+  );
+}
 
 // Alt text for posts whose Sanity schema has no alt field (writer copy, QC Rev 3/4). Keyed by asset document _id.
 const LOAD_ALT = "Comic story art previewed in LOAD magazine, from Tommy's Issue #2";
@@ -2463,6 +2481,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                         {p.title || 'Product'}
                       </span>
                     )}
+                    {isAdultProduct(p) ? <NudePill /> : null}
                     {badge && (
                       <span
                         style={{
@@ -2658,6 +2677,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
+                  {isAdultProduct(p) ? <NudePill /> : null}
                   {(comingSoon || soldOnly) ? (
                     <span
                       style={{
@@ -2971,6 +2991,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: rpPaused ? 0.4 : 1 }}
                       />
                     ) : null}
+                    {isAdultProduct(rp) ? <NudePill small /> : null}
                     {rpBadge ? (
                       <span style={{
                         position: 'absolute', top: 10, right: 10,
@@ -5376,7 +5397,7 @@ function App() {
     if (view.page === 'item' && !aboutOpen) {
       const s = view.series || {};
       document.title = (s.headline || s.title ? (s.headline || s.title) + ' | ' : '') + '\u00aeSaboteur';
-      setRating(!!NUDITY_ASSET_IDS[s.id]);
+      setRating(isAdultAsset(s.id));
       setHead(HOME_CANONICAL, HOME_DESC);
       return;
     }

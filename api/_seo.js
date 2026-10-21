@@ -211,12 +211,22 @@ function productOg(p) {
 // SafeSearch: <meta name="rating" content="adult"> (https://developers.google.com/search/docs/specialty/explicit/guidelines,
 // "Add metadata to pages with sexually explicit content"). Per page, only where the page's OWN images show nudity,
 // from a visual check of the Sanity images on 2026-10-21. Pages we could not judge are listed in FIXES.md, not tagged.
-const NUDITY_PRODUCT_SLUGS = { 'pinup-issue-2-tommy-s': 1, 'tommy': 1, 'this-book-is-anonymous': 1, 'the-romania-hotel-series-anato': 1, 'camelia-arama': 1 };
+// Product list comes from index.html ADULT_CONTENT (the same line that drives the client "Nude art" pill).
+let ADULT = null;
+function adultContent() {
+  if (!ADULT) {
+    const m = /const ADULT_CONTENT = (\{[^\n]*\});/.exec(shell());
+    if (!m) throw new Error('ADULT_CONTENT missing from index.html');
+    ADULT = JSON.parse(m[1]);
+  }
+  return ADULT;
+}
+function isAdultSlug(slug) { return !!slug && adultContent().productSlugs.indexOf(String(slug)) >= 0; }
 const NUDITY_CATEGORY_IDS = { 'prints-and-books': 1, 'original-art': 1 }; // grid thumbnails include the products above
 const NUDITY_SECTION_SLUGS = { photography: 1 }; // gallery thumbnails include nude photographs
-function adultImage(p) { return !!(p && NUDITY_PRODUCT_SLUGS[p.slug]); }
+function adultImage(p) { return !!(p && isAdultSlug(p.slug)); }
 // Shopping signal (hasAdultConsideration): 18+ products and products whose images show nudity.
-function adultProduct(p) { return !!(p && (p.requiresAgeConfirm || NUDITY_PRODUCT_SLUGS[p.slug] || OG_EXPLICIT_SLUGS[p.slug])); }
+function adultProduct(p) { return !!(p && (p.requiresAgeConfirm || isAdultSlug(p.slug) || OG_EXPLICIT_SLUGS[p.slug])); }
 function productUrl(p) { return SITE + '/store/' + encodeURIComponent(p.slug); }
 function catUrl(c) { return SITE + '/store/' + c.slug; }
 

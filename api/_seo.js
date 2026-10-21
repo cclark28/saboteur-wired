@@ -242,7 +242,7 @@ function productLd(p, settings) {
     '@id': productUrl(p) + '#product',
     name: shortName(p.title),
     // Adult titles get the neutral template text (SEO-RULES C: non-explicit metadata); others use the Sanity description.
-    description: p.requiresAgeConfirm ? productDesc(p, settings) : clip(p.description || productDesc(p, settings), 500),
+    description: p.requiresAgeConfirm ? productDesc(p, settings) : clip(descPlain(p.description) || productDesc(p, settings), 500),
     sku: p.slug,
     url: productUrl(p),
     brand: { '@type': 'Brand', name: BRAND },
@@ -286,6 +286,23 @@ function ldScript(graph) {
 
 // ---------- body (crawlable, replaced by the SPA on mount) ----------
 const LINK = 'color:#18181B;text-decoration:underline;text-underline-offset:2px';
+// Product descriptions may carry [text](https://url) links (index.html linkifyDescription): plain text for metadata,
+// real links (escaped, http(s) only) in the crawlable body.
+const DESC_LINK_RE = /\[([^\[\]\n]{1,200})\]\((https?:\/\/[^\s()<>]+)\)|(https?:\/\/[^\s<>()\[\]"]+)/g;
+const descPlain = (s) => String(s || '').replace(/\[([^\[\]\n]{1,200})\]\((https?:\/\/[^\s()<>]+)\)/g, '$1');
+function descHtml(s) {
+  s = String(s || '');
+  let out = '', last = 0, m;
+  DESC_LINK_RE.lastIndex = 0;
+  while ((m = DESC_LINK_RE.exec(s))) {
+    let url = m[2] || m[3], label = m[1] || url, trail = '';
+    if (!m[2]) { const t = url.match(/[.,;:!?'\u2019]+$/); if (t) { trail = t[0]; url = url.slice(0, -trail.length); label = url; } }
+    out += esc(s.slice(last, m.index)) + '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer" style="' + LINK + '">' + esc(label) + '</a>' + esc(trail);
+    last = m.index + m[0].length;
+  }
+  return out + esc(s.slice(last));
+}
+
 function navHtml(sections) {
   const secs = (sections || []).filter((s) => s.showInNav !== false && s.slug && s.slug !== 'store' && !s.isInfoPage && !s.isAbout);
   const links = [['/', 'Home'], ['/store', 'Store']]
@@ -414,7 +431,7 @@ function productRoute(p, products, sections, settings) {
     (p.imageUrl ? '<img src="' + esc(p.imageUrl + '?w=800&fm=jpg&q=80') + '" alt="' + esc(imgAlt(p)) + '" width="400" loading="lazy" style="max-width:100%;height:auto;display:block;margin:0 0 16px">' : '') +
     '<p><strong>' + esc(st.key === 'coming' ? 'Coming soon' : priceText(p)) + '</strong>' + (st.key !== 'live' && st.key !== 'coming' ? ' \u00b7 ' + esc(st.text) : '') + '</p>' +
     '<dl>' + facts.map((f) => '<dt style="display:inline;font-weight:600">' + esc(f[0]) + ':</dt> <dd style="display:inline;margin:0 12px 0 4px">' + esc(String(f[1]).trim()) + '</dd>').join('') + '</dl>' +
-    String(p.description || '').split(/\n\s*\n/).filter((x) => x.trim()).map((x) => '<p>' + esc(x.trim()) + '</p>').join('') +
+    String(p.description || '').split(/\n\s*\n/).filter((x) => x.trim()).map((x) => '<p>' + descHtml(x.trim()) + '</p>').join('') +
     (p.requiresAgeConfirm ? '<p><strong>18+:</strong> This work contains nudity, violence and other adult material. You must be 18 or older to view or buy it.</p>' : '') +
     (cat ? '<p>More in <a href="' + catUrl(cat).replace(SITE, '') + '" style="' + LINK + '">' + esc(cat.label) + '</a>' : '<p>') +
     (related.length ? ': ' + related.map((x) => '<a href="/store/' + encodeURIComponent(x.slug) + '" style="' + LINK + '">' + esc(shortName(x.title)) + '</a>').join(', ') : '') + '</p>';

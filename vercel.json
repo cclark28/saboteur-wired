@@ -80,7 +80,11 @@
       "destination": "/comics.html"
     },
     {
-      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html).*)",
+      "source": "/policies",
+      "destination": "/policies.html"
+    },
+    {
+      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html|policies\\.html).*)",
       "destination": "/index.html"
     }
   ]

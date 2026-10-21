@@ -742,7 +742,7 @@ function viewFromPath(pathname, search) {
   }
   if (path === '/about' || path === '/info' || path === '/contact') return { page: 'about' };
   if (path === '/resend') return { page: 'resend' };
-  if (path === '/policies' || path === '/store-policies') return { page: 'policies' };
+  if (path === '/policies') return { page: 'policies' };
   if (path === '/checkout') return { page: 'checkout' };
   if (path === '/order-success') return { page: 'order-success' };
   const parts = path.split('/').filter(Boolean);

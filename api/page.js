@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400');
     res.setHeader('X-Robots-Tag', 'noindex');
-    return res.status(200).send(JSON.stringify({ title: meta.title || null, adult: !!meta.adult, status: meta.status }));
+    return res.status(200).send(JSON.stringify({ title: meta.title || null, adult: !!meta.adult, status: meta.status, canonical: meta.canonical || null, desc: meta.desc || null }));
   }
   const html = seo.render(meta);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

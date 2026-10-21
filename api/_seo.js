@@ -7,7 +7,7 @@ const path = require('path');
 
 const SITE = 'https://saboteur.one';
 const BRAND = '\u00aeSaboteur';
-const EMAIL = 'saboteur@mail.grokbot.com';
+const EMAIL = 'store@saboteur.one';
 const SANITY = 'https://6td8xalf.apicdn.sanity.io/v2024-01-01/data/query/production';
 // Non-explicit fallback share image: the full (R)SABOTEUR logo on white, 1200x630 PNG served by api/og-logo.js.
 const FALLBACK_OG = { url: SITE + '/og/saboteur-logo.png', w: 1200, h: 630, alt: 'The ' + BRAND + ' logo, black on white' };
@@ -58,7 +58,7 @@ function shell() {
 const QUERY = `{
   "products": *[_type == "product" && published == true && enabled != false] | order(coalesce(displayOrder, 999) asc, title asc) {
     _id, _updatedAt, title, "slug": slug.current, description, priceCents, fulfillmentType, category,
-    requiresAgeConfirm, soldOut, comingSoon, stock, variants, productDetails,
+    requiresAgeConfirm, soldOut, comingSoon, stock, variants, productDetails, "seoDesc": seo.description,
     "imageUrl": images[0].asset->url, "imageW": images[0].asset->metadata.dimensions.width
   },
   "sections": *[_type == "section"] | order(sortOrder asc) { title, "slug": slug.current, showInNav, isInfoPage, isAbout, comingSoon, _updatedAt },
@@ -135,7 +135,7 @@ function fitDesc(parts, pads) {
   for (const p of pads) { if (s.length >= 120) break; if ((s + ' ' + p).length <= 155) s += ' ' + p; }
   return s.length > 155 ? clip(s, 155) : s;
 }
-const PADS = ['Human-crafted, not AI-generated.', 'Sold by ' + BRAND + ', an independent art studio and publisher.'];
+const PADS = ['Sold by ' + BRAND + ', an independent art studio and publisher.'];
 // Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
 const SECTION_DESC = {
   art: 'Original drawings, paintings and comic art by Charlie Clark from ' + BRAND + ', an independent art studio and publishing imprint. Pencil, ink and paint.',
@@ -156,6 +156,9 @@ function qualifier(p) {
   return '';
 }
 function productDesc(p, settings) {
+  // QC: the product's own Sanity seo.description wins; generated copy is only the fallback.
+  const own = String(p.seoDesc || '').replace(/\s+/g, ' ').trim();
+  if (own) return clip(noDash(own), 155);
   const name = shortName(p.title);
   const st = status(p, settings);
   const d = details(p);

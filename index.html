@@ -546,7 +546,7 @@
       "name": "Charlie Clark",
       "url": "https://saboteur.one",
       "jobTitle": "Graphic artist, comic book artist, photographer",
-      "email": "saboteur@mail.grokbot.com",
+      "email": "store@saboteur.one",
       "worksFor": { "@id": "https://saboteur.one/#studio" },
       "sameAs": [
         "https://www.instagram.com/saboteur.supply/",
@@ -557,7 +557,7 @@
       "@type": "Organization",
       "@id": "https://saboteur.one/#studio",
       "name": "®Saboteur",
-      "email": "saboteur@mail.grokbot.com",
+      "email": "store@saboteur.one",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
       "founder": { "@id": "https://saboteur.one/#charlie" },
@@ -587,7 +587,7 @@
       <li><a href="/store">Store</a></li>
       <li><a href="/about">About / contact</a></li>
     </ul>
-    <p>Email: <a href="mailto:saboteur@mail.grokbot.com">saboteur@mail.grokbot.com</a>. Store policies: <a href="/policies">/policies</a>. For AI systems: <a href="/llms.txt">llms.txt</a> and <a href="/llms-full.txt">llms-full.txt</a>.</p>
+    <p>Email: <a href="mailto:store@saboteur.one">store@saboteur.one</a>. Store policies: <a href="/policies">/policies</a>. For AI systems: <a href="/llms.txt">llms.txt</a> and <a href="/llms-full.txt">llms-full.txt</a>.</p>
   </main>
 </noscript>
 <div id="root"></div>
@@ -612,7 +612,7 @@ let SECTION_META = [];
 
 // Charlie-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the product 18+ checkbox.
 const ADULT_CONTENT_LINE = 'This work contains nudity, violence and other adult material. You must be 18 or older to view or buy it.';
-const CONTACT_EMAIL = 'saboteur@mail.grokbot.com';
+const CONTACT_EMAIL = 'store@saboteur.one';
 
 const STORE_TABS = [
   { id: 'comics', label: 'Comics' },
@@ -783,6 +783,12 @@ function viewFromPath(pathname, search) {
   if (parts.length === 1) return { page: parts[0] };
   return { page: 'not-found' };
 }
+
+// Home head values (static index.html), restored on client navigation back to home.
+const HOME_CANONICAL = 'https://saboteur.one/';
+const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
+// Posts (asset docs) whose own images show nudity: adult rating when the post is open (QC, visual check 2026-10-21).
+const NUDITY_ASSET_IDS = { 'c3b3368f-d9ce-426b-96b2-35226b0e9ba4': 1 };
 
 // Alt text for posts whose Sanity schema has no alt field (writer copy, QC Rev 3/4). Keyed by asset document _id.
 const LOAD_ALT = "Comic story art previewed in LOAD magazine, from Tommy's Issue #2";
@@ -2144,6 +2150,51 @@ const colBox = {
 
 
 
+// Home hero taglines, [heading, subline]. Line 1 is the static default: the first render (and SEO/caching) always shows it,
+// then the client swaps in a random line after mount. Add new lines to the end. Plain strings so React escapes the faces.
+const HERO_TAGLINES = [
+  ["Experimental art studio and publishing imprint.", "Human-crafted comics, books, zines, apparel."],
+  ["Experimental art studio and publishing imprint.", "Human-centipeded comics, books, zines, apparel. <( '.')>"],
+  ["Comics. Books. Zines. Shirts.", "Made by humans. Allegedly."],
+  ["NO AI. NO REFUNDS.", "Just comics, books, zines and apparel. Love ya."],
+  ["Welcome back, weirdo.", "We drew you something. <( ' ')^"],
+  ["Comics your mother warned you about.", "Now in your size."],
+  ["Experimental art studio and publishing imprint.", "Not a cult. Mostly."],
+  ["SIGNED. NUMBERED. SLIGHTLY UNHINGED.", "Comics, books, zines, apparel."],
+  ["Hand-drawn by a real person", "in a real hotel room. 10/10."],
+  ["Publishing imprint.", "Also stickers. Don't ask."],
+];
+const HERO_TAGLINE_KEY = 'sab_hero_tagline';
+function pickHeroTagline() {
+  let last = -1;
+  try { last = parseInt(window.localStorage.getItem(HERO_TAGLINE_KEY), 10); } catch (e) {}
+  const pool = HERO_TAGLINES.map((_, i) => i).filter((i) => i !== last);
+  const next = pool[Math.floor(Math.random() * pool.length)];
+  try { window.localStorage.setItem(HERO_TAGLINE_KEY, String(next)); } catch (e) {}
+  return next;
+}
+function HeroTagline() {
+  const [idx, setIdx] = useState(0);
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    const next = pickHeroTagline();
+    if (next === 0) return;
+    let reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduce) { setIdx(next); return; }
+    setShown(false);
+    const t = setTimeout(() => { setIdx(next); setShown(true); }, 320);
+    return () => clearTimeout(t);
+  }, []);
+  const line = HERO_TAGLINES[idx] || HERO_TAGLINES[0];
+  return (
+    <span data-hero-tagline={idx + 1} style={{ display: 'block', opacity: shown ? 1 : 0, transition: 'opacity 320ms ease' }}>
+      {line[0]}<br />
+      {line[1]}
+    </span>
+  );
+}
+
 function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
   return (
     <div>
@@ -2170,8 +2221,7 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark
           letterSpacing: '-0.01em',
           color: 'var(--color-ink)',
         }}>
-          Experimental art studio and publishing imprint.<br />
-          Human-crafted comics, books, zines, apparel.
+          <HeroTagline />
         </p>
       </div>
       <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
@@ -2224,13 +2274,12 @@ function isPhysicalFulfillment(ft) {
 // Auto-pause at local midnight Indianapolis on Aug 19, 2026.
 // Sanity switch: false = pause now; true = selling (also the way to resume after the trip); unset = follow this date.
 const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
-const PHYSICAL_PAUSED_COPY = "Physical shipping is paused right now. Digital downloads are still available. Email saboteur@mail.grokbot.com with any questions.";
+const PHYSICAL_PAUSED_COPY = "Physical shipping is paused right now. Digital downloads are still available. Email store@saboteur.one with any questions.";
 
 function physicalPauseCopy(custom) {
   const c = String(custom || '').trim();
   if (!c) return PHYSICAL_PAUSED_COPY;
-  if (/please send me an email/i.test(c)) return c;
-  return c.replace(/\s+$/, '') + ' Please send me an email for any inquiries.';
+  return c;
 }
 
 function arePhysicalOrdersLive(flag) {
@@ -2695,7 +2744,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             </div>
           )}
 
-          {details.notes ? (
+          {details.notes && !(shippingPaused && /shipping/i.test(String(details.notes))) ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 24px', lineHeight: 1.5,
@@ -3123,7 +3172,7 @@ function PolicyStoreLink({ children }) {
 }
 const POLICY_SECTIONS = [
   { title: 'Age requirement', body: () => <>{'\u00aeSaboteur publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.'}</> },
-  { title: 'Digital downloads', body: () => <>{'After payment, your download opens on the confirmation page. Save it. If it does not work, email '}<PolicyMailLink>saboteur@mail.grokbot.com</PolicyMailLink>{'.'}</> },
+  { title: 'Digital downloads', body: () => <>{'After payment, your download opens on the confirmation page. Save it. If it does not work, email '}<PolicyMailLink>store@saboteur.one</PolicyMailLink>{'.'}</> },
   { title: 'Shipping', body: () => <>{'Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only '}<PolicyStoreLink>digital downloads</PolicyStoreLink>{' are available.'}</> },
   { title: 'Returns and refunds', body: () => <>{"All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn't work, "}<PolicyMailLink>contact us</PolicyMailLink>{" and we'll make it right."}</> },
 ];
@@ -5308,13 +5357,36 @@ function App() {
     const fallbackTitle = () => (view.page === 'home' && !aboutOpen ? '\u00aeSaboteur' : (aboutOpen ? 'About' : labelForView(view)) + ' | \u00aeSaboteur');
     if (view.page === 'not-found') { setRating(false); return; } // the 404 screen sets its own title
     // Home is the static index.html head (title \u00aeSaboteur, rating adult); the server resolver has no '/' route.
-    if (view.page === 'home' && !aboutOpen) { document.title = '\u00aeSaboteur'; setRating(true); return; }
+    const setHead = (canonical, desc) => {
+      try {
+        let l = document.querySelector('link[rel="canonical"]');
+        if (canonical) {
+          if (!l) { l = document.createElement('link'); l.setAttribute('rel', 'canonical'); document.head.appendChild(l); }
+          l.setAttribute('href', canonical);
+        } else if (l) { l.parentNode.removeChild(l); }
+        if (desc) {
+          let d = document.querySelector('meta[name="description"]');
+          if (!d) { d = document.createElement('meta'); d.setAttribute('name', 'description'); document.head.appendChild(d); }
+          d.setAttribute('content', desc);
+        }
+      } catch (e) {}
+    };
+    if (view.page === 'home' && !aboutOpen) { document.title = '\u00aeSaboteur'; setRating(true); setHead(HOME_CANONICAL, HOME_DESC); return; }
+    // Post overlays live at '/' (no server route): rating follows the post's own images.
+    if (view.page === 'item' && !aboutOpen) {
+      const s = view.series || {};
+      document.title = (s.headline || s.title ? (s.headline || s.title) + ' | ' : '') + '\u00aeSaboteur';
+      setRating(!!NUDITY_ASSET_IDS[s.id]);
+      setHead(HOME_CANONICAL, HOME_DESC);
+      return;
+    }
     fetch('/api/page?__path=' + encodeURIComponent(path) + '&__meta=1', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {
         if (seq !== headSeq.current) return;
         if (m && m.title) document.title = m.title; else document.title = fallbackTitle();
         setRating(!!(m && m.adult));
+        if (m) setHead(m.canonical, m.desc);
       })
       .catch(() => { if (seq === headSeq.current) document.title = fallbackTitle(); });
   }, [view, aboutOpen]);

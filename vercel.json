@@ -50,10 +50,6 @@
       "destination": "https://saboteur-api.vercel.app/api/cms"
     },
     {
-      "source": "/comics",
-      "destination": "/comics.html"
-    },
-    {
       "source": "/facts",
       "destination": "/facts.html"
     },
@@ -66,7 +62,11 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|comics\\.html|facts\\.html|favicon\\.ico).*)",
+      "source": "/og/saboteur-logo.png",
+      "destination": "/api/og-logo"
+    },
+    {
+      "source": "/((?!api/|cms|assets/|fonts/|tokens/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|facts\\.html|favicon\\.ico).*)",
       "destination": "/api/page?__path=/$1"
     }
   ],
@@ -83,87 +83,13 @@
       "statusCode": 301
     },
     {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "comics"
-        }
-      ],
+      "source": "/comics",
       "destination": "/store/comics",
       "statusCode": 301
     },
     {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "prints-and-books"
-        }
-      ],
-      "destination": "/store/books",
-      "statusCode": 301
-    },
-    {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "books"
-        }
-      ],
-      "destination": "/store/books",
-      "statusCode": 301
-    },
-    {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "textures"
-        }
-      ],
-      "destination": "/store/textures",
-      "statusCode": 301
-    },
-    {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "original-art"
-        }
-      ],
-      "destination": "/store/original-art",
-      "statusCode": 301
-    },
-    {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "clothing"
-        }
-      ],
-      "destination": "/store/apparel",
-      "statusCode": 301
-    },
-    {
-      "source": "/store",
-      "has": [
-        {
-          "type": "query",
-          "key": "tab",
-          "value": "apparel"
-        }
-      ],
-      "destination": "/store/apparel",
+      "source": "/comics.html",
+      "destination": "/store/comics",
       "statusCode": 301
     }
   ],

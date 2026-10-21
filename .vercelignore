@@ -1,0 +1,6 @@
+# Repo-only files: never served on saboteur.one (QC).
+/AGENTS.md
+/scripts
+/*.bak*
+/c0.txt
+/p0.txt

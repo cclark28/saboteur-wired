@@ -90,8 +90,14 @@
     --z-nav: 100;
     --z-overlay: 200;
     --z-modal: 300;
+    /* 18+ label: brand palette is white, black, orange, blue only (Charlie 13:54). Orange = coming soon; brand blue
+       --color-link #4D80E6 gives white text 3.79:1 (fails AA at 13px), so the label is black/white: 17.72:1. */
+    --color-adult-bg: #18181B;
+    --color-adult-text: #FFFFFF;
   }
   [data-theme="dark"] {
+    --color-adult-bg: #FFFFFF;
+    --color-adult-text: #18181B;
     --color-accent: #FF6119;
     --color-accent-hover: #FF7940;
     --color-link: #6B9AFF;
@@ -787,22 +793,22 @@ function viewFromPath(pathname, search) {
 // Home head values (static index.html), restored on client navigation back to home.
 const HOME_CANONICAL = 'https://saboteur.one/';
 const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
-// ONE source for nudity (visual check of the Sanity images, 2026-10-21). It drives BOTH the "18+" label and
+// ONE source for nudity (visual check of the Sanity images, 2026-10-21; Charlie 13:54: every book has nudity except Tesla). It drives BOTH the "18+" label and
 // <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
 // Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
-const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
+const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
 // "18+" label (Charlie 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
-// section "Tags / Badges", variant "Paid / Price": --color-card background, --color-ink text, 4px radius, 4px 8px padding,
-// --font-label (IBM Plex Mono 500, 0.8125rem, 0.02em tracking), no uppercase transform. Sits below the copy, not on the image.
+// section "Tags / Badges": 4px radius, 4px 8px padding, --font-label (IBM Plex Mono 500, 0.8125rem, 0.02em tracking),
+// no uppercase transform. Colors: black #18181B / white #FFFFFF (inverted in dark mode), see --color-adult-*. Below the copy, not on the image.
 const ADULT_LABEL = '18+';
 const ADULT_LABEL_ARIA = 'Adult content, 18+';
 function AdultLabel() {
   return (
     <span data-adult-label role="img" aria-label={ADULT_LABEL_ARIA} style={{
       display: 'inline-block', alignSelf: 'flex-start',
-      background: 'var(--color-card)', color: 'var(--color-ink)',
+      background: 'var(--color-adult-bg)', color: 'var(--color-adult-text)',
       borderRadius: 'var(--radius-sm, 4px)', padding: '4px 8px',
       fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size, 0.8125rem)',
       fontWeight: 'var(--font-label-weight, 500)', letterSpacing: 'var(--font-label-tracking, 0.02em)',

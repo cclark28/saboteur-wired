@@ -1924,6 +1924,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
     color: 'var(--color-ink-55)',
+    lineHeight: 1.5,
     margin: '0 0 16px',
   };
 
@@ -2055,8 +2056,8 @@ const colBox = {
       ) : null}
 
       <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
-       {/* QC 14:45: all 6 footer columns on one row from 1000px up (1280 used to wrap LOCAL TIME). Below that the auto-fit 200px grid is unchanged. */}
-       <style>{'@media (min-width: 1000px){[data-footer-grid]{grid-template-columns:repeat(6,minmax(0,1fr))!important}}'}</style>
+       {/* Brand + 4 footer columns on one row from 1000px up (Charlie 14:53 mockup; was 6 at QC 14:45). Below that the auto-fit 200px grid is unchanged. */}
+       <style>{'@media (min-width: 1000px){[data-footer-grid]{grid-template-columns:repeat(5,minmax(0,1fr))!important}}'}</style>
        <div data-footer-grid style={{
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -2093,10 +2094,8 @@ const colBox = {
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
             >Pixabay</a>
-          </div>
-
-          <div style={colBox}>
-            <div style={colLabel}>Textures</div>
+            {/* Charlie 14:53 mockup: Textures stacks under SFX in one column (brand + 4 columns). */}
+            <div style={Object.assign({}, colLabel, { marginTop: 28 })}>Textures</div>
             <a href="https://saboteurcomics.gumroad.com/" target="_blank" rel="noopener noreferrer" style={linkStyle}
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}

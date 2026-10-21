@@ -196,7 +196,8 @@ function productLd(p, settings) {
   const ld = {
     '@id': productUrl(p) + '#product',
     name: shortName(p.title),
-    description: clip(p.description || productDesc(p, settings), 500),
+    // Adult titles get the neutral template text (SEO-RULES C: non-explicit metadata); others use the Sanity description.
+    description: p.requiresAgeConfirm ? productDesc(p, settings) : clip(p.description || productDesc(p, settings), 500),
     sku: p.slug,
     url: productUrl(p),
     brand: { '@type': 'Brand', name: BRAND },

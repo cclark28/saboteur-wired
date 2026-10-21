@@ -223,7 +223,7 @@ function adultContent() {
   return ADULT;
 }
 function isAdultSlug(slug) { return !!slug && adultContent().productSlugs.indexOf(String(slug)) >= 0; }
-const NUDITY_CATEGORY_IDS = { 'prints-and-books': 1, 'original-art': 1 }; // grid thumbnails include the products above
+const NUDITY_CATEGORY_IDS = { 'prints-and-books': 1, 'original-art': 1, comics: 1 }; // grid thumbnails include the products above
 const NUDITY_SECTION_SLUGS = { photography: 1 }; // gallery thumbnails include nude photographs
 function adultImage(p) { return !!(p && isAdultSlug(p.slug)); }
 // Shopping signal (hasAdultConsideration): 18+ products and products whose images show nudity.

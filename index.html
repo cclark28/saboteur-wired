@@ -1851,24 +1851,9 @@ const SHOW_MARQUEE = true; // toggle from Sanity CMS
 const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE · INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · © ®SABOTEUR · ';
 
 // Calendar-derived travel stops. Local clock follows the current stop; Upcoming is the next one.
-const DEFAULT_ITINERARY = [
-  { startDate: '2026-01-01', city: 'Indianapolis', label: 'Indianapolis, Indiana', timezone: 'America/Indiana/Indianapolis' },
-  { startDate: '2026-08-20', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-08-24', city: 'Prague', label: 'Prague, Czechia', timezone: 'Europe/Prague' },
-  { startDate: '2026-08-29', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-09-04', city: 'Brașov', label: 'Brașov, Romania', timezone: 'Europe/Bucharest' },
-  { startDate: '2026-09-08', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-09-11', city: 'Bratislava', label: 'Bratislava, Slovakia', timezone: 'Europe/Bratislava' },
-  { startDate: '2026-09-14', city: 'Budapest', label: 'Budapest, Hungary', timezone: 'Europe/Budapest' },
-  { startDate: '2026-09-20', city: 'Belgrade', label: 'Belgrade, Serbia', timezone: 'Europe/Belgrade' },
-  { startDate: '2026-10-05', city: 'Skopje', label: 'Skopje, North Macedonia', timezone: 'Europe/Skopje' },
-  { startDate: '2026-10-09', city: 'Sofia', label: 'Sofia, Bulgaria', timezone: 'Europe/Sofia' },
-  { startDate: '2026-10-12', city: 'Istanbul', label: 'Istanbul, Turkey', timezone: 'Europe/Istanbul' },
-  { startDate: '2026-10-16', city: 'Skopje', label: 'Skopje, North Macedonia', timezone: 'Europe/Skopje' },
-  { startDate: '2026-10-19', city: 'Sofia', label: 'Sofia, Bulgaria', timezone: 'Europe/Sofia' },
-  { startDate: '2026-10-23', city: 'Istanbul', label: 'Istanbul, Turkey', timezone: 'Europe/Istanbul' },
-  { startDate: '2026-11-15', city: 'Indianapolis', label: 'Indianapolis, Indiana', timezone: 'America/Indiana/Indianapolis' },
-];
+// No hard-coded fallback stops (Charlie 14:27: city clocks stay, dates go). With no CMS itinerary the
+// footer falls back to footer.localLabel / nextLocation from Sanity, then the Indianapolis default.
+const DEFAULT_ITINERARY = [];
 
 function resolveItinerary(stops, now) {
   const list = (Array.isArray(stops) ? stops : [])
@@ -2121,11 +2106,9 @@ const colBox = {
             {(upcomingAll && upcomingAll.length) ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
                 {upcomingAll.map((stop, i) => {
-                  const d = new Date(String(stop.startDate) + 'T12:00:00Z');
-                  const dStr = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
                   return (
                     <div key={stop._key || (stop.startDate + i)} style={{ display: 'inline-block', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
-                      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {stop.city || stop.label}{dStr ? ' · ' + dStr : ''}</div>
+                      <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5 }}>Upcoming: {stop.city || stop.label}</div>
                       <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>{formatClock(time, stop.timezone)}</div>
                     </div>
                   );

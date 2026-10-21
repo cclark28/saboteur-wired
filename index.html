@@ -1134,7 +1134,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   const img = (
     <img
       src="/assets/logo.svg"
-      alt="Saboteur"
+      alt="®Saboteur"
       style={{
         width: size, display: 'block',
         filter: forceLight ? 'none' : 'var(--logo-filter, none)',
@@ -1147,7 +1147,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
     return (
       <img
         src="/assets/logo.svg"
-        alt="Saboteur"
+        alt="®Saboteur"
         style={{
           width: size, display: 'block', cursor: 'default',
           filter: forceLight ? 'none' : 'var(--logo-filter, none)',
@@ -1801,7 +1801,7 @@ function InfiniteGrid({ baseItems, onOpen }) {
 }
 
 const SHOW_MARQUEE = true; // toggle from Sanity CMS
-const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE — INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · ®SABOTEUR.ONE — ';
+const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE · INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · © ®SABOTEUR · ';
 
 // Calendar-derived travel stops. Local clock follows the current stop; Upcoming is the next one.
 const DEFAULT_ITINERARY = [
@@ -1859,7 +1859,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
 
   const f = FOOTER_DATA || {};
   const subhead = f.logoSubhead || 'Experimental creative house';
-  const copyright = f.copyright || '© 2026 ®Saboteur LLC — All rights reserved';
+  const copyright = f.copyright || '© ®Saboteur. All rights reserved.';
   const cmsItinerary = Array.isArray(f.itinerary) ? f.itinerary : [];
   const { current, upcoming, upcomingAll } = resolveItinerary(cmsItinerary.length ? cmsItinerary : DEFAULT_ITINERARY, time);
   const localLabel = (current && (current.label || current.city)) || f.localLabel || 'Indianapolis, Indiana';
@@ -2002,7 +2002,7 @@ const colBox = {
             color: 'var(--color-ink)',
             textTransform: 'uppercase',
           }}>
-            {marquee} — {marquee} —
+            {marquee} · {marquee} ·
           </div>
           <style>{'@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}'}</style>
         </div>

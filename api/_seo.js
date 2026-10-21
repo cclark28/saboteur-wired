@@ -19,9 +19,9 @@ const OG_EXPLICIT_SLUGS = { 'pinup-issue-2-tommy-s': 1, 'crisdev': 1 };
 const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
 const POLICIES_LASTMOD = '2026-10-21';
 const FACTS_LASTMOD = '2026-10-21';
+// Pages whose code-side copy changed (QC copy Rev 3/4); bumps sitemap lastmod even when Sanity did not change.
+const CODE_LASTMOD = { comics: '2026-10-21', clothing: '2026-10-21', art: '2026-10-21', explorations: '2026-10-21' };
 
-// Tommy's placeholder (AWAITING FINAL TOMMY'S COPY, see FIXES.md). Minimal and non-descriptive on purpose.
-const TOMMYS_PLACEHOLDER = "Tommy's, a " + BRAND + " comic. For mature readers.";
 const CATS = [
   { id: 'comics', slug: 'comics', label: 'Comics',
     title: 'Comics - Indie Adult Comics | ' + BRAND,
@@ -463,10 +463,10 @@ function sitemap(data) {
   add(SITE + '/store', maxDay(products.map((p) => p._updatedAt)));
   CATS.forEach((c) => {
     const list = products.filter((p) => p.category === c.id);
-    if (list.length) add(catUrl(c), maxDay(list.map((p) => p._updatedAt)));
+    if (list.length) add(catUrl(c), maxDay(list.map((p) => p._updatedAt).concat(CODE_LASTMOD[c.id] ? [CODE_LASTMOD[c.id]] : [])));
   });
   products.forEach((p) => add(productUrl(p), day(p._updatedAt)));
-  sections.forEach((s) => add(SITE + '/' + s.slug, maxDay([s._updatedAt].concat(assets.filter((a) => (a.secs || []).indexOf(s.slug) >= 0).map((a) => a._updatedAt)))));
+  sections.forEach((s) => add(SITE + '/' + s.slug, maxDay([s._updatedAt].concat(assets.filter((a) => (a.secs || []).indexOf(s.slug) >= 0).map((a) => a._updatedAt), CODE_LASTMOD[s.slug] ? [CODE_LASTMOD[s.slug]] : []))));
   add(SITE + '/about', day(data.settings && data.settings._updatedAt));
   add(SITE + '/policies', POLICIES_LASTMOD);
   add(SITE + '/facts', FACTS_LASTMOD);

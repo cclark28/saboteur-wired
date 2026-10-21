@@ -24,6 +24,13 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.status(200).send(require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8'));
   }
+  if (url.searchParams.get('__meta') === '1') {
+    // Client-side route changes: the SPA asks for the page title and adult rating so they match the server-rendered head.
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400');
+    res.setHeader('X-Robots-Tag', 'noindex');
+    return res.status(200).send(JSON.stringify({ title: meta.title || null, adult: !!meta.adult, status: meta.status }));
+  }
   const html = seo.render(meta);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400');

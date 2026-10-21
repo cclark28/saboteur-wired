@@ -784,6 +784,19 @@ function viewFromPath(pathname, search) {
   return { page: 'not-found' };
 }
 
+// Alt text for posts whose Sanity schema has no alt field (writer copy, QC Rev 3/4). Keyed by asset document _id.
+const LOAD_ALT = "Comic story art previewed in LOAD magazine, from Tommy's Issue #2";
+const ASSET_ALT = {
+  '7cd11d45-74d1-4f18-ad0c-ebe84c539336': LOAD_ALT,
+  '03d13660-095e-4666-aecf-97a8a0f8ab5c': 'Framed painted figure study',
+  '59371b5f-2421-49b0-b6e3-1e0818076a31': 'Night photo of an urban cinema storefront',
+  '6f02c138-dfa9-4458-b426-e9433fd37b21': 'Model in a white cropped tee holding a flowering branch',
+  '6604af2d-8360-4e89-8b5e-da39ffd03e4d': 'Model in a dark \u00aeSaboteur hoodie',
+  'bd479d2f-411a-464f-8481-bba7d06203bd': 'Portrait of a model in a black \u00aeSaboteur tee',
+  'ab8b2715-3e9b-45ab-b07d-780472109c8b': 'Printed phone case on a retail display',
+  '31092f02-2e27-4e0d-b65d-0d60b7984450': 'Figure drawing on a wall behind caution tape',
+};
+
 const KNOWN_VIEW_PAGES = {
   home: 1, store: 1, product: 1, about: 1, info: 1, contact: 1,
   resend: 1, policies: 1, checkout: 1, 'order-success': 1, tag: 1, item: 1, 'not-found': 1,
@@ -890,7 +903,7 @@ function send404Im(text, replyEmail) {
       form.appendChild(input);
     };
     add('access_key', WEB3FORMS_KEY);
-    add('subject', 'Saboteur 404 — instant message');
+    add('subject', 'Saboteur 404, instant message');
     add('from_name', '404 Messenger');
     add('name', '404 Messenger');
     add('email', email);
@@ -1046,6 +1059,7 @@ function assetToSeries(asset, index) {
 
   return {
     id: asset._id || ('asset-' + index),
+    alt: ASSET_ALT[asset._id] || null,
     size,
     hasInfo,
     title: asset.title || null,
@@ -1080,7 +1094,7 @@ function makeSeries(id, opts = {}) {
     size: randomSize(),
     hasInfo,
     headline: hasInfo ? `Study No. ${id + 1}` : null,
-    subhead: hasInfo ? 'Street Photography — Tokyo 2024' : null,
+    subhead: hasInfo ? 'Street Photography, Tokyo 2024' : null,
     body: hasInfo ? 'Shot on 35mm over three nights near Shinjuku station. Part of an ongoing series on transient light and motion in dense urban space.' : null,
     tags: hasInfo ? ['Street', 'Night', '35mm'] : [],
     gallery: Array.from({ length: galleryCount }, () => randomSize()),
@@ -1158,7 +1172,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   return (
     <a
       href="/"
-      aria-label={title === 'Refresh' ? 'Refresh homepage' : 'Saboteur home'}
+      aria-label={title === 'Refresh' ? 'Refresh homepage' : '®Saboteur home'}
       title={title}
       onClick={(e) => {
         e.preventDefault();
@@ -1175,7 +1189,7 @@ function Logo({ size = 160, onClick, forceLight, title = 'Home' }) {
   );
 }
 
-/* Saboteur comics icon — orange circle + black cat face. Always brand orange (never filtered). Scales with size prop. */
+/* Saboteur comics icon, orange circle + black cat face. Always brand orange (never filtered). Scales with size prop. */
 function SaboteurIcon({ size = 40, onClick }) {
   const [pressed, setPressed] = useState(false);
   const handleClick = onClick ? () => { setPressed(true); setTimeout(() => setPressed(false), 200); onClick(); } : undefined;
@@ -1283,7 +1297,7 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   return (
     <a
       href="/store/comics"
-      aria-label="Saboteur Comics store"
+      aria-label="®Saboteur store"
       title="Store, Comics"
       onClick={handleClick}
       style={{
@@ -1335,8 +1349,8 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Search pill + results — own relative wrapper so dropdown aligns under the pill only.
-            RULE: no drop shadow on search — border only when open, pure icon when closed. */}
+        {/* Search pill + results, own relative wrapper so dropdown aligns under the pill only.
+            RULE: no drop shadow on search, border only when open, pure icon when closed. */}
         <div style={{ position: 'relative' }}>
           <div className="search-pill" style={{
             display: 'flex', alignItems: 'center', gap: 10,
@@ -1378,7 +1392,7 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
               />
             )}
           </div>
-          {/* RULE: no drop shadow on search / menu panels — border only */}
+          {/* RULE: no drop shadow on search / menu panels, border only */}
           {searchOpen && (
             <div className="search-results" style={{
               position: 'absolute', top: '100%', left: 0, marginTop: 6,
@@ -1539,7 +1553,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
           <SaboteurComicsLogo height={48} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Search pill + results — relative so the dropdown aligns exactly under the pill */}
+          {/* Search pill + results, relative so the dropdown aligns exactly under the pill */}
           <div style={{ position: 'relative' }}>
             <div className="search-pill" style={{
               display: 'flex',
@@ -1590,7 +1604,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
               )}
             </div>
 
-            {/* Results panel — flush under the pill. RULE: no drop shadow — border only */}
+            {/* Results panel, flush under the pill. RULE: no drop shadow, border only */}
             {searchOpen && (
               <div className="search-results" style={{
                 position: 'absolute',
@@ -1702,7 +1716,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             }}
           >
             <div style={{ position: 'relative' }}>
-              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.title || s.headline || s.subhead || ''} />
+              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span
                   style={{
@@ -1774,7 +1788,7 @@ function InfiniteGrid({ baseItems, onOpen }) {
     const io = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !loading && items.length < 200) {
         const hasReal = items.some((it) => it.imageUrl);
-        if (hasReal) return; // real Sanity assets — do not invent more or show loading
+        if (hasReal) return; // real Sanity assets, do not invent more or show loading
         setLoading(true);
         setTimeout(() => {
           setItems((prev) => {
@@ -1846,7 +1860,7 @@ function formatClock(date, timeZone) {
       second: '2-digit',
     });
   } catch (err) {
-    return '—';
+    return '-';
   }
 }
 
@@ -1871,7 +1885,7 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const marquee = (f.marqueeText || '').trim();
 
   const localStr = formatClock(time, localTimezone);
-  const nextStr = nextTimezone ? formatClock(time, nextTimezone) : '—';
+  const nextStr = nextTimezone ? formatClock(time, nextTimezone) : '-';
 
   const colLabel = {
     fontFamily: 'var(--font-family-mono)',
@@ -1946,6 +1960,8 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   // Drop figure studies, send Info/Contact to About, and treat store categories as store tabs
   const rewritten = siteMap
     .filter((item) => !isFigureStudiesItem(item))
+    // QC: no footer link to /resend until email delivery (email-downloads) merges.
+    .filter((item) => !(item && (item.linkType === 'resend' || /re-?send/i.test(String(item.label || '')))))
     .map((item) => {
       if (isInfoMapItem(item)) return Object.assign({}, item, { linkType: 'info', sectionSlug: null });
       const tab = resolveStoreTab(item);
@@ -1954,7 +1970,6 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
     });
   const extraMap = STORE_TABS.map((c) => ({ label: c.label, linkType: 'store', sectionSlug: c.id })).concat([
     { label: 'Store', linkType: 'store' },
-    { label: 'Re-send downloads', linkType: 'resend' },
     { label: 'Store Policies', linkType: 'policies' },
   ]);
   const baseMap = rewritten.length ? rewritten : [
@@ -2546,7 +2561,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         paddingTop: isMobile ? 88 : 100,
         borderBottom: '1px solid var(--color-stroke)',
       }}>
-        {/* Images — centered like editorial project view, no grey plate */}
+        {/* Images, centered like editorial project view, no grey plate */}
         <div style={{
           flex: 1,
           minWidth: 0,
@@ -2694,14 +2709,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 20px', lineHeight: 1.5,
             }}>
-              Preview — this item is not available yet.
+              Preview, this item is not available yet.
             </p>
           ) : (p.fulfillmentType === 'paid_physical' || p.fulfillmentType === 'paid_physical_variant') ? (
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
               margin: '0 0 20px', lineHeight: 1.5,
             }}>
-              Physical item — shipping address is collected at checkout when you pay (Stripe). US shipping only.
+              Physical item, shipping address is collected at checkout when you pay (Stripe). US shipping only.
             </p>
           ) : null}
 
@@ -2763,7 +2778,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                 color: 'var(--color-ink-55)', marginBottom: 6,
               }}>Email</label>
               <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', margin: '0 0 8px', lineHeight: 1.4 }}>
-                We capture your email to stay in touch. The file stays available here — this is not a lock.
+                We capture your email to stay in touch. The file stays available here, this is not a lock.
               </p>
               <input
                 id="download-email"
@@ -2836,7 +2851,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-success)',
               margin: '12px 0 0',
-            }}>Thanks — email saved. Your download is starting.</p>
+            }}>Thanks, email saved. Your download is starting.</p>
           ) : null}
           {isFree && !comingSoon && !p.digitalFileUrl ? (
             <p style={{
@@ -3027,14 +3042,14 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
                   // Prefer stored URL if we saved it; otherwise user re-opens from product
                   const url = row.digitalFileUrl;
                   if (url) window.open(url, '_blank', 'noopener,noreferrer');
-                  else setMessage('Open the product page to download again — link was not stored with this entry.');
+                  else setMessage('Open the product page to download again, link was not stored with this entry.');
                 }}
                 style={{
                   background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                   fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-link)', textDecoration: 'underline',
                 }}
               >
-                {row.digitalFileUrl ? 'Download again' : 'Link not stored — use product page'}
+                {row.digitalFileUrl ? 'Download again' : 'Link not stored, use product page'}
               </button>
             </div>
           ))}
@@ -3057,7 +3072,7 @@ function OrderSuccessPage({ onMenu, onBack, onHome, onContact, onTag, dark, onTo
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 16px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Thank you</h1>
         <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '14px', color: 'var(--color-ink-55)', margin: '0 0 12px', lineHeight: 1.55 }}>
-          Payment received. A confirmation email comes from Stripe. Physical orders ship after we pack them — address was collected at checkout.
+          Payment received. A confirmation email comes from Stripe. Physical orders ship after we pack them, address was collected at checkout.
         </p>
         {sessionId ? (
           <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', margin: '0 0 32px' }}>
@@ -3172,7 +3187,7 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
       return;
     }
     if (totalCents <= 0) {
-      setCheckoutError('Free items download from the product page — no payment needed.');
+      setCheckoutError('Free items download from the product page, no payment needed.');
       return;
     }
     if (!emailValid) {
@@ -3727,7 +3742,7 @@ function GalleryPanel({ series }) {
               ) : (
                 <img
                   src={item.src}
-                  alt={series.title || series.headline || ''}
+                  alt={series.alt || series.title || series.headline || ''}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   style={{ ...style, margin: 0, maxWidth: '100%' }}
                   onLoad={(e) => setDims(item.src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
@@ -4074,7 +4089,7 @@ function ContactForm() {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           access_key: '8fb4c260-014b-491e-bb90-e6cb6e25ca52',
-          subject: 'Saboteur site — contact',
+          subject: 'Saboteur site, contact',
           from_name: name,
           name: name,
           email: email,
@@ -4240,14 +4255,14 @@ const MSN404_SCRIPTS = [
 ];
 
 const MSN404_ERRORS = [
-  ['Error 404 — page not found', "This page was here. Now it isn't. We're not saying anything happened to it."],
-  ['Error 404 — page not found', 'The address is wrong, the page moved, or your email client put a dash in the middle of the URL again.'],
+  ['Error 404, page not found', "This page was here. Now it isn't. We're not saying anything happened to it."],
+  ['Error 404, page not found', 'The address is wrong, the page moved, or your email client put a dash in the middle of the URL again.'],
   ['Cannot find server', 'The page might be unavailable. You might also just be wrong.'],
-  ['Error 404 — page not found', 'This page has left the conversation.'],
-  ['Error 404 — page not found', "The item you're looking for has been removed by somebody's mother."],
-  ['Error 404 — page not found', "We checked twice. Kev checked once, but Kev also can't do fractions."],
-  ['Error 404 — page not found', 'The resource is unavailable. It may have evolved into a different page.'],
-  ['Error 404 — page not found', 'Nothing is here. The homepage, by contrast, is extremely here.']
+  ['Error 404, page not found', 'This page has left the conversation.'],
+  ['Error 404, page not found', "The item you're looking for has been removed by somebody's mother."],
+  ['Error 404, page not found', "We checked twice. Kev checked once, but Kev also can't do fractions."],
+  ['Error 404, page not found', 'The resource is unavailable. It may have evolved into a different page.'],
+  ['Error 404, page not found', 'Nothing is here. The homepage, by contrast, is extremely here.']
 ];
 
 const MSN404_NAMES = { A: '~*~Assslayer~*~', S: 'xXSaboteurXx' };
@@ -5272,6 +5287,36 @@ function App() {
     }
   }, []);
 
+  // Keep <title> and the adult-rating meta in step with client-side route changes (QC).
+  // The server already renders the right head for a direct load; this mirrors it after in-app navigation.
+  const headSeq = React.useRef(0);
+  useEffect(() => {
+    if (!view || !view.page) return;
+    const path = aboutOpen ? '/about' : pathFromView(view);
+    const seq = ++headSeq.current;
+    const setRating = (adult) => {
+      try {
+        let m = document.querySelector('meta[name="rating"]');
+        if (adult) {
+          if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'rating'); document.head.appendChild(m); }
+          m.setAttribute('content', 'adult');
+        } else if (m) {
+          m.parentNode.removeChild(m);
+        }
+      } catch (e) {}
+    };
+    const fallbackTitle = () => (view.page === 'home' && !aboutOpen ? '\u00aeSaboteur' : (aboutOpen ? 'About' : labelForView(view)) + ' | \u00aeSaboteur');
+    if (view.page === 'not-found') { setRating(false); return; } // the 404 screen sets its own title
+    fetch('/api/page?__path=' + encodeURIComponent(path) + '&__meta=1', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => {
+        if (seq !== headSeq.current) return;
+        if (m && m.title) document.title = m.title; else document.title = fallbackTitle();
+        setRating(!!(m && m.adult));
+      })
+      .catch(() => { if (seq === headSeq.current) document.title = fallbackTitle(); });
+  }, [view, aboutOpen]);
+
   // Initial path parse + popstate listener
   useEffect(() => {
     let initial = viewFromPath(window.location.pathname, window.location.search);
@@ -5345,7 +5390,7 @@ function App() {
               _id: 'fallback-bts',
               title: "Tommy's BTS",
               slug: 'tommys-bts',
-              description: 'Behind-the-scenes digital pack. Free download — we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
+              description: 'Behind-the-scenes digital pack. Free download, we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
               priceCents: 0,
               fulfillmentType: 'free_digital',
               category: 'comics',
@@ -5359,7 +5404,7 @@ function App() {
               _id: 'fallback-comic',
               title: "Tommy's Comic",
               slug: 'tommys-comic',
-              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout) — not on this page.',
+              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout), not on this page.',
               priceCents: 1800,
               fulfillmentType: 'paid_physical',
               category: 'comics',
@@ -5395,7 +5440,7 @@ function App() {
               ],
             },
           ];
-            try { console.warn('[saboteur] No products from Sanity — using fallback cards'); } catch (e) {}
+            try { console.warn('[saboteur] No products from Sanity, using fallback cards'); } catch (e) {}
           } else {
             try { console.log('[saboteur] products from Sanity:', list.length, list); } catch (e) {}
           }
@@ -5517,7 +5562,7 @@ function App() {
               _id: 'fallback-bts',
               title: "Tommy's BTS",
               slug: 'tommys-bts',
-              description: 'Behind-the-scenes digital pack. Free download — we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
+              description: 'Behind-the-scenes digital pack. Free download, we only ask for your email so we can stay in touch. The file link stays available on this page anytime.',
               priceCents: 0,
               fulfillmentType: 'free_digital',
               category: 'comics',
@@ -5531,7 +5576,7 @@ function App() {
               _id: 'fallback-comic',
               title: "Tommy's Comic",
               slug: 'tommys-comic',
-              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout) — not on this page.',
+              description: 'Physical comic book. Ships to US addresses. Shipping address is collected at payment (Stripe Checkout), not on this page.',
               priceCents: 1800,
               fulfillmentType: 'paid_physical',
               category: 'comics',
@@ -5807,7 +5852,7 @@ function App() {
         if (rect.bottom < -100 || rect.top > vh + 100) return;
         const center = rect.top + rect.height / 2;
         const offset = (center - vh / 2) / vh; // -0.5 … 0.5 roughly
-        const move = Math.max(-12, Math.min(12, offset * -18)); // max ±12px — approved subtle parallax
+        const move = Math.max(-12, Math.min(12, offset * -18)); // max ±12px, approved subtle parallax
         el.style.transform = `translate3d(0, ${move.toFixed(1)}px, 0)`;
 
 

@@ -1776,6 +1776,10 @@ function MasonryGrid({ items, onOpen, dense = false }) {
                 </span>
               )}
             </div>
+            {/* 18+ label below the tile, never on the image. Same ADULT_CONTENT source as the adult rating meta. */}
+            {((s.isProduct && isAdultProduct(s.product)) || (!s.isProduct && isAdultAsset(s.id))) ? (
+              <div style={{ marginTop: 8 }}><AdultLabel /></div>
+            ) : null}
           </div>
         );
       })}

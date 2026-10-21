@@ -2947,21 +2947,35 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [links, setLinks] = useState([]);
+  const [sending, setSending] = useState(false);
 
   const submit = () => {
     const e = String(email || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
-      setError('Enter the email you used to download.');
+      setError('Enter the email you used at checkout.');
       setMessage('');
       setLinks([]);
       return;
     }
     setError('');
+    // Paid orders: the API emails fresh links. Same answer whether or not the email has orders.
+    setSending(true);
+    fetch(String(CHECKOUT_API_BASE || '').replace(/\/$/, '') + '/api/resend-downloads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: e }),
+    })
+      .then((r) => r.json().catch(() => ({})).then((j) => ({ ok: r.ok, j })))
+      .then(({ ok, j }) => {
+        if (ok) setMessage((j && j.message) || 'If that email bought downloads here, the links are on their way.');
+        else setMessage((j && j.error) || 'Could not send right now. Email saboteur@mail.grokbot.com and I will send them.');
+      })
+      .catch(() => setMessage('Could not send right now. Email saboteur@mail.grokbot.com and I will send them.'))
+      .finally(() => setSending(false));
     let log = [];
     try { log = JSON.parse(localStorage.getItem('saboteur-download-log') || '[]'); } catch (err) { log = []; }
     const matches = log.filter((row) => String((row && row.email) || '').toLowerCase() === e);
     if (!matches.length) {
-      setMessage('No downloads found for that email on this browser yet.');
       setLinks([]);
       return;
     }
@@ -2975,7 +2989,6 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
       unique.push(row);
     });
     setLinks(unique);
-    setMessage('Found ' + unique.length + ' download(s). Open a link below to re-download.');
   };
 
   return (
@@ -2984,7 +2997,7 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
       <div style={{ padding: '128px clamp(20px,5vw,64px) 96px', maxWidth: 480, margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 12px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>Re-send downloads</h1>
         <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: '0 0 40px', lineHeight: 1.55 }}>
-          Free files also stay on their product pages. This page lists downloads tied to your email on this browser. Full email delivery comes with Phase 2.
+          Enter the email you used at checkout and I'll email your download links again. Free files also stay on their product pages.
         </p>
         <label style={{ display: 'block', fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 6 }}>Email</label>
         <input
@@ -3002,6 +3015,7 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
         {error ? <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-error)', marginBottom: 12 }}>{error}</div> : null}
         <button
           onClick={submit}
+          disabled={sending}
           style={{
             width: '100%', minHeight: 48, padding: '14px 28px', marginBottom: 20,
             background: 'var(--color-ink)', color: 'var(--color-paper)', border: 'none', borderRadius: 'var(--radius-sm)',
@@ -3010,7 +3024,7 @@ function ResendDownloadsPage({ onMenu, onBack, onHome, onContact, onTag, dark, o
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-accent)'; e.currentTarget.style.color = '#fff'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-ink)'; e.currentTarget.style.color = 'var(--color-paper)'; }}
         >
-          Look up downloads
+          {sending ? 'Sending…' : 'Email my downloads'}
         </button>
         {message ? <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: '0 0 16px' }}>{message}</p> : null}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

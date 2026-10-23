@@ -2707,7 +2707,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                       borderRadius: '2px',
                     }}
                   />
-                  {(comingSoon || soldOnly) ? (
+                  {((comingSoon && i === 0) || soldOnly) ? (
                     <span
                       style={{
                         position: 'absolute',

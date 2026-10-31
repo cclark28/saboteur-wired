@@ -26,24 +26,24 @@ const CATS = [
   { id: 'comics', slug: 'comics', label: 'Comics',
     title: 'Comics - Indie Adult Comics | ' + BRAND,
     // QC copy Rev 3 A1 (no Tommy's plot claims; logline still awaiting Charlie).
-    desc: 'Comics by Charlie Clark from ' + BRAND + ": Tommy's Issue #1 in print and its behind-the-scenes PDF. Print issue and digital extras. Adults only (18+).",
-    intro: 'Comics by Charlie Clark from ' + BRAND + '. Print issue and digital extras. Adults only (18+).',
+    desc: 'Comics from ' + BRAND + ": Tommy's Issue #1 in print and its behind-the-scenes PDF. Print issue and digital extras. Adults only (18+).",
+    intro: 'Comics from ' + BRAND + '. Print issue and digital extras. Adults only (18+).',
     og: COMICS_OG },
   { id: 'prints-and-books', slug: 'books', label: 'Books & Zines',
     title: 'Photo Books & Zines - Digital PDFs | ' + BRAND,
-    desc: 'Digital photo books and zines by Charlie Clark, published by ' + BRAND + '. Fine art photography series delivered as PDF downloads. Adults only (18+).',
-    intro: 'Digital photo books and zines by Charlie Clark, published by ' + BRAND + '. Fine art photography for adults (18+), delivered as PDF.' },
+    desc: 'Digital photo books and zines from ' + BRAND + '. Fine art photography series delivered as PDF downloads. Adults only (18+).',
+    intro: 'Digital photo books and zines from ' + BRAND + '. Fine art photography for adults (18+), delivered as PDF.' },
   { id: 'textures', slug: 'textures', label: 'Textures',
     title: 'Textures - Scanned Paper, Screentone & Paint | ' + BRAND,
     desc: 'High-resolution scanned textures for illustrators and designers: paper, screentone, newsprint, gel plate and paint. Many are free downloads from ' + BRAND + '.',
     intro: 'High-resolution scanned textures for illustrators and designers: paper, screentone, newsprint, gel plate, paint and more. Many are free.' },
   { id: 'original-art', slug: 'original-art', label: 'Original Art',
     title: 'Original Comic Art for Sale - Covers & Pinups | ' + BRAND,
-    desc: 'Original comic covers and pinups by Charlie Clark: pencil, ink and screentone on bristol board, 11x17. One of a kind pieces from ' + BRAND + '.',
-    intro: 'Original comic covers and pinups by Charlie Clark: pencil, ink and screentone on bristol board.' },
+    desc: 'Original comic covers and pinups from ' + BRAND + ': pencil, ink and screentone on bristol board, 11x17. One of a kind pieces.',
+    intro: 'Original comic covers and pinups from ' + BRAND + ': pencil, ink and screentone on bristol board.' },
   { id: 'clothing', slug: 'apparel', label: 'Apparel',
     title: 'Apparel - Tees and Totes | ' + BRAND,
-    desc: BRAND + " apparel: graphic tees and a tote bag in the studio's comic art style by Charlie Clark. Sold out for now. Physical shipping is paused.",
+    desc: BRAND + " apparel: graphic tees and a tote bag in the studio's comic art style. Sold out for now. Physical shipping is paused.",
     intro: BRAND + " tees and totes in the studio's comic art style. Sold out. Physical shipping is paused." },
 ];
 const catById = (id) => CATS.find((c) => c.id === id);
@@ -149,9 +149,9 @@ function fitDesc(parts, pads) {
 const PADS = ['Sold by ' + BRAND + ', an independent art studio and publisher.'];
 // Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
 const SECTION_DESC = {
-  art: 'Original drawings, paintings and comic art by Charlie Clark from ' + BRAND + ', an independent art studio and publishing imprint. Pencil, ink and paint.',
-  photography: 'Photography by Charlie Clark from ' + BRAND + ': portraits, street work and figure studies, from an independent art studio and publishing imprint.',
-  explorations: 'Experiments in ink, paper animation, video and 3D scanning by Charlie Clark from ' + BRAND + ', an independent art studio and publishing imprint.',
+  art: 'Original drawings, paintings and comic art from ' + BRAND + ', an independent art studio and publishing imprint. Pencil, ink and paint.',
+  photography: 'Photography from ' + BRAND + ': portraits, street work and figure studies, from an independent art studio and publishing imprint.',
+  explorations: 'Experiments in ink, paper animation, video and 3D scanning from ' + BRAND + ', an independent art studio and publishing imprint.',
 };
 function details(p) { return p.productDetails || {}; }
 function pagesOf(p) { const n = parseInt(details(p).pages, 10); return Number.isFinite(n) && n > 0 ? n : null; }
@@ -192,12 +192,12 @@ function productDesc(p, settings) {
   const avail = st.key === 'sold' ? (shipPaused ? 'Sold out, and physical shipping is paused for now.' : 'Sold out.') : st.key === 'paused' ? 'Physical shipping is paused for now.' : '';
   const c = p.category;
   let lead;
-  if (c === 'prints-and-books') lead = name + ': a ' + (pages ? pages + '-page ' : '') + 'digital photo book (PDF) by Charlie Clark, published by ' + BRAND + '.';
+  if (c === 'prints-and-books') lead = name + ': a ' + (pages ? pages + '-page ' : '') + 'digital photo book (PDF) from ' + BRAND + '.';
   else if (c === 'comics') lead = isPhysical(p.fulfillmentType)
     ? name + ': ' + (pages ? 'a ' + pages + '-page ' : 'a ') + 'print comic book from ' + BRAND + '.'
     : name + ': ' + (pages ? 'a ' + pages + '-page ' : 'a ') + "digital PDF from " + BRAND + (isTommys(p) ? ", the making of Tommy's." : '.');
   else if (c === 'textures') lead = name + ': ' + (d.format ? d.format + ' of ' : '') + 'high-resolution texture scans for artists and designers from ' + BRAND + '.';
-  else if (c === 'original-art') lead = name + ': original ' + (d.size || d.resolution ? String(d.size || d.resolution).trim() + ' ' : '') + 'art by Charlie Clark' + (d.format ? ' (' + String(d.format).trim() + ')' : '') + '.';
+  else if (c === 'original-art') lead = name + ': original ' + (d.size || d.resolution ? String(d.size || d.resolution).trim() + ' ' : '') + 'art from ' + BRAND + (d.format ? ' (' + String(d.format).trim() + ')' : '') + '.';
   else if (c === 'clothing') lead = name + ': ' + BRAND + ' apparel in the studio\u2019s comic art style.';
   else lead = name + ' from ' + BRAND + '.';
   const adult = p.requiresAgeConfirm ? 'Adults only (18+).' : '';
@@ -206,10 +206,10 @@ function productDesc(p, settings) {
 function imgAlt(p) {
   const name = shortName(p.title);
   const c = p.category;
-  if (c === 'prints-and-books') return 'Cover of ' + name + ', a digital photo book by Charlie Clark';
+  if (c === 'prints-and-books') return 'Cover of ' + name + ', a digital photo book from ' + BRAND;
   if (c === 'comics') return 'Cover of ' + name;
   if (c === 'textures') return 'Preview of the ' + name + ' texture scans';
-  if (c === 'original-art') return name + ', original art by Charlie Clark';
+  if (c === 'original-art') return name + ', original art from ' + BRAND;
   if (c === 'clothing') return name + ', ' + BRAND + ' apparel';
   return name;
 }
@@ -361,7 +361,7 @@ function resolve(pathname, data) {
   const store = ['Store', SITE + '/store'];
 
   if (lower === '/store' || lower === '/store/all') {
-    const desc = 'The ' + BRAND + ' store: comics, digital photo books and zines, texture packs, original comic art and apparel by Charlie Clark. Prices in USD.';
+    const desc = 'The ' + BRAND + ' store: comics, digital photo books and zines, texture packs, original comic art and apparel. Prices in USD.';
     const inner = crumbsHtml([home, ['Store', SITE + '/store']]) + '<h1>Store</h1>' +
       '<p>Comics, photo books and zines, textures, original art and apparel from ' + esc(BRAND) + '.</p>' +
       CATS.map((c) => {
@@ -392,11 +392,11 @@ function resolve(pathname, data) {
   }
   if (lower === '/about' || lower === '/info' || lower === '/contact' || lower === '/info-contact') {
     const paras = (settings.infoParagraphs || []).filter(Boolean);
-    const desc = fitDesc([(paras[0] || BRAND + ' is the art studio and publishing imprint of Charlie Clark.')], ['Contact: ' + EMAIL + '.', 'Comics, photo books, original art and apparel.']);
+    const desc = fitDesc([(paras[0] || BRAND + ' is an independent art studio and publishing imprint.')], ['Contact: ' + EMAIL + '.', 'Comics, photo books, original art and apparel.']);
     const inner = crumbsHtml([home, ['About', SITE + '/about']]) + '<h1>' + esc(settings.infoHeadline || 'About') + '</h1>' +
       (settings.infoSubhead ? '<p>' + esc(settings.infoSubhead) + '</p>' : '') + paras.map((x) => '<p>' + esc(x) + '</p>').join('');
     // Title leads with the same words as the H1 (Sanity siteSettings.infoHeadline).
-    return base({ title: (settings.infoHeadline || 'About') + ' - About ' + BRAND + ' and Charlie Clark', desc, canonical: SITE + '/about',
+    return base({ title: (settings.infoHeadline || 'About') + ' - About ' + BRAND, desc, canonical: SITE + '/about',
       ld: [{ '@type': 'AboutPage', '@id': SITE + '/about#page', url: SITE + '/about', name: 'About ' + BRAND, about: { '@id': SITE + '/#studio' }, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, ['About', SITE + '/about']])],
       body: wrapBody(inner, sections) });
   }
@@ -413,10 +413,10 @@ function resolve(pathname, data) {
     if (sec && sec.slug !== 'store') {
       const posts = (data.assets || []).filter((a) => (a.secs || []).indexOf(sec.slug) >= 0);
       const hidden = sec.showInNav === false;
-      const desc = SECTION_DESC[sec.slug] || fitDesc([sec.title + ' by Charlie Clark at ' + BRAND + ', an independent art studio and publishing imprint.'], PADS);
+      const desc = SECTION_DESC[sec.slug] || fitDesc([sec.title + ' from ' + BRAND + ', an independent art studio and publishing imprint.'], PADS);
       const inner = crumbsHtml([home, [sec.title, SITE + '/' + sec.slug]]) + '<h1>' + esc(sec.title) + '</h1>' +
         (posts.length ? '<ul style="padding-left:18px">' + posts.map((a) => '<li><strong>' + esc(a.headline || a.title || 'Untitled') + '</strong>' + (a.subhead ? ': ' + esc(clip(a.subhead, 160)) : '') + '</li>').join('') + '</ul>' : '');
-      return base({ adult: !!NUDITY_SECTION_SLUGS[sec.slug], title: fitTitle(sec.title, 'Charlie Clark'), desc, canonical: SITE + '/' + sec.slug, robots: hidden ? 'noindex, follow' : null,
+      return base({ adult: !!NUDITY_SECTION_SLUGS[sec.slug], title: fitTitle(sec.title), desc, canonical: SITE + '/' + sec.slug, robots: hidden ? 'noindex, follow' : null,
         ld: [{ '@type': 'CollectionPage', '@id': SITE + '/' + sec.slug + '#page', url: SITE + '/' + sec.slug, name: sec.title, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, [sec.title, SITE + '/' + sec.slug]])],
         body: wrapBody(inner, sections) });
     }

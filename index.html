@@ -6057,7 +6057,7 @@ function App() {
       <div className="sr-only" aria-live="polite" aria-atomic="true">{showNotFound ? 'Page not found' : labelForView(view)}</div>
       <main id="main">
       {/* Visually hidden homepage H1 (SEO): no visual change. */}
-      {!showNotFound && view.page === 'home' && !aboutOpen && <h1 className="sr-only">®Saboteur: comics, photography and art by Charlie Clark</h1>}
+      {!showNotFound && view.page === 'home' && !aboutOpen && <h1 className="sr-only">®Saboteur: comics, photography and art</h1>}
 
       {showNotFound && <Messenger404 />}
       {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}

@@ -343,11 +343,14 @@
     display: block;
     width: 100%;
   }
-  /* PREVIEW grid-frames v2 (Charlie 31 Oct, 21:14): floating 1px light-grey dividers only BETWEEN items, centred in the
-     gutter. Every cell draws a vertical line on its left edge and a horizontal line on its top edge, each stopping
-     --frame-gap short of both ends so lines never touch or meet. clip-path hides the first column's left lines and the
-     first row's (or each masonry column's first item's) top lines, which sit in the container's first 1px, so there is
-     no outer frame. Negative margin cancels the outer cell padding so images stay aligned with the page edges. */
+  /* Grid frames: floating 1px light-grey dividers only BETWEEN items, centred in the gutter. Every cell draws a
+     vertical line on its left edge and a horizontal line on its top edge, each stopping --frame-gap short of both ends
+     so lines never touch or meet. clip-path hides the first column's left lines and the first row's (or each masonry
+     column's first item's) top lines, which sit in the container's first 1px, so there is no outer frame. Negative
+     margin cancels the outer cell padding so images stay aligned with the page edges.
+     .grid-frame-media clips the media so desktop parallax moves the image inside a fixed box and never into the
+     padding or under a divider; where parallax runs, the media bleeds 12px (= the parallax clamp) above and below so
+     the box stays filled at every scroll position. */
   .grid-frame { --frame-line: #D9D9D9; --frame-pad: 12px; --frame-gap: 10px; margin: calc(-1 * var(--frame-pad)); clip-path: inset(1px 0 0 1px); }
   [data-theme="dark"] .grid-frame { --frame-line: #34343A; }
   .grid-frame-cell { position: relative; padding: var(--frame-pad); }
@@ -355,6 +358,8 @@
   .grid-frame-cell::before { left: 0; top: var(--frame-gap); bottom: var(--frame-gap); width: 1px; }
   .grid-frame-cell::after { top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 1px; }
   @media (max-width: 699px) { .grid-frame { --frame-pad: 8px; --frame-gap: 8px; } }
+  .grid-frame-media { position: relative; overflow: hidden; }
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) { .grid-frame-media > [data-parallax] { margin: -12px 0; } }
   .photo-wrap img,
   .photo-wrap video {
     display: block;
@@ -1760,7 +1765,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
               cursor: 'pointer',
             }}
           >
-            <div style={{ position: 'relative' }}>
+            <div className="grid-frame-media">
               <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span

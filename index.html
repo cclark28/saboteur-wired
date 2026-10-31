@@ -13,7 +13,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111113">
 <meta name="rating" content="adult">
 <meta name="description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
-<meta name="author" content="Charlie Clark">
+<meta name="author" content="®Saboteur">
 <link rel="alternate" type="text/plain" href="https://saboteur.one/llms.txt" title="llms.txt">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="®Saboteur">
@@ -90,7 +90,7 @@
     --z-nav: 100;
     --z-overlay: 200;
     --z-modal: 300;
-    /* 18+ label: brand palette is white, black, orange, blue only (Charlie 13:54). Orange = coming soon; brand blue
+    /* 18+ label: brand palette is white, black, orange, blue only (owner 13:54). Orange = coming soon; brand blue
        --color-link #4D80E6 gives white text 3.79:1 (fails AA at 13px), so the label is black/white: 17.72:1. */
     --color-adult-bg: #18181B;
     --color-adult-text: #FFFFFF;
@@ -547,26 +547,12 @@
       "publisher": { "@id": "https://saboteur.one/#studio" }
     },
     {
-      "@type": "Person",
-      "@id": "https://saboteur.one/#charlie",
-      "name": "Charlie Clark",
-      "url": "https://saboteur.one",
-      "jobTitle": "Graphic artist, comic book artist, photographer",
-      "email": "store@saboteur.one",
-      "worksFor": { "@id": "https://saboteur.one/#studio" },
-      "sameAs": [
-        "https://www.instagram.com/saboteur.supply/",
-        "https://x.com/saboteurcomics"
-      ]
-    },
-    {
       "@type": "Organization",
       "@id": "https://saboteur.one/#studio",
       "name": "®Saboteur",
       "email": "store@saboteur.one",
       "url": "https://saboteur.one",
       "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
-      "founder": { "@id": "https://saboteur.one/#charlie" },
       "logo": {
         "@type": "ImageObject",
         "url": "https://saboteur.one/assets/logo.svg"
@@ -616,7 +602,7 @@ let FOOTER_DATA = null;
 let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null, policies: null };
 let SECTION_META = [];
 
-// Charlie-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the product 18+ checkbox.
+// Owner-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the product 18+ checkbox.
 const ADULT_CONTENT_LINE = 'This work contains nudity, violence and other adult material. You must be 18 or older to view or buy it.';
 const CONTACT_EMAIL = 'store@saboteur.one';
 
@@ -793,13 +779,13 @@ function viewFromPath(pathname, search) {
 // Home head values (static index.html), restored on client navigation back to home.
 const HOME_CANONICAL = 'https://saboteur.one/';
 const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
-// ONE source for nudity (visual check of the Sanity images, 2026-10-21; Charlie 13:54: every book has nudity except Tesla). It drives BOTH the "18+" label and
+// ONE source for nudity (visual check of the Sanity images, 2026-10-21; owner 13:54: every book has nudity except Tesla). It drives BOTH the "18+" label and
 // <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
 // Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
 const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts","monika-may-vienna-2026"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
-// "18+" label (Charlie 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
+// "18+" label (owner 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
 // section "Tags / Badges": 4px radius, 4px 8px padding, --font-label (IBM Plex Mono 500, 0.8125rem, 0.02em tracking),
 // no uppercase transform. Colors: black #18181B / white #FFFFFF (inverted in dark mode), see --color-adult-*. Below the copy, not on the image.
 const ADULT_LABEL = '18+';
@@ -1736,7 +1722,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
     }}>
       {items.map((s) => {
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
-        const showSoldOut = s.soldOut && isStoreItem;
+        const showSoldOut = isFlaggedSoldOut(s) && isStoreItem; // guarded: digital downloads never show Sold out
         return (
           <div
             key={s.id}
@@ -1851,7 +1837,7 @@ const SHOW_MARQUEE = true; // toggle from Sanity CMS
 const MARQUEE_TEXT = 'EXPERIMENTAL CREATIVE HOUSE · INSPIRATION & RESOURCES · EXPLORATIONS · FIGURE STUDIES · ABOUT · © ®SABOTEUR · ';
 
 // Calendar-derived travel stops. Local clock follows the current stop; Upcoming is the next one.
-// No hard-coded fallback stops (Charlie 14:27: city clocks stay, dates go). With no CMS itinerary the
+// No hard-coded fallback stops (owner 14:27: city clocks stay, dates go). With no CMS itinerary the
 // footer falls back to footer.localLabel / nextLocation from Sanity, then the Indianapolis default.
 const DEFAULT_ITINERARY = [];
 
@@ -1882,7 +1868,7 @@ function formatClock(date, timeZone) {
   }
 }
 
-// One footer clock block. Fixed size so every city looks uniform (Charlie 14:37).
+// One footer clock block. Fixed size so every city looks uniform (owner 14:37).
 // Room for a 2-line city label so narrow columns (1024px) wrap instead of cutting the city off.
 const CLOCK_BLOCK_HEIGHT = 78;
 function ClockBlock({ label, clock, local }) {
@@ -2056,7 +2042,7 @@ const colBox = {
       ) : null}
 
       <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
-       {/* Brand + 4 footer columns on one row from 1000px up (Charlie 14:53 mockup; was 6 at QC 14:45). Below that the auto-fit 200px grid is unchanged. */}
+       {/* Brand + 4 footer columns on one row from 1000px up (owner 14:53 mockup; was 6 at QC 14:45). Below that the auto-fit 200px grid is unchanged. */}
        <style>{'@media (min-width: 1000px){[data-footer-grid]{grid-template-columns:repeat(5,minmax(0,1fr))!important}}'}</style>
        <div data-footer-grid style={{
   display: 'grid',
@@ -2094,7 +2080,7 @@ const colBox = {
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
             >Pixabay</a>
-            {/* Charlie 14:53 mockup: Textures stacks under SFX in one column (brand + 4 columns). */}
+            {/* Owner 14:53 mockup: Textures stacks under SFX in one column (brand + 4 columns). */}
             <div style={Object.assign({}, colLabel, { marginTop: 28 })}>Textures</div>
             <a href="https://saboteurcomics.gumroad.com/" target="_blank" rel="noopener noreferrer" style={linkStyle}
               onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
@@ -2115,7 +2101,7 @@ const colBox = {
 
           <div style={Object.assign({}, colBox, { paddingRight: 0 })}>
             <div style={colLabel}>Local time</div>
-            {/* Charlie 14:37: every clock block (local + upcoming) is the same size. Equal widths via a
+            {/* Owner 14:37: every clock block (local + upcoming) is the same size. Equal widths via a
                 one-column grid, fixed height, long city names truncate with the full name in the title. */}
             <div data-footer-clocks style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, width: '100%' }}>
               <ClockBlock label={localLabel} clock={localStr} local />
@@ -2277,7 +2263,7 @@ function SectionGrid({ title, items, onMenu, onBack, onOpen, onContact, onTag, o
 
 const STORE_CATEGORIES = STORE_TABS.concat([{ id: 'all', label: 'All' }]);
 
-// Product descriptions: [text](https://url) and bare http(s) URLs become links (Charlie, 21 Oct: Katherine's AdultFolio).
+// Product descriptions: [text](https://url) and bare http(s) URLs become links (21 Oct: Katherine's AdultFolio).
 // Built as React nodes, so every other character stays escaped text; only http(s) hrefs are allowed.
 const DESC_LINK_RE = /\[([^\[\]\n]{1,200})\]\((https?:\/\/[^\s()<>]+)\)|(https?:\/\/[^\s<>()\[\]"]+)/g;
 function safeHttpUrl(u) {
@@ -2319,7 +2305,7 @@ function isPhysicalFulfillment(ft) {
   return ft === 'paid_physical' || ft === 'paid_physical_variant';
 }
 
-/** Digital downloads never sell out (Charlie, 31 Oct): a digital fulfillment type, a title ending in "(Digital download)",
+/** Digital downloads never sell out (31 Oct): a digital fulfillment type, a title ending in "(Digital download)",
  *  or a Books & Zines item that isn't physical. Their soldOut flag is ignored everywhere in the store. */
 function isDigitalDownload(p) {
   if (!p) return false;
@@ -2675,7 +2661,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         paddingTop: isMobile ? 88 : 100,
         borderBottom: '1px solid var(--color-stroke)',
       }}>
-        {/* Images: one left-aligned column; cover top lines up with the info panel (both 40px from the top). Charlie 31 Oct 17:14 */}
+        {/* Images: one left-aligned column; cover top lines up with the info panel (both 40px from the top). 31 Oct 17:14 */}
         <div style={{
           flex: 1,
           minWidth: 0,
@@ -2702,9 +2688,9 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               alignItems: 'flex-start',
             }}>
               {(() => {
-                // Gallery rows (Charlie, 31 Oct 17:17): two portraits in a row sit side by side (widths follow their aspect ratios so both are the same height);
+                // Gallery rows (31 Oct 17:17): two portraits in a row sit side by side (widths follow their aspect ratios so both are the same height);
                 // a landscape gets its own full-width row; a lone portrait (single-image product or leftover) fills the full
-                // column width with no height cap (Charlie, 31 Oct 17:56). Orientation comes from the Sanity asset dimensions in
+                // column width with no height cap (31 Oct 17:56). Orientation comes from the Sanity asset dimensions in
                 // the image URL (e.g. ...-1200x1800.jpg), so the layout is fixed before images load. Phone: one column.
                 const items = imgs.map((src, i) => {
                   const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(src).split('?')[0]);
@@ -5126,7 +5112,7 @@ function Messenger404() {
               <div style={{ background: '#F8FDFF', borderBottom: '1px solid #C7D8E4', padding: '7px 8px', fontSize: 11, color: '#18181B' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <MsnIcon name="on" />
-                  <span><strong>Charlie</strong> (Online)</span>
+                  <span><strong>®Saboteur</strong> (Online)</span>
                 </div>
               </div>
               <div style={{ padding: '6px 8px', fontSize: 11, borderBottom: '1px solid #C7D8E4', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -6057,7 +6043,7 @@ function App() {
       <div className="sr-only" aria-live="polite" aria-atomic="true">{showNotFound ? 'Page not found' : labelForView(view)}</div>
       <main id="main">
       {/* Visually hidden homepage H1 (SEO): no visual change. */}
-      {!showNotFound && view.page === 'home' && !aboutOpen && <h1 className="sr-only">®Saboteur: comics, photography and art by Charlie Clark</h1>}
+      {!showNotFound && view.page === 'home' && !aboutOpen && <h1 className="sr-only">®Saboteur: comics, photography and art</h1>}
 
       {showNotFound && <Messenger404 />}
       {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}

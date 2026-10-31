@@ -146,12 +146,12 @@ function fitDesc(parts, pads) {
   for (const p of pads) { if (s.length >= 120) break; if ((s + ' ' + p).length <= 155) s += ' ' + p; }
   return s.length > 155 ? clip(s, 155) : s;
 }
-const PADS = ['Sold by ' + BRAND + ', an independent art studio and publisher.'];
+const PADS = ['Sold by ' + BRAND + ', an experimental art and publishing house.']; // short enough to fit after a ~90-char lead (155 cap)
 // Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
 const SECTION_DESC = {
-  art: 'Original drawings, paintings and comic art from ' + BRAND + ', an independent art studio and publishing imprint. Pencil, ink and paint.',
-  photography: 'Photography from ' + BRAND + ': portraits, street work and figure studies, from an independent art studio and publishing imprint.',
-  explorations: 'Experiments in ink, paper animation, video and 3D scanning from ' + BRAND + ', an independent art studio and publishing imprint.',
+  art: 'Original drawings, paintings and comic art from ' + BRAND + ', an experimental art studio and publishing house. Pencil, ink and paint.',
+  photography: 'Photography from ' + BRAND + ', an experimental art studio and publishing house: portraits, street work and figure studies.',
+  explorations: 'Experiments in ink, paper animation, video and 3D scanning from ' + BRAND + ', an experimental art studio and publishing house.',
 };
 function details(p) { return p.productDetails || {}; }
 function pagesOf(p) { const n = parseInt(details(p).pages, 10); return Number.isFinite(n) && n > 0 ? n : null; }
@@ -235,7 +235,7 @@ function adultContent() {
 }
 function isAdultSlug(slug) { return !!slug && adultContent().productSlugs.indexOf(String(slug)) >= 0; }
 const NUDITY_CATEGORY_IDS = { 'prints-and-books': 1, 'original-art': 1, comics: 1 }; // grid thumbnails include the products above
-const NUDITY_SECTION_SLUGS = { photography: 1 }; // gallery thumbnails include nude photographs
+const NUDITY_SECTION_SLUGS = { photography: 1, explorations: 1 }; // gallery thumbnails include nude photographs (explorations: autoplay collage video, 31 Oct)
 function adultImage(p) { return !!(p && isAdultSlug(p.slug)); }
 // Shopping signal (hasAdultConsideration): 18+ products and products whose images show nudity.
 function adultProduct(p) { return !!(p && (p.requiresAgeConfirm || isAdultSlug(p.slug) || OG_EXPLICIT_SLUGS[p.slug])); }
@@ -392,12 +392,14 @@ function resolve(pathname, data) {
   }
   if (lower === '/about' || lower === '/info' || lower === '/contact' || lower === '/info-contact') {
     const paras = (settings.infoParagraphs || []).filter(Boolean);
-    const desc = fitDesc([(paras[0] || BRAND + ' is an independent art studio and publishing imprint.')], ['Contact: ' + EMAIL + '.', 'Comics, photo books, original art and apparel.']);
+    // About may carry the owner's name (Charlie 19:57; 20:00 'publishing house').
+    const desc = fitDesc([BRAND + ' is an experimental art studio and publishing house of Charlie Clark.'], ['Contact: ' + EMAIL + '.', 'Comics, photo books, original art and apparel.']);
     const inner = crumbsHtml([home, ['About', SITE + '/about']]) + '<h1>' + esc(settings.infoHeadline || 'About') + '</h1>' +
       (settings.infoSubhead ? '<p>' + esc(settings.infoSubhead) + '</p>' : '') + paras.map((x) => '<p>' + esc(x) + '</p>').join('');
     // Title leads with the same words as the H1 (Sanity siteSettings.infoHeadline).
-    return base({ title: (settings.infoHeadline || 'About') + ' - About ' + BRAND, desc, canonical: SITE + '/about',
-      ld: [{ '@type': 'AboutPage', '@id': SITE + '/about#page', url: SITE + '/about', name: 'About ' + BRAND, about: { '@id': SITE + '/#studio' }, isPartOf: { '@id': SITE + '/#website' } }, breadcrumb([home, ['About', SITE + '/about']])],
+    return base({ title: (settings.infoHeadline || 'About') + ' - About ' + BRAND + ' and Charlie Clark', desc, canonical: SITE + '/about',
+      ld: [{ '@type': 'AboutPage', '@id': SITE + '/about#page', url: SITE + '/about', name: 'About ' + BRAND, about: { '@id': SITE + '/#studio' }, isPartOf: { '@id': SITE + '/#website' } },
+        { '@type': 'Organization', '@id': SITE + '/#studio', founder: { '@type': 'Person', '@id': SITE + '/about#founder', name: 'Charlie Clark' } }, breadcrumb([home, ['About', SITE + '/about']])],
       body: wrapBody(inner, sections) });
   }
   if (lower === '/policies') return policiesRoute(sections);
@@ -413,7 +415,7 @@ function resolve(pathname, data) {
     if (sec && sec.slug !== 'store') {
       const posts = (data.assets || []).filter((a) => (a.secs || []).indexOf(sec.slug) >= 0);
       const hidden = sec.showInNav === false;
-      const desc = SECTION_DESC[sec.slug] || fitDesc([sec.title + ' from ' + BRAND + ', an independent art studio and publishing imprint.'], PADS);
+      const desc = SECTION_DESC[sec.slug] || fitDesc([sec.title + ' from ' + BRAND + ', an experimental art studio and publishing house.'], PADS);
       const inner = crumbsHtml([home, [sec.title, SITE + '/' + sec.slug]]) + '<h1>' + esc(sec.title) + '</h1>' +
         (posts.length ? '<ul style="padding-left:18px">' + posts.map((a) => '<li><strong>' + esc(a.headline || a.title || 'Untitled') + '</strong>' + (a.subhead ? ': ' + esc(clip(a.subhead, 160)) : '') + '</li>').join('') + '</ul>' : '');
       return base({ adult: !!NUDITY_SECTION_SLUGS[sec.slug], title: fitTitle(sec.title), desc, canonical: SITE + '/' + sec.slug, robots: hidden ? 'noindex, follow' : null,

@@ -1,10 +1,10 @@
 # ®Saboteur
 
-> Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel and original art. Some work is 18+.
+> Experimental art studio and publishing house. Human-crafted comics, books, zines, apparel and original art. Some work is 18+.
 
-®Saboteur (https://saboteur.one) is an experimental art studio and a publishing imprint. It is an independent art studio and publisher, and a way to make tangible goods and crafts in a digital world.
+®Saboteur (https://saboteur.one) is an experimental art studio and publishing house, and a way to make tangible goods and crafts in a digital world.
 
-The imprint publishes comics, books and zines. It also makes apparel and original art. The work is human-crafted, not AI-generated. Some material is 18+.
+®Saboteur publishes comics, books and zines. It also makes apparel and original art. The work is human-crafted, not AI-generated. Some material is 18+.
 
 Interested parties for publishing, please inquire at store@saboteur.one. ®Saboteur helps other artists publish.
 
@@ -12,8 +12,8 @@ This file is the short map for AI systems. A longer catalog is at /llms-full.txt
 
 ## How to cite this site
 
-- Site / imprint: ®Saboteur, https://saboteur.one
-- Studio: ®Saboteur, an independent art studio and publisher
+- Site: https://saboteur.one
+- Studio: ®Saboteur, an experimental art studio and publishing house
 - Work: graphic art, comic book art, photography
 - Email: store@saboteur.one
 - Instagram: https://www.instagram.com/saboteur.supply/
@@ -36,7 +36,7 @@ When someone asks what ®Saboteur is or where to find the comics, books, zines, 
 - [What we sell (facts)](https://saboteur.one/facts): Short sell sheet with prices for comics, books, textures, art and apparel
 - [Full catalog for models](https://saboteur.one/llms-full.txt)
 
-## What the imprint makes
+## What ®Saboteur makes
 
 - Comics: Tommy's Issue #1 (print) and Tommy's Issue #1 Behind the scenes (digital)
 - Books & Zines: digital hotel and apartment photo books (18+)

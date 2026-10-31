@@ -12,13 +12,13 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111113">
 <meta name="rating" content="adult">
-<meta name="description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
+<meta name="description" content="®Saboteur is an experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
 <meta name="author" content="®Saboteur">
 <link rel="alternate" type="text/plain" href="https://saboteur.one/llms.txt" title="llms.txt">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="®Saboteur">
 <meta property="og:title" content="®Saboteur">
-<meta property="og:description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
+<meta property="og:description" content="®Saboteur is an experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
 <meta property="og:url" content="https://saboteur.one/">
 <meta property="og:image" content="https://saboteur.one/assets/og-amelia.jpg">
 <meta property="og:image:width" content="1080">
@@ -27,7 +27,7 @@
 <meta property="og:image:alt" content="IRONING poster by ®Saboteur, featuring Amelia">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="®Saboteur">
-<meta name="twitter:description" content="®Saboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
+<meta name="twitter:description" content="®Saboteur is an experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.">
 <meta name="twitter:image" content="https://saboteur.one/assets/og-amelia.jpg">
 <meta name="twitter:image:alt" content="IRONING poster by ®Saboteur, featuring Amelia">
 <!-- Vercel Web Analytics (enabled in dashboard) -->
@@ -543,7 +543,7 @@
       "@id": "https://saboteur.one/#website",
       "name": "®Saboteur",
       "url": "https://saboteur.one",
-      "description": "Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.",
+      "description": "Experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.",
       "publisher": { "@id": "https://saboteur.one/#studio" }
     },
     {
@@ -552,7 +552,7 @@
       "name": "®Saboteur",
       "email": "store@saboteur.one",
       "url": "https://saboteur.one",
-      "description": "Experimental art studio and publishing imprint. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
+      "description": "Experimental art studio and publishing house. Comics, books, zines, apparel, and original art. Human-crafted. Interested parties for publishing, please inquire. Some work is 18+.",
       "logo": {
         "@type": "ImageObject",
         "url": "https://saboteur.one/assets/logo.svg"
@@ -571,7 +571,7 @@
 <noscript>
   <main style="max-width:42rem;margin:2rem auto;padding:0 1.25rem;font-family:Helvetica,Arial,sans-serif;line-height:1.5">
     <h1>®Saboteur</h1>
-    <p>Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.</p>
+    <p>Experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.</p>
     <ul>
       <li><a href="/photography">Photography</a></li>
       <li><a href="/art">Art</a></li>
@@ -778,11 +778,11 @@ function viewFromPath(pathname, search) {
 
 // Home head values (static index.html), restored on client navigation back to home.
 const HOME_CANONICAL = 'https://saboteur.one/';
-const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
+const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Some work is 18+.';
 // ONE source for nudity (visual check of the Sanity images, 2026-10-21; owner 13:54: every book has nudity except Tesla). It drives BOTH the "18+" label and
 // <meta name="rating" content="adult">: api/_seo.js reads this exact line from index.html, so the two cannot disagree.
 // Keep it on one line of plain JSON. productSlugs = store products; assetIds = posts (asset docs).
-const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts","monika-may-vienna-2026"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4"]};
+const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts","monika-may-vienna-2026"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4","1f73a1c1-af60-45e0-9a08-3c515d97a914"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
 // "18+" label (owner 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
@@ -1063,6 +1063,9 @@ function assetToSeries(asset, index) {
   if (!imageUrl && !videoUrl && galleryUrls[0]) {
     imageUrl = galleryUrls[0];
   }
+  // Video post with its own mainImage and no gallery: the mainImage is the video's poster frame
+  // (shown before playback; detail view gets controls so sound is available). Existing posts unaffected.
+  const posterUrl = (videoUrl && imageUrl && !galleryUrls.length) ? imageUrl : null;
 
   let size = randomSize();
   const dims = asset.mainImage && asset.mainImage.asset && asset.mainImage.asset.metadata && asset.mainImage.asset.metadata.dimensions;
@@ -1092,6 +1095,7 @@ function assetToSeries(asset, index) {
     gallery: Array.from({ length: Math.max(1, galleryUrls.length || 1) }, () => randomSize()),
     imageUrl,
     videoUrl,
+    posterUrl,
     galleryUrls,
   };
 }
@@ -1125,7 +1129,19 @@ function makeSeries(id, opts = {}) {
 const HOME_ITEMS = Array.from({ length: 14 }, (_, i) => makeSeries(i));
 const FIGURE_ITEMS = Array.from({ length: 10 }, (_, i) => makeSeries(i + 20, { hasInfo: i % 2 === 0 }));
 
-function Placeholder({ size, label, imageUrl, videoUrl }) {
+// Accessible name for a post video (QC): public headline + short neutral description from the subhead, never the internal title.
+// "Cut and Paste" + "Mixed media collage, 2026" -> "Cut and Paste, mixed media collage video".
+function postVideoLabel(s) {
+  if (!s) return 'Video';
+  if (s.alt) return s.alt;
+  const kind = String(s.subhead || '').replace(/,?\s*(19|20)\d\d\s*$/, '').trim().toLowerCase().replace(/\s*video$/, '');
+  const head = String(s.headline || '').trim();
+  if (head && kind) return head + ', ' + kind + ' video';
+  if (head) return head + ' video';
+  return kind ? kind.charAt(0).toUpperCase() + kind.slice(1) + ' video' : 'Video';
+}
+
+function Placeholder({ size, label, imageUrl, videoUrl, posterUrl, videoLabel }) {
   if (!imageUrl && !videoUrl) return null;
 
   // Wrapper gives us the static grain + desktop parallax target
@@ -1137,7 +1153,7 @@ function Placeholder({ size, label, imageUrl, videoUrl }) {
 
   if (videoUrl) {
     return wrap(
-      <video src={videoUrl} muted playsInline autoPlay loop
+      <video src={videoUrl} muted playsInline autoPlay loop aria-label={videoLabel || 'Video'} poster={posterUrl ? posterUrl + '?w=900&auto=format' : undefined}
         style={{ width: '100%', height: 'auto', display: 'block', background: 'transparent' }} />
     );
   }
@@ -1735,7 +1751,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             }}
           >
             <div style={{ position: 'relative' }}>
-              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} label={s.alt || s.title || s.headline || s.subhead || ''} />
+              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span
                   style={{
@@ -2124,7 +2140,7 @@ const colBox = {
           color: 'var(--color-ink-55)',
         }}>
           <p style={{ margin: 0 }}>
-            Experimental art studio and publishing imprint. Human-crafted comics, books, zines, apparel, and original art. Not AI-generated. Interested parties for publishing,{' '}
+            Experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Not AI-generated. Interested parties for publishing,{' '}
             <a
               href="/about"
               onClick={(e) => { if (!isPlainLeftClick(e)) return; goContact(e); }}
@@ -2154,16 +2170,16 @@ const colBox = {
 // Home hero taglines, [heading, subline]. Line 1 is the static default: the first render (and SEO/caching) always shows it,
 // then the client swaps in a random line after mount. Add new lines to the end. Plain strings so React escapes the faces.
 const HERO_TAGLINES = [
-  ["Experimental art studio and publishing imprint.", "Human-crafted comics, books, zines, apparel."],
-  ["Experimental art studio and publishing imprint.", "Human-centipeded comics, books, zines, apparel. <( '.')>"],
+  ["Experimental art studio and publishing house.", "Human-crafted comics, books, zines, apparel."],
+  ["Experimental art studio and publishing house.", "Human-centipeded comics, books, zines, apparel. <( '.')>"],
   ["Comics. Books. Zines. Shirts.", "Made by humans. Allegedly."],
   ["NO AI. NO REFUNDS.", "Just comics, books, zines and apparel. Love ya."],
-  ["Welcome back, weirdo.", "We drew you something. <( ' ')^"],
+  ["Welcome back, asshole.", "I drew you something. <( ' ')^"],
   ["Comics your mother warned you about.", "Now in your size."],
-  ["Experimental art studio and publishing imprint.", "Not a cult. Mostly."],
+  ["Experimental art studio and publishing house.", "Not a cult. Mostly."],
   ["SIGNED. NUMBERED. SLIGHTLY UNHINGED.", "Comics, books, zines, apparel."],
   ["Hand-drawn by a real person", "in a real hotel room. 10/10."],
-  ["Publishing imprint.", "Also stickers. Don't ask."],
+  ["Publishing house.", "Also stickers. Don't ask."],
 ];
 const HERO_TAGLINE_KEY = 'sab_hero_tagline';
 function pickHeroTagline() {
@@ -3792,10 +3808,10 @@ function GalleryPanel({ series }) {
 
   const items = [];
   const seen = new Set();
-  const push = (type, src) => {
+  const push = (type, src, poster) => {
     if (!src || seen.has(src)) return;
     seen.add(src);
-    items.push({ type, src });
+    items.push({ type, src, poster: poster || null });
   };
   if (series.galleryUrls && series.galleryUrls.length) {
     series.galleryUrls.forEach((u) => {
@@ -3803,8 +3819,8 @@ function GalleryPanel({ series }) {
       else push('image', u);
     });
   }
-  if (series.imageUrl) push('image', series.imageUrl);
-  if (series.videoUrl) push('video', series.videoUrl);
+  if (series.imageUrl && !series.posterUrl) push('image', series.imageUrl);
+  if (series.videoUrl) push('video', series.videoUrl, series.posterUrl);
   if (!items.length) return null;
 
   const setDims = (src, w, h) => {
@@ -3855,6 +3871,9 @@ function GalleryPanel({ series }) {
                   playsInline
                   autoPlay
                   loop
+                  poster={item.poster || undefined}
+                  controls={!!item.poster}
+                  aria-label={postVideoLabel(series)}
                   style={{ ...style, margin: 0, maxWidth: '100%' }}
                   onLoadedMetadata={(e) => setDims(item.src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
                 />
@@ -4353,7 +4372,7 @@ function labelForView(view) {
   if (view.page === 'home') return 'Home';
   if (view.page === 'store') return 'Store';
   if (view.page === 'product') return (view.product && view.product.title) || 'Product';
-  if (view.page === 'item') return (view.series && (view.series.title || view.series.headline)) || 'Item';
+  if (view.page === 'item') return (view.series && (view.series.headline || view.series.title)) || 'Item';
   if (view.page === 'tag') return 'Tag: ' + (view.tag || '');
   if (view.page === 'info' || view.page === 'contact') return 'About';
   if (view.page === 'checkout') return 'Checkout';

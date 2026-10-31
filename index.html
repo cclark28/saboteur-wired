@@ -4372,7 +4372,7 @@ function labelForView(view) {
   if (view.page === 'home') return 'Home';
   if (view.page === 'store') return 'Store';
   if (view.page === 'product') return (view.product && view.product.title) || 'Product';
-  if (view.page === 'item') return (view.series && (view.series.title || view.series.headline)) || 'Item';
+  if (view.page === 'item') return (view.series && (view.series.headline || view.series.title)) || 'Item';
   if (view.page === 'tag') return 'Tag: ' + (view.tag || '');
   if (view.page === 'info' || view.page === 'contact') return 'About';
   if (view.page === 'checkout') return 'Checkout';

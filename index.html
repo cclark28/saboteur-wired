@@ -1736,7 +1736,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
     }}>
       {items.map((s) => {
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
-        const showSoldOut = s.soldOut && isStoreItem;
+        const showSoldOut = isFlaggedSoldOut(s) && isStoreItem; // guarded: digital downloads never show Sold out
         return (
           <div
             key={s.id}

@@ -82,7 +82,18 @@ const noDash = (s) => String(s == null ? '' : s).replace(/\s*\u2014\s*/g, ', ');
 const esc = (s) => noDash(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const isPhysical = (ft) => ft === 'paid_physical' || ft === 'paid_physical_variant';
 const isComingSoon = (p) => p.comingSoon === true || p.comingSoon === 'true';
+// Same digital check as the SPA's isDigitalDownload (index.html): a digital fulfillment type, a title ending in
+// "(Digital download)", or a Books & Zines item that isn't physical. Digital downloads never sell out (Charlie, 31 Oct).
+const isDigitalDownload = (p) => {
+  if (!p) return false;
+  const ft = p.fulfillmentType;
+  if (ft === 'free_digital' || ft === 'paid_digital') return true;
+  if (isPhysical(ft)) return false;
+  if (/\(digital download\)\s*$/i.test(String(p.title || ''))) return true;
+  return p.category === 'prints-and-books';
+};
 const isSoldOut = (p) => {
+  if (isDigitalDownload(p)) return false; // soldOut flag ignored for digital: no SoldOut schema, no "Sold out." text
   if (p.soldOut === true || p.soldOut === 'true') return true;
   if (p.fulfillmentType === 'paid_physical' && p.stock !== null && p.stock !== undefined && p.stock !== '' && Number(p.stock) === 0) return true;
   if (p.fulfillmentType === 'paid_physical_variant' && Array.isArray(p.variants) && p.variants.length && p.variants.every((v) => Number(v && v.stock) === 0)) return true;

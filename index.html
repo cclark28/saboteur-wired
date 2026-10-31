@@ -2685,60 +2685,72 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               maxWidth: 880,
               alignItems: 'flex-start',
             }}>
-              {imgs.map((src, i) => {
-                // Each image fills the column width; tall portraits stop at 85vh (width follows the aspect ratio read from the Sanity URL, e.g. -1200x1800.jpg).
-                const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(src).split('?')[0]);
-                const ar = dm ? Number(dm[1]) / Number(dm[2]) : 0;
-                return (
-                <div key={i} style={{
-                  width: ar ? `min(100%, calc(85vh * ${ar.toFixed(4)}))` : '100%',
-                  position: 'relative',
-                  lineHeight: 0,
-                }}>
-                  <img
-                    src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
-                    alt={p.title ? `${p.title}${i > 0 ? `, ${i + 1}` : ''}` : ''}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    style={{
-                      width: '100%',
-                      height: 'auto',
-                      aspectRatio: ar ? String(ar) : undefined,
-                      maxHeight: ar ? undefined : '85vh',
-                      display: 'block',
-                      objectFit: 'contain',
-                      objectPosition: 'left top',
-                      background: 'transparent',
-                      borderRadius: '2px',
-                    }}
-                  />
-                  {((comingSoon && i === 0) || soldOnly) ? (
-                    <span
+              {(() => {
+                // Gallery rows (Charlie, 31 Oct 17:17): two portraits in a row sit side by side in two equal columns;
+                // a landscape gets its own full-width row; a leftover single portrait is its own row, left-aligned,
+                // as wide as the column allows up to 85vh tall. Orientation comes from the Sanity asset dimensions in
+                // the image URL (e.g. ...-1200x1800.jpg), so the layout is fixed before images load. Phone: one column.
+                const items = imgs.map((src, i) => {
+                  const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(src).split('?')[0]);
+                  const ar = dm ? Number(dm[1]) / Number(dm[2]) : 0;
+                  return { src, i, ar, portrait: ar > 0 && ar < 1 };
+                });
+                const rows = [];
+                for (let k = 0; k < items.length; k++) {
+                  const a = items[k], b = items[k + 1];
+                  if (!isMobile && a.portrait && b && b.portrait) { rows.push([a, b]); k++; }
+                  else rows.push([a]);
+                }
+                const cell = ({ src, i, ar }, width) => (
+                  <div key={i} style={{ width, position: 'relative', lineHeight: 0, minWidth: 0 }}>
+                    <img
+                      src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
+                      alt={p.title ? `${p.title}${i > 0 ? `, ${i + 1}` : ''}` : ''}
+                      loading={i === 0 ? 'eager' : 'lazy'}
                       style={{
-                        position: 'absolute',
-                        ...(comingSoon ? { bottom: 12 } : { top: 12 }),
-                        right: 12,
-                        fontFamily: 'var(--font-family-mono)',
-                        fontSize: 11,
-                        fontWeight: 500,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        padding: '7px 12px',
-                        borderRadius: 9999,
-                        lineHeight: 1,
-                        whiteSpace: 'nowrap',
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                        zIndex: 2,
-                        background: 'var(--color-accent)',
-                        color: '#18181B',
+                        width: '100%',
+                        height: 'auto',
+                        aspectRatio: ar ? String(ar) : undefined,
+                        maxHeight: ar ? undefined : '85vh',
+                        display: 'block',
+                        objectFit: 'contain',
+                        background: 'transparent',
+                        borderRadius: '2px',
                       }}
-                    >
-                      {comingSoon ? 'Coming soon' : 'Sold out'}
-                    </span>
-                  ) : null}
-                </div>
+                    />
+                    {((comingSoon && i === 0) || soldOnly) ? (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          ...(comingSoon ? { bottom: 12 } : { top: 12 }),
+                          right: 12,
+                          fontFamily: 'var(--font-family-mono)',
+                          fontSize: 11,
+                          fontWeight: 500,
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
+                          padding: '7px 12px',
+                          borderRadius: 9999,
+                          lineHeight: 1,
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                          zIndex: 2,
+                          background: 'var(--color-accent)',
+                          color: '#18181B',
+                        }}
+                      >
+                        {comingSoon ? 'Coming soon' : 'Sold out'}
+                      </span>
+                    ) : null}
+                  </div>
                 );
-              })}
+                return rows.map((row, r) => row.length === 2 ? (
+                  <div key={'r' + r} style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? 20 : 32, alignItems: 'start' }}>
+                    {row.map((it) => cell(it, '100%'))}
+                  </div>
+                ) : cell(row[0], (row[0].portrait) ? `min(100%, calc(85vh * ${row[0].ar.toFixed(4)}))` : '100%'));
+              })()}
             </div>
           )}
         </div>

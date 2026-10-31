@@ -146,11 +146,11 @@ function fitDesc(parts, pads) {
   for (const p of pads) { if (s.length >= 120) break; if ((s + ' ' + p).length <= 155) s += ' ' + p; }
   return s.length > 155 ? clip(s, 155) : s;
 }
-const PADS = ['Sold by ' + BRAND + ', an experimental art studio and publishing house.'];
+const PADS = ['Sold by ' + BRAND + ', an experimental art and publishing house.']; // short enough to fit after a ~90-char lead (155 cap)
 // Hand-written, non-explicit section descriptions (SITE.md: never pull post titles into metadata).
 const SECTION_DESC = {
   art: 'Original drawings, paintings and comic art from ' + BRAND + ', an experimental art studio and publishing house. Pencil, ink and paint.',
-  photography: 'Photography from ' + BRAND + ': portraits, street work and figure studies, from an experimental art studio and publishing house.',
+  photography: 'Photography from ' + BRAND + ', an experimental art studio and publishing house: portraits, street work and figure studies.',
   explorations: 'Experiments in ink, paper animation, video and 3D scanning from ' + BRAND + ', an experimental art studio and publishing house.',
 };
 function details(p) { return p.productDetails || {}; }

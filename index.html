@@ -1129,7 +1129,19 @@ function makeSeries(id, opts = {}) {
 const HOME_ITEMS = Array.from({ length: 14 }, (_, i) => makeSeries(i));
 const FIGURE_ITEMS = Array.from({ length: 10 }, (_, i) => makeSeries(i + 20, { hasInfo: i % 2 === 0 }));
 
-function Placeholder({ size, label, imageUrl, videoUrl, posterUrl }) {
+// Accessible name for a post video (QC): public headline + short neutral description from the subhead, never the internal title.
+// "Cut and Paste" + "Mixed media collage, 2026" -> "Cut and Paste, mixed media collage video".
+function postVideoLabel(s) {
+  if (!s) return 'Video';
+  if (s.alt) return s.alt;
+  const kind = String(s.subhead || '').replace(/,?\s*(19|20)\d\d\s*$/, '').trim().toLowerCase().replace(/\s*video$/, '');
+  const head = String(s.headline || '').trim();
+  if (head && kind) return head + ', ' + kind + ' video';
+  if (head) return head + ' video';
+  return kind ? kind.charAt(0).toUpperCase() + kind.slice(1) + ' video' : 'Video';
+}
+
+function Placeholder({ size, label, imageUrl, videoUrl, posterUrl, videoLabel }) {
   if (!imageUrl && !videoUrl) return null;
 
   // Wrapper gives us the static grain + desktop parallax target
@@ -1141,7 +1153,7 @@ function Placeholder({ size, label, imageUrl, videoUrl, posterUrl }) {
 
   if (videoUrl) {
     return wrap(
-      <video src={videoUrl} muted playsInline autoPlay loop poster={posterUrl ? posterUrl + '?w=900&auto=format' : undefined}
+      <video src={videoUrl} muted playsInline autoPlay loop aria-label={videoLabel || 'Video'} poster={posterUrl ? posterUrl + '?w=900&auto=format' : undefined}
         style={{ width: '100%', height: 'auto', display: 'block', background: 'transparent' }} />
     );
   }
@@ -1739,7 +1751,7 @@ function MasonryGrid({ items, onOpen, dense = false }) {
             }}
           >
             <div style={{ position: 'relative' }}>
-              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} label={s.alt || s.title || s.headline || s.subhead || ''} />
+              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span
                   style={{
@@ -3861,6 +3873,7 @@ function GalleryPanel({ series }) {
                   loop
                   poster={item.poster || undefined}
                   controls={!!item.poster}
+                  aria-label={postVideoLabel(series)}
                   style={{ ...style, margin: 0, maxWidth: '100%' }}
                   onLoadedMetadata={(e) => setDims(item.src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
                 />

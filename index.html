@@ -2515,7 +2515,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                       <span
                         style={{
                           position: 'absolute',
-                          top: 12,
+                          ...(badge === 'Coming soon' ? { bottom: 12 } : { top: 12 }),
                           right: 12,
                           fontFamily: 'var(--font-family-mono)',
                           fontSize: 11,
@@ -2659,14 +2659,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         paddingTop: isMobile ? 88 : 100,
         borderBottom: '1px solid var(--color-stroke)',
       }}>
-        {/* Images, centered like editorial project view, no grey plate */}
+        {/* Images: one left-aligned column; cover top lines up with the info panel (both 40px from the top). Charlie 31 Oct 17:14 */}
         <div style={{
           flex: 1,
           minWidth: 0,
-          padding: isMobile ? '24px 20px 40px' : '32px clamp(24px,5vw,64px) 64px',
+          padding: isMobile ? '24px 20px 40px' : '40px clamp(24px,5vw,64px) 64px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'flex-start',
         }}>
           {imgs.length === 0 ? (
             <div style={{
@@ -2680,18 +2680,20 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 'clamp(24px, 2.8vw, 32px)',
+              gap: isMobile ? 20 : 32,
               width: '100%',
-              maxWidth: 560,
-              alignItems: 'center',
+              maxWidth: 880,
+              alignItems: 'flex-start',
             }}>
-              {imgs.map((src, i) => (
+              {imgs.map((src, i) => {
+                // Each image fills the column width; tall portraits stop at 85vh (width follows the aspect ratio read from the Sanity URL, e.g. -1200x1800.jpg).
+                const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(src).split('?')[0]);
+                const ar = dm ? Number(dm[1]) / Number(dm[2]) : 0;
+                return (
                 <div key={i} style={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
+                  width: ar ? `min(100%, calc(85vh * ${ar.toFixed(4)}))` : '100%',
                   position: 'relative',
-                  maxWidth: 'min(100%, 420px)',
+                  lineHeight: 0,
                 }}>
                   <img
                     src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
@@ -2699,10 +2701,12 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     loading={i === 0 ? 'eager' : 'lazy'}
                     style={{
                       width: '100%',
-                      maxHeight: '72vh',
                       height: 'auto',
+                      aspectRatio: ar ? String(ar) : undefined,
+                      maxHeight: ar ? undefined : '85vh',
                       display: 'block',
                       objectFit: 'contain',
+                      objectPosition: 'left top',
                       background: 'transparent',
                       borderRadius: '2px',
                     }}
@@ -2711,7 +2715,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     <span
                       style={{
                         position: 'absolute',
-                        top: 12,
+                        ...(comingSoon ? { bottom: 12 } : { top: 12 }),
                         right: 12,
                         fontFamily: 'var(--font-family-mono)',
                         fontSize: 11,
@@ -2733,7 +2737,8 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     </span>
                   ) : null}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -3023,7 +3028,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     ) : null}
                     {rpBadge ? (
                       <span style={{
-                        position: 'absolute', top: 10, right: 10,
+                        position: 'absolute', ...(rpSoon ? { bottom: 10 } : { top: 10 }), right: 10,
                         fontFamily: 'var(--font-family-mono)', fontSize: 10, fontWeight: 500,
                         letterSpacing: '0.04em', textTransform: 'uppercase',
                         padding: '6px 10px', borderRadius: 9999, lineHeight: 1,

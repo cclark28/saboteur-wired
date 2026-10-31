@@ -272,7 +272,7 @@ function productLd(p, settings) {
   const pages = pagesOf(p);
   if (p.category === 'prints-and-books' || (p.category === 'comics' && !isPhysical(p.fulfillmentType))) {
     types.push('Book');
-    ld.author = { '@id': SITE + '/#charlie' };
+    ld.author = { '@id': SITE + '/#studio' };
     ld.publisher = { '@id': SITE + '/#studio' };
     ld.bookFormat = isPhysical(p.fulfillmentType) ? 'https://schema.org/Paperback' : 'https://schema.org/EBook';
     if (pages) ld.numberOfPages = pages;
@@ -281,7 +281,7 @@ function productLd(p, settings) {
     types.push('ComicIssue');
     const m = /#\s*(\d+)/.exec(p.title || '');
     if (m) ld.issueNumber = Number(m[1]);
-    ld.author = { '@id': SITE + '/#charlie' };
+    ld.author = { '@id': SITE + '/#studio' };
     ld.publisher = { '@id': SITE + '/#studio' };
     if (isTommys(p)) ld.isPartOf = { '@type': 'ComicSeries', name: "Tommy's", publisher: { '@id': SITE + '/#studio' } };
   } else if (p.category === 'original-art') {

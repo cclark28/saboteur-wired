@@ -2319,6 +2319,22 @@ function isPhysicalFulfillment(ft) {
   return ft === 'paid_physical' || ft === 'paid_physical_variant';
 }
 
+/** Digital downloads never sell out (Charlie, 31 Oct): a digital fulfillment type, a title ending in "(Digital download)",
+ *  or a Books & Zines item that isn't physical. Their soldOut flag is ignored everywhere in the store. */
+function isDigitalDownload(p) {
+  if (!p) return false;
+  const ft = p.fulfillmentType;
+  if (ft === 'free_digital' || ft === 'paid_digital') return true;
+  if (isPhysicalFulfillment(ft)) return false;
+  if (/\(digital download\)\s*$/i.test(String(p.title || ''))) return true;
+  return p.category === 'prints-and-books';
+}
+
+/** soldOut flag that counts: physical (and other non-digital) items only. */
+function isFlaggedSoldOut(p) {
+  return !!p && (p.soldOut === true || p.soldOut === 'true') && !isDigitalDownload(p);
+}
+
 // Auto-pause at local midnight Indianapolis on Aug 19, 2026.
 // Sanity switch: false = pause now; true = selling (also the way to resume after the trip); unset = follow this date.
 const PHYSICAL_PAUSE_START_MS = Date.parse('2026-08-19T00:00:00-04:00');
@@ -2344,7 +2360,7 @@ function isComingSoon(p) {
 function isProductUnavailable(p, physicalOrdersEnabled) {
   if (!p) return true;
   if (isComingSoon(p)) return true;
-  if (p.soldOut === true || p.soldOut === 'true') return true;
+  if (isFlaggedSoldOut(p)) return true;
   if (isPhysicalFulfillment(p.fulfillmentType)) {
     if (!arePhysicalOrdersLive(physicalOrdersEnabled)) return true;
     if (p.fulfillmentType === 'paid_physical' && Number(p.stock) === 0 && p.stock !== null && p.stock !== undefined && p.stock !== '') return true;
@@ -2515,7 +2531,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                       <span
                         style={{
                           position: 'absolute',
-                          top: 12,
+                          ...(badge === 'Coming soon' ? { bottom: 12 } : { top: 12 }),
                           right: 12,
                           fontFamily: 'var(--font-family-mono)',
                           fontSize: 11,
@@ -2659,14 +2675,14 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         paddingTop: isMobile ? 88 : 100,
         borderBottom: '1px solid var(--color-stroke)',
       }}>
-        {/* Images, centered like editorial project view, no grey plate */}
+        {/* Images: one left-aligned column; cover top lines up with the info panel (both 40px from the top). Charlie 31 Oct 17:14 */}
         <div style={{
           flex: 1,
           minWidth: 0,
-          padding: isMobile ? '24px 20px 40px' : '32px clamp(24px,5vw,64px) 64px',
+          padding: isMobile ? '24px 20px 40px' : '40px clamp(24px,5vw,64px) 64px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'flex-start',
         }}>
           {imgs.length === 0 ? (
             <div style={{
@@ -2680,60 +2696,77 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 'clamp(24px, 2.8vw, 32px)',
+              gap: isMobile ? 20 : 32,
               width: '100%',
-              maxWidth: 560,
-              alignItems: 'center',
+              maxWidth: 880,
+              alignItems: 'flex-start',
             }}>
-              {imgs.map((src, i) => (
-                <div key={i} style={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  maxWidth: 'min(100%, 420px)',
-                }}>
-                  <img
-                    src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
-                    alt={p.title ? `${p.title}${i > 0 ? `, ${i + 1}` : ''}` : ''}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    style={{
-                      width: '100%',
-                      maxHeight: '72vh',
-                      height: 'auto',
-                      display: 'block',
-                      objectFit: 'contain',
-                      background: 'transparent',
-                      borderRadius: '2px',
-                    }}
-                  />
-                  {((comingSoon && i === 0) || soldOnly) ? (
-                    <span
+              {(() => {
+                // Gallery rows (Charlie, 31 Oct 17:17): two portraits in a row sit side by side (widths follow their aspect ratios so both are the same height);
+                // a landscape gets its own full-width row; a lone portrait (single-image product or leftover) fills the full
+                // column width with no height cap (Charlie, 31 Oct 17:56). Orientation comes from the Sanity asset dimensions in
+                // the image URL (e.g. ...-1200x1800.jpg), so the layout is fixed before images load. Phone: one column.
+                const items = imgs.map((src, i) => {
+                  const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(src).split('?')[0]);
+                  const ar = dm ? Number(dm[1]) / Number(dm[2]) : 0;
+                  return { src, i, ar, portrait: ar > 0 && ar < 1 };
+                });
+                const rows = [];
+                for (let k = 0; k < items.length; k++) {
+                  const a = items[k], b = items[k + 1];
+                  if (!isMobile && a.portrait && b && b.portrait) { rows.push([a, b]); k++; }
+                  else rows.push([a]);
+                }
+                const cell = ({ src, i, ar }, width, flex) => (
+                  <div key={i} style={{ width, flex, position: 'relative', lineHeight: 0, minWidth: 0 }}>
+                    <img
+                      src={src + (src.includes('cdn.sanity.io') ? '?w=1200&auto=format' : '')}
+                      alt={p.title ? `${p.title}${i > 0 ? `, ${i + 1}` : ''}` : ''}
+                      loading={i === 0 ? 'eager' : 'lazy'}
                       style={{
-                        position: 'absolute',
-                        top: 12,
-                        right: 12,
-                        fontFamily: 'var(--font-family-mono)',
-                        fontSize: 11,
-                        fontWeight: 500,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        padding: '7px 12px',
-                        borderRadius: 9999,
-                        lineHeight: 1,
-                        whiteSpace: 'nowrap',
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                        zIndex: 2,
-                        background: 'var(--color-accent)',
-                        color: '#18181B',
+                        width: '100%',
+                        height: 'auto',
+                        aspectRatio: ar ? String(ar) : undefined,
+                        display: 'block',
+                        objectFit: 'contain',
+                        background: 'transparent',
+                        borderRadius: '2px',
                       }}
-                    >
-                      {comingSoon ? 'Coming soon' : 'Sold out'}
-                    </span>
-                  ) : null}
-                </div>
-              ))}
+                    />
+                    {((comingSoon && i === 0) || soldOnly) ? (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          ...(comingSoon ? { bottom: 12 } : { top: 12 }),
+                          right: 12,
+                          fontFamily: 'var(--font-family-mono)',
+                          fontSize: 11,
+                          fontWeight: 500,
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
+                          padding: '7px 12px',
+                          borderRadius: 9999,
+                          lineHeight: 1,
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                          zIndex: 2,
+                          background: 'var(--color-accent)',
+                          color: '#18181B',
+                        }}
+                      >
+                        {comingSoon ? 'Coming soon' : 'Sold out'}
+                      </span>
+                    ) : null}
+                  </div>
+                );
+                return rows.map((row, r) => row.length === 2 ? (
+                  // Pair widths follow each photo's aspect ratio so both share one height: top and bottom edges line up, no cropping.
+                  <div key={'r' + r} style={{ width: '100%', display: 'flex', gap: isMobile ? 20 : 32, alignItems: 'flex-start' }}>
+                    {row.map((it) => cell(it, undefined, `${it.ar.toFixed(4)} 1 0`))}
+                  </div>
+                ) : cell(row[0], '100%'));
+              })()}
             </div>
           )}
         </div>
@@ -3023,7 +3056,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     ) : null}
                     {rpBadge ? (
                       <span style={{
-                        position: 'absolute', top: 10, right: 10,
+                        position: 'absolute', ...(rpSoon ? { bottom: 10 } : { top: 10 }), right: 10,
                         fontFamily: 'var(--font-family-mono)', fontSize: 10, fontWeight: 500,
                         letterSpacing: '0.04em', textTransform: 'uppercase',
                         padding: '6px 10px', borderRadius: 9999, lineHeight: 1,
@@ -5326,7 +5359,7 @@ function App() {
       const next = (prev || []).filter((line) => {
         const match = products.find((p) => p && line && p._id === line.productId);
         if (!match) return true;
-        return !isComingSoon(match) && match.soldOut !== true && match.soldOut !== 'true';
+        return !isComingSoon(match) && !isFlaggedSoldOut(match);
       });
       if (next.length === (prev || []).length) return prev;
       try { localStorage.setItem('saboteur-cart', JSON.stringify(next)); } catch (e) {}

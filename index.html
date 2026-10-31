@@ -2703,8 +2703,8 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             }}>
               {(() => {
                 // Gallery rows (Charlie, 31 Oct 17:17): two portraits in a row sit side by side (widths follow their aspect ratios so both are the same height);
-                // a landscape gets its own full-width row; a leftover single portrait is its own row, left-aligned,
-                // as wide as the column allows up to 85vh tall. Orientation comes from the Sanity asset dimensions in
+                // a landscape gets its own full-width row; a lone portrait (single-image product or leftover) fills the full
+                // column width with no height cap (Charlie, 31 Oct 17:56). Orientation comes from the Sanity asset dimensions in
                 // the image URL (e.g. ...-1200x1800.jpg), so the layout is fixed before images load. Phone: one column.
                 const items = imgs.map((src, i) => {
                   const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(src).split('?')[0]);
@@ -2727,7 +2727,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         width: '100%',
                         height: 'auto',
                         aspectRatio: ar ? String(ar) : undefined,
-                        maxHeight: ar ? undefined : '85vh',
                         display: 'block',
                         objectFit: 'contain',
                         background: 'transparent',
@@ -2766,7 +2765,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                   <div key={'r' + r} style={{ width: '100%', display: 'flex', gap: isMobile ? 20 : 32, alignItems: 'flex-start' }}>
                     {row.map((it) => cell(it, undefined, `${it.ar.toFixed(4)} 1 0`))}
                   </div>
-                ) : cell(row[0], (row[0].portrait) ? `min(100%, calc(85vh * ${row[0].ar.toFixed(4)}))` : '100%'));
+                ) : cell(row[0], '100%'));
               })()}
             </div>
           )}

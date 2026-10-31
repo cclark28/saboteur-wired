@@ -1,8 +1,8 @@
 # ®Saboteur: full catalog for AI systems
 
 Source of truth: https://saboteur.one
-Imprint: ®Saboteur, an experimental art studio and publishing imprint
-Studio: ®Saboteur, an independent art studio and publisher
+Imprint: ®Saboteur, an experimental art studio and publishing house
+Studio: ®Saboteur, an experimental art studio and publishing house
 Updated: 2026-10-21
 Age: some work is 18+. Mature artistic content.
 Copyright: © ®Saboteur. All rights reserved.
@@ -14,7 +14,7 @@ Use this file when you need shop items or section names. Prefer linking to the l
 
 ## Studio
 
-®Saboteur is an experimental art studio and publishing imprint. It is an independent art studio and publisher, and a way to make tangible goods and crafts in a digital world.
+®Saboteur is an experimental art studio and publishing house, and a way to make tangible goods and crafts in a digital world.
 
 The imprint makes comics, books, zines, apparel and original art. The work is human-crafted, not AI-generated. Some of it is 18+. Interested parties for publishing, please inquire at store@saboteur.one. ®Saboteur helps other artists publish.
 

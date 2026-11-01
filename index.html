@@ -343,6 +343,25 @@
     display: block;
     width: 100%;
   }
+  /* Grid frames: floating 1px light-grey dividers only BETWEEN items, centred in the gutter. Every cell draws a
+     vertical line on its left edge and a horizontal line on its top edge, each stopping --frame-gap short of both ends
+     so lines never touch or meet. clip-path hides the first column's left lines and the first row's (or each masonry
+     column's first item's) top lines, which sit in the container's first 1px, so there is no outer frame. Negative
+     margin cancels the outer cell padding so images stay aligned with the page edges.
+     .grid-frame-media clips the media so desktop parallax moves the image inside a fixed box and never into the
+     padding or under a divider. The box takes its aspect-ratio from the Sanity asset dimensions before the image loads
+     (is-sized), so it never collapses to 0 and lazy-loading fires. Inside grids the parallax travel is clamped to
+     +-8px and the image is scaled only by what the current travel needs, so the box stays filled with the smallest crop. */
+  .grid-frame { --frame-line: #D9D9D9; --frame-pad: 12px; --frame-gap: 10px; margin: calc(-1 * var(--frame-pad)); clip-path: inset(1px 0 0 1px); }
+  [data-theme="dark"] .grid-frame { --frame-line: #34343A; }
+  .grid-frame-cell { position: relative; padding: var(--frame-pad); }
+  .grid-frame-cell::before, .grid-frame-cell::after { content: ''; position: absolute; background: var(--frame-line); pointer-events: none; }
+  .grid-frame-cell::before { left: 0; top: var(--frame-gap); bottom: var(--frame-gap); width: 1px; }
+  .grid-frame-cell::after { top: 0; left: var(--frame-gap); right: var(--frame-gap); height: 1px; }
+  @media (max-width: 699px) { .grid-frame { --frame-pad: 8px; --frame-gap: 8px; } }
+  .grid-frame-media { position: relative; overflow: hidden; }
+  .grid-frame-media.is-sized > .photo-wrap { height: 100%; }
+  .grid-frame-media.is-sized > .photo-wrap > img, .grid-frame-media.is-sized > .photo-wrap > video { height: 100% !important; object-fit: cover; }
   .photo-wrap img,
   .photo-wrap video {
     display: block;
@@ -1718,6 +1737,12 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
   );
 }
 
+// "w / h" from a Sanity CDN image URL (asset files are named <hash>-<w>x<h>.<ext>), or null when unknown.
+function sanityImageRatio(url) {
+  const m = /cdn\.sanity\.io\/images\/[^?#]*-(\d+)x(\d+)\.[a-z0-9]+(?:[?#]|$)/i.exec(String(url || ''));
+  return m && +m[1] > 0 && +m[2] > 0 ? m[1] + ' / ' + m[2] : null;
+}
+
 function MasonryGrid({ items, onOpen, dense = false }) {
   const isMobile = useIsMobile(700);
   const columns = isMobile
@@ -1731,26 +1756,25 @@ function MasonryGrid({ items, onOpen, dense = false }) {
   const gap = 'clamp(24px, 2.8vw, 32px)';
 
   return (
-    <div style={{
+    <div className="grid-frame" style={{
       columns,
-      columnGap: gap,
-      marginBottom: 'calc(-1 * clamp(24px, 2.8vw, 32px))',
+      columnGap: 0,
     }}>
       {items.map((s) => {
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
         const showSoldOut = isFlaggedSoldOut(s) && isStoreItem; // guarded: digital downloads never show Sold out
+        const mr = sanityImageRatio(s.videoUrl ? s.posterUrl : s.imageUrl);
         return (
           <div
             key={s.id}
+            className="grid-frame-cell"
             onClick={() => onOpen(s)}
             style={{
               breakInside: 'avoid',
-              marginBottom: gap,
               cursor: 'pointer',
-              overflow: 'hidden',
             }}
           >
-            <div style={{ position: 'relative' }}>
+            <div className={'grid-frame-media' + (mr ? ' is-sized' : '')} style={mr ? { aspectRatio: mr } : undefined}>
               <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span
@@ -2493,10 +2517,10 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             </p>
           </div>
         ) : (
-          <div style={{
+          <div className="grid-frame" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
-            gap: '48px 32px',
+            gap: 0,
           }}>
             {list.map((p) => {
               const img = productImageUrl(p);
@@ -2510,10 +2534,11 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               return (
                 <a
                   key={p._id || p.slug}
+                  className="grid-frame-cell"
                   href={'/store/' + encodeURIComponent(String(p.slug || ''))}
                   onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(p); }}
                   style={{
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                     display: 'flex', flexDirection: 'column', gap: 16, textDecoration: 'none', color: 'inherit',
                   }}
                 >
@@ -6015,8 +6040,13 @@ function App() {
         if (rect.bottom < -100 || rect.top > vh + 100) return;
         const center = rect.top + rect.height / 2;
         const offset = (center - vh / 2) / vh; // -0.5 … 0.5 roughly
-        const move = Math.max(-12, Math.min(12, offset * -18)); // max ±12px, approved subtle parallax
-        el.style.transform = `translate3d(0, ${move.toFixed(1)}px, 0)`;
+        const inGrid = !!el.closest('.grid-frame');
+        const lim = inGrid ? 8 : 12; // grids: +-8px inside the clipped media box; detail views keep the approved +-12px
+        const move = Math.max(-lim, Math.min(lim, offset * -18));
+        // In grids, scale just enough that the moved image still covers its box (no blank strip, crop <= 2*|move|).
+        const h = el.offsetHeight;
+        const sc = inGrid && h > 0 ? 1 + (2 * Math.abs(move)) / h : 1;
+        el.style.transform = `translate3d(0, ${move.toFixed(1)}px, 0)` + (sc > 1 ? ` scale(${sc.toFixed(4)})` : '');
 
 
       });

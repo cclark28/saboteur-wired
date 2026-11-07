@@ -1914,7 +1914,7 @@ const CLOCK_BLOCK_HEIGHT = 78;
 function ClockBlock({ label, clock, local }) {
   const line = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
   return (
-    <div data-clock-block title={label} style={{ boxSizing: 'border-box', width: '100%', height: CLOCK_BLOCK_HEIGHT, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-card)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', overflow: 'hidden' }}>
+    <div data-clock-block title={label} style={{ boxSizing: 'border-box', width: '100%', height: CLOCK_BLOCK_HEIGHT, display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-card)', border: '1px solid var(--color-stroke)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', overflow: 'hidden' }}>
       <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-ink-55)', marginBottom: 4, lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflowWrap: 'anywhere' }}>{label}</div>
       <div style={Object.assign({ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', fontWeight: local ? 500 : 400, color: 'var(--color-ink)', lineHeight: 1.5 }, line)}>{clock}</div>
     </div>
@@ -2050,11 +2050,13 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
 const colBox = {
     display: 'flex',
     flexDirection: 'column',
-    padding: '0 24px 28px',
-    borderLeft: '1px solid var(--color-stroke)',
+    padding: 24,
     boxSizing: 'border-box',
     minHeight: '100%',
+    background: 'var(--color-paper)',
   };
+  const hoverOn = (e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; };
+  const hoverOff = (e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; };
 
   return (
     <footer style={{ marginTop: 80, background: 'var(--color-paper)' }}>
@@ -2081,18 +2083,19 @@ const colBox = {
         </div>
       ) : null}
 
-      <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px', borderTop: marquee ? 'none' : '1px solid var(--color-stroke)' }}>
-       {/* Brand + 4 footer columns on one row from 1000px up (owner 14:53 mockup; was 6 at QC 14:45). Below that the auto-fit 200px grid is unchanged. */}
-       <style>{'@media (min-width: 1000px){[data-footer-grid]{grid-template-columns:repeat(5,minmax(0,1fr))!important}}'}</style>
-       <div data-footer-grid style={{
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-  gap: 0,
-  maxWidth: 1200,
-  margin: '0 auto',
-  alignItems: 'stretch',
-}}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingRight: 24, minHeight: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: '48px clamp(16px, 4vw, 48px) 40px' }}>
+       {/* Bordered footer grid (owner 7 Nov mockup): every block sits in 1px stroke lines like the rest of the site.
+           Lines come from a 1px grid gap over the stroke colour, so no line is ever doubled.
+           Brand + 4 columns from 1000px, 2 columns from 601px (brand full width), 1 column on phones with SFX/Textures side by side. */}
+       <style>{'[data-footer-grid]{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;background:var(--color-stroke);border:1px solid var(--color-stroke);max-width:1200px;margin:0 auto}'
+         + '[data-footer-grid]>*{background:var(--color-paper)}'
+         + '[data-footer-res]{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:1px;background:var(--color-stroke)!important;padding:0}'
+         + '[data-footer-res]>div{background:var(--color-paper);padding:24px}'
+         + '[data-footer-bottom]{grid-column:1/-1}'
+         + '@media (min-width: 601px){[data-footer-grid]{grid-template-columns:repeat(2,minmax(0,1fr))}[data-footer-brand]{grid-column:1/-1}}'
+         + '@media (min-width: 1000px){[data-footer-grid]{grid-template-columns:repeat(5,minmax(0,1fr))}[data-footer-brand]{grid-column:auto}[data-footer-res]{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}'}</style>
+       <div data-footer-grid>
+          <div data-footer-brand style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: 24, minHeight: '100%', boxSizing: 'border-box' }}>
             <div style={{ marginBottom: 12 }}>
               <Logo size={72} onClick={goHome} />
             </div>
@@ -2103,29 +2106,29 @@ const colBox = {
           <div style={colBox}>
             <div style={colLabel}>Contact</div>
             <a href="/about" onClick={(e) => { if (!isPlainLeftClick(e)) return; goContact(e); }} style={linkStyle}
-              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+              onMouseEnter={hoverOn} onMouseLeave={hoverOff}
             >Contact</a>
             {socials.filter((s) => String((s && s.label) || '').toLowerCase() !== 'sfx').map((s, i) => (
               <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={linkStyle}
-                onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
               >{s.label}</a>
             ))}
           </div>
 
-          <div style={colBox}>
-            <div style={colLabel}>SFX</div>
-            <a href="https://pixabay.com/users/saboteurcomics-52281254/" target="_blank" rel="noopener noreferrer" style={linkStyle}
-              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-            >Pixabay</a>
-            {/* Owner 14:53 mockup: Textures stacks under SFX in one column (brand + 4 columns). */}
-            <div style={Object.assign({}, colLabel, { marginTop: 28 })}>Textures</div>
-            <a href="https://saboteurcomics.gumroad.com/" target="_blank" rel="noopener noreferrer" style={linkStyle}
-              onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-              onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
-            >Gumroad</a>
+          {/* SFX and Textures stack as two bordered cells in one column (side by side on phones). */}
+          <div data-footer-res style={{ minHeight: '100%', boxSizing: 'border-box' }}>
+            <div>
+              <div style={colLabel}>SFX</div>
+              <a href="https://pixabay.com/users/saboteurcomics-52281254/" target="_blank" rel="noopener noreferrer" style={linkStyle}
+                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+              >Pixabay</a>
+            </div>
+            <div>
+              <div style={colLabel}>Textures</div>
+              <a href="https://saboteurcomics.gumroad.com/" target="_blank" rel="noopener noreferrer" style={linkStyle}
+                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+              >Gumroad</a>
+            </div>
           </div>
 
           <div style={colBox}>
@@ -2133,13 +2136,12 @@ const colBox = {
             {displayMap.map((item, i) => (
               <a key={i} href={hrefForMapItem(item)} data-footer-link={item.linkType === 'policies' ? 'policies' : undefined}
                 onClick={(e) => { if (!isPlainLeftClick(e)) return; if (item.linkType === 'external' || item.linkType === 'url') return; e.preventDefault(); onMapClick(item); }} style={linkStyle}
-                onMouseEnter={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-link)'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget; if (el) el.style.color = 'var(--color-ink)'; }}
+                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
               >{item.label}</a>
             ))}
           </div>
 
-          <div style={Object.assign({}, colBox, { paddingRight: 0 })}>
+          <div style={colBox}>
             <div style={colLabel}>Local time</div>
             {/* Owner 14:37: every clock block (local + upcoming) is the same size. Equal widths via a
                 one-column grid, fixed height, long city names truncate with the full name in the title. */}
@@ -2152,17 +2154,14 @@ const colBox = {
                 : nextLocation ? <ClockBlock label={'Upcoming: ' + nextLocation} clock={nextStr} /> : null}
             </div>
           </div>
-        </div>
-        <div style={{
-          maxWidth: 1200,
-          margin: '20px auto 0',
-          paddingTop: 12,
-          borderTop: '1px solid var(--color-stroke)',
-          fontFamily: 'var(--font-family-mono)',
-          fontSize: '10px',
-          lineHeight: 1.5,
-          color: 'var(--color-ink-55)',
-        }}>
+
+          <div data-footer-bottom style={{
+            padding: '16px 24px',
+            fontFamily: 'var(--font-family-mono)',
+            fontSize: '10px',
+            lineHeight: 1.5,
+            color: 'var(--color-ink-55)',
+          }}>
           <p style={{ margin: 0 }}>
             Experimental art studio and publishing house. Human-crafted comics, books, zines, apparel, and original art. Not AI-generated. Interested parties for publishing,{' '}
             <a
@@ -2181,6 +2180,7 @@ const colBox = {
               }}
             >please inquire</a>.
           </p>
+          </div>
         </div>
       </div>
     </footer>

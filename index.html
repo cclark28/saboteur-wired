@@ -306,6 +306,45 @@
     outline-offset: 2px;
   }
 
+
+  /* Phone header: keep cart + menu inside 375–430px viewports. Desktop unchanged. */
+  [data-topbar] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+  @media (max-width: 640px) {
+    html, body { overflow-x: hidden; }
+    [data-topbar] {
+      padding-left: calc(12px + env(safe-area-inset-left, 0px)) !important;
+      padding-right: calc(12px + env(safe-area-inset-right, 0px)) !important;
+    }
+    [data-topbar-brand] {
+      min-width: 0;
+      gap: 8px !important;
+    }
+    [data-topbar-brand] img[alt="®Saboteur"] {
+      width: 56px !important;
+    }
+    /* First paint can still show the desktop wordmark; CSS keeps the icon only. */
+    .js-comics-lockup > span { display: none !important; }
+    .js-comics-lockup { gap: 0 !important; }
+    [data-topbar-actions] {
+      gap: 0 !important;
+      flex-shrink: 0;
+    }
+    [data-topbar] .icon-btn {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    [data-topbar-back] {
+      padding: 8px !important;
+      gap: 0 !important;
+    }
+    [data-topbar-back-label] { display: none; }
+  }
+
+
   @media (prefers-reduced-motion: reduce) {
     [style*="footerMarquee"] { animation: none !important; }
     *, *::before, *::after {
@@ -577,7 +616,7 @@
         "url": "https://saboteur.one/assets/logo.svg"
       },
       "sameAs": [
-        "https://www.instagram.com/saboteur.supply/",
+        "https://www.instagram.com/saboteur.psd/",
         "https://x.com/saboteurcomics"
       ]
     }
@@ -1290,7 +1329,7 @@ function goHeaderStoreComics() {
 
 function SaboteurComicsLogo({ onClick, height = 40 }) {
   const [pressed, setPressed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)');
     const update = () => setIsMobile(mq.matches);
@@ -1386,23 +1425,24 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
   if (hidden) return null;
 
   return (
-    <div style={{
+    <div data-topbar style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      boxSizing: 'border-box', width: '100%', maxWidth: '100%',
     padding: 'calc(16px + env(safe-area-inset-top, 0px)) calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px)) 16px calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-left, 0px))',
       background: scrolled ? 'var(--color-paper)' : 'transparent',
       borderBottom: scrolled ? '1px solid var(--color-stroke)' : '1px solid transparent',
       transition: 'background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
         {(scrolled || !hero) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(24px, 2.8vw, 36px)', opacity: (!hero || scrolled) ? 1 : 0, transition: 'opacity var(--duration-fast) var(--ease)' }}>
+          <div data-topbar-brand style={{ display: 'flex', alignItems: 'center', gap: 'clamp(24px, 2.8vw, 36px)', opacity: (!hero || scrolled) ? 1 : 0, transition: 'opacity var(--duration-fast) var(--ease)', minWidth: 0 }}>
             <Logo size={100} onClick={onHome} />
             <SaboteurComicsLogo height={48} />
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div data-topbar-actions style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         {/* Search pill + results, own relative wrapper so dropdown aligns under the pill only.
             RULE: no drop shadow on search, border only when open, pure icon when closed. */}
         <div style={{ position: 'relative' }}>
@@ -1487,8 +1527,8 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
           )}
         </div>
         {showBack && (
-          <button onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'} style={{ background: 'var(--back-btn-bg, var(--color-ink))', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', transition: 'background var(--duration-fast) var(--ease)' }}>
-            <img src="/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> Back
+          <button data-topbar-back aria-label="Back" onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'} style={{ background: 'var(--back-btn-bg, var(--color-ink))', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', transition: 'background var(--duration-fast) var(--ease)' }}>
+            <img src="/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> <span data-topbar-back-label>Back</span>
           </button>
         )}
         <button aria-label="Toggle dark mode" className="icon-btn" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>
@@ -1935,8 +1975,8 @@ function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const { current, upcoming, upcomingAll } = resolveItinerary(cmsItinerary.length ? cmsItinerary : DEFAULT_ITINERARY, time);
   const localLabel = (current && (current.label || current.city)) || f.localLabel || 'Indianapolis, Indiana';
   const localTimezone = (current && current.timezone) || f.localTimezone || 'America/Indiana/Indianapolis';
-  const nextLocation = (upcoming && (upcoming.city || upcoming.label)) || f.nextLocation || '';
-  const nextTimezone = (upcoming && upcoming.timezone) || f.nextTimezone || '';
+  const nextLocation = (upcoming && (upcoming.city || upcoming.label)) || (cmsItinerary.length ? '' : (f.nextLocation || ''));
+  const nextTimezone = (upcoming && upcoming.timezone) || (cmsItinerary.length ? '' : (f.nextTimezone || ''));
   const siteMap = Array.isArray(f.siteMapLinks) ? f.siteMapLinks : [];
   const socials = Array.isArray(f.socialLinks) ? f.socialLinks : [];
   const marquee = (f.marqueeText || '').trim();

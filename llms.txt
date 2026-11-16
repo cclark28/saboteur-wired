@@ -16,7 +16,7 @@ This file is the short map for AI systems. A longer catalog is at /llms-full.txt
 - Studio: ®Saboteur, an experimental art studio and publishing house
 - Work: graphic art, comic book art, photography
 - Email: store@saboteur.one
-- Instagram: https://www.instagram.com/saboteur.supply/
+- Instagram: https://www.instagram.com/saboteur.psd/
 - X: https://x.com/saboteurcomics
 - Age: some work is 18+. Mature artistic content.
 - Copyright: © ®Saboteur. All rights reserved.

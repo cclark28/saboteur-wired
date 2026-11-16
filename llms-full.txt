@@ -2,7 +2,7 @@
 
 Source of truth: https://saboteur.one
 Studio: ®Saboteur, an experimental art studio and publishing house
-Updated: 2026-10-21
+Updated: 2026-11-16
 Age: some work is 18+. Mature artistic content.
 Copyright: © ®Saboteur. All rights reserved.
 
@@ -37,11 +37,11 @@ Process, motion, paper and 3D experiments.
 
 ### Store: https://saboteur.one/store
 
-Physical shipping is paused for now; digital downloads are available. Prices in USD.
+Physical items ship within the U.S. Digital downloads are also available. Prices in USD.
 
 #### Comics: https://saboteur.one/store/comics
-- Tommy's Issue #1: https://saboteur.one/store/tommys-issue-1 (physical, $16, physical shipping paused for now)
-- Tommy's Issue #1 Behind the scenes: https://saboteur.one/store/tommys-issue-1-bts (digital download, $2)
+- Tommy's Issue #1: https://saboteur.one/store/tommys-issue-1 (physical, $12)
+- Tommy's Issue #1 Behind the scenes: https://saboteur.one/store/tommys-issue-1-bts (digital download, $1)
 
 #### Books & Zines (digital photo books, 18+): https://saboteur.one/store/books
 - Kika, Kraków 2026: https://saboteur.one/store/kika-krakow-2026 (coming soon)
@@ -67,10 +67,10 @@ Physical shipping is paused for now; digital downloads are available. Prices in 
 - Plastic Overlay: https://saboteur.one/store/plastic-overlay (free digital download)
 
 #### Original art: https://saboteur.one/store/original-art
-- Tommy's Cover: https://saboteur.one/store/tommy-s-cover (physical, $250, physical shipping paused for now)
-- Pinup - Issue #2 Tommy's: https://saboteur.one/store/pinup-issue-2-tommy-s (physical, $100, physical shipping paused for now)
-- Barbarian Gal: https://saboteur.one/store/barbarian-gal (physical, $50, physical shipping paused for now)
-- Dracula the Impaler: https://saboteur.one/store/dracula-the-impaler (physical, $100, physical shipping paused for now)
+- Tommy's Cover: https://saboteur.one/store/tommy-s-cover (physical, $250)
+- Pinup - Issue #2 Tommy's: https://saboteur.one/store/pinup-issue-2-tommy-s (physical, $100)
+- Barbarian Gal: https://saboteur.one/store/barbarian-gal (physical, $50)
+- Dracula the Impaler: https://saboteur.one/store/dracula-the-impaler (physical, $100)
 - Tommy: https://saboteur.one/store/tommy (physical, $150, sold out)
 
 #### Apparel: https://saboteur.one/store/apparel

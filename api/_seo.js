@@ -43,8 +43,8 @@ const CATS = [
     intro: 'Original comic covers and pinups from ' + BRAND + ': pencil, ink and screentone on bristol board.' },
   { id: 'clothing', slug: 'apparel', label: 'Apparel',
     title: 'Apparel - Tees and Totes | ' + BRAND,
-    desc: BRAND + " apparel: graphic tees and a tote bag in the studio's comic art style. Sold out for now. Physical shipping is paused.",
-    intro: BRAND + " tees and totes in the studio's comic art style. Sold out. Physical shipping is paused." },
+    desc: BRAND + " apparel: graphic tees and a tote bag in the studio's comic art style. Sold out for now.",
+    intro: BRAND + " tees and totes in the studio's comic art style. Sold out." },
 ];
 const catById = (id) => CATS.find((c) => c.id === id);
 const catBySlug = (s) => CATS.find((c) => c.slug === s);
@@ -460,7 +460,7 @@ function policiesRoute(sections) {
   const inner = crumbsHtml([['Home', SITE + '/'], ['Store Policies', SITE + '/policies']]) + '<h1>Store Policies</h1>' +
     '<h2>Age requirement</h2><p>' + esc(BRAND) + ' publishes work for adults. Some titles contain nudity, violence and other mature content. By purchasing, you confirm you are 18 or older.</p>' +
     '<h2>Digital downloads</h2><p>After payment, your download opens on the confirmation page. Save it. If it does not work, email ' + mail + EMAIL + '</a>.</p>' +
-    '<h2>Shipping</h2><p>Physical items are not shipping right now. Our full shipping policy will be posted here soon. Until then, physical orders are paused and only <a href="/store" style="' + LINK + '">digital downloads</a> are available.</p>' +
+    '<h2>Shipping</h2><p>Physical items ship within the U.S. Shipping address is collected at checkout. Our full shipping policy will be posted here soon.</p>' +
     '<h2>Returns and refunds</h2><p>All sales are final. Because of the nature of digital goods and limited-run prints, we do not accept returns or offer refunds. If an item arrives damaged or a download doesn\'t work, ' + mail + 'contact us</a> and we\'ll make it right.</p>' +
     '<h2>Contact</h2><p>Questions about an order? Email ' + mail + EMAIL + '</a>.</p>';
   const desc = BRAND + ' store policies: 18+ age requirement, how digital downloads work after payment, shipping status, returns, and how to contact us.';

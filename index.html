@@ -467,28 +467,98 @@
     [data-topbar-back-label] { display: none; }
   }
 
-  /* Header woman mark: decorative, same height as the 48px comics lockup
-     and the SABOTEUR wordmark (width 100 at viewBox 285.9x138). Hidden when
-     the 400px header row cannot fit all three marks plus the action icons.
-     Hover scale matches Logo and SaboteurComicsLogo: 1.05 over --duration-fast / --ease. */
-  [data-header-woman] {
+  /* Header marks: AB Dick and LOAD Magazine. Decorative, same 48px height as
+     the comics lockup and the SABOTEUR wordmark (width 100 at viewBox 285.9x138).
+     Invert in dark mode like the wordmark (--logo-filter). Hidden when the row
+     cannot fit both plus the main logos and action icons without shrinking them.
+     Two marks plus the Back button do not fit at 900 or 820, so the hide
+     kicks in at 1023px. Hover scale matches Logo and SaboteurComicsLogo:
+     1.05 over --duration-fast / --ease. */
+  [data-header-mark] {
     display: block;
     line-height: 0;
     cursor: default;
     flex-shrink: 0;
   }
-  [data-header-woman] img {
+  [data-header-mark] img {
     display: block;
     height: 48px;
     width: auto;
     transition: transform var(--duration-fast) var(--ease);
+    filter: var(--logo-filter, none);
   }
-  @media (max-width: 400px) {
-    /* The 400px row cannot fit the woman plus logo, comics mark, and
-       action icons (or the Back button) without shrinking the other marks. */
-    [data-header-woman] { display: none !important; }
+  @media (max-width: 1023px) {
+    /* Below 1024px the marks collide with action icons (and Back on store
+       pages) and would shrink or cover the main logos. */
+    [data-header-mark] { display: none !important; }
   }
 
+
+  /* Age gate: always on a white field. Sponsor block under the buttons
+     fades in with a soft overlapping stagger (Presented by, then each logo,
+     then copy). Buttons are not animated. Reduced motion is static. */
+  @keyframes gate-sponsor-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  [data-age-gate] {
+    overflow-y: auto;
+  }
+  [data-age-gate] img[alt="®Saboteur"] {
+    width: min(280px, 70vw) !important;
+  }
+  [data-gate-presented],
+  [data-gate-logo],
+  [data-gate-sponsor] {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: gate-sponsor-in 1.1s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  [data-gate-presented] { animation-delay: 0ms; }
+  [data-gate-logo="abdick"] { animation-delay: 300ms; }
+  [data-gate-logo="load"] { animation-delay: 450ms; }
+  [data-gate-sponsor] { animation-delay: 700ms; }
+  [data-gate-logos] img,
+  [data-gate-logo] {
+    display: block;
+    height: 88px;
+    width: auto;
+  }
+  [data-gate-presented] {
+    font-family: var(--font-family-display);
+    font-size: 1.25rem;
+    line-height: 1.3;
+    color: #18181B;
+  }
+  [data-gate-sponsor] {
+    font-family: var(--font-family-display);
+    font-size: 1.125rem;
+    line-height: 1.4;
+    color: #18181B;
+  }
+  [data-gate-tagline] {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    margin-top: 0.4em;
+  }
+  @media (max-width: 640px) {
+    [data-age-gate] > div { gap: 24px !important; padding: 24px 20px !important; }
+    [data-gate-logos] img,
+    [data-gate-logo] { height: 56px; }
+    [data-gate-presented] { font-size: 1.125rem; }
+    [data-gate-sponsor] { font-size: 1rem; }
+    [data-gate-tagline] { font-size: 0.75rem; }
+    [data-gate-logos] { gap: 20px !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-gate-presented],
+    [data-gate-logo],
+    [data-gate-sponsor] {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
 
   @keyframes apparel-takeover-in {
     from { opacity: 0; transform: scale(0.985); }
@@ -1682,32 +1752,42 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   );
 }
 
-function HeaderWoman() {
+function HeaderMark({ src, title, width, height = 48 }) {
   return (
     <span
-      data-header-woman
-      title="Saboteur"
-      aria-hidden="true"
+      data-header-mark
+      role="img"
+      aria-label={title}
+      title={title}
       style={{ display: 'block', lineHeight: 0, cursor: 'default', flexShrink: 0 }}
       onMouseEnter={(e) => { const el = e.currentTarget.querySelector('img'); if (el) el.style.transform = 'scale(1.05)'; }}
       onMouseLeave={(e) => { const el = e.currentTarget.querySelector('img'); if (el) el.style.transform = 'scale(1)'; }}
     >
       <img
-        src="/assets/menu-woman.svg"
+        src={src}
         alt=""
-        width={44}
-        height={48}
+        width={width}
+        height={height}
         style={{
           display: 'block',
-          height: 48,
+          height,
           width: 'auto',
           pointerEvents: 'none',
           transform: 'scale(1)',
           transition: 'transform var(--duration-fast) var(--ease)',
+          filter: 'var(--logo-filter, none)',
         }}
       />
     </span>
   );
+}
+
+function HeaderAbDick() {
+  return <HeaderMark src="/assets/menu-abdick.svg" title="AB Dick" width={57} />;
+}
+
+function HeaderLoad() {
+  return <HeaderMark src="/assets/menu-load.svg" title="LOAD Magazine" width={88} />;
 }
 
 function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, onTag, cartCount = 0, onCartOpen, hidden }) {
@@ -1740,7 +1820,8 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
           <div data-topbar-brand style={{ display: 'flex', alignItems: 'center', gap: 'clamp(24px, 2.8vw, 36px)', opacity: (!hero || scrolled) ? 1 : 0, transition: 'opacity var(--duration-fast) var(--ease)', minWidth: 0 }}>
             <Logo size={100} onClick={onHome} />
             <SaboteurComicsLogo height={48} />
-            <HeaderWoman />
+            <HeaderAbDick />
+            <HeaderLoad />
           </div>
         )}
       </div>
@@ -1947,7 +2028,8 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
         <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(24px, 2.8vw, 36px)' }}>
           <Logo size={100} onClick={onHome} />
           <SaboteurComicsLogo height={48} />
-            <HeaderWoman />
+          <HeaderAbDick />
+          <HeaderLoad />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Search pill + results, relative so the dropdown aligns exactly under the pill */}
@@ -4762,7 +4844,7 @@ function AgeGate({ onConfirm, data }) {
 
   const entryMessage = React.useMemo(() => {
     const list = (data && data.entryMessages) || [];
-    return list.length ? list[Math.floor(Math.random() * list.length)] : 'This site contains mature artistic content and is intended for viewers 18 years of age or older.';
+    return list.length ? list[Math.floor(Math.random() * list.length)] : 'You must be 18 or older to enter. This site contains artistic mature content.';
   }, [data]);
 
   const exitMessage = React.useMemo(() => {
@@ -4795,14 +4877,22 @@ function AgeGate({ onConfirm, data }) {
     transition: 'background var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease)',
   };
 
-  // Always white gate — ignore dark mode so labels stay readable
+  // Always white gate. Ignore dark mode so labels stay readable.
+  // Sponsor copy is locked to the owner's mockup (17 Nov 2026) and lives in
+  // code, same pattern as ADULT_CONTENT_LINE. Button labels and the 18+
+  // entry line still come from the Sanity ageGate doc, with code fallbacks.
   return (
-    <div style={{
+    <div data-age-gate style={{
       position: 'fixed', inset: 0, zIndex: 200, background: '#FFFFFF',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 40, padding: '32px 24px', textAlign: 'center', color: '#18181B',
+      display: 'flex', flexDirection: 'column', color: '#18181B',
     }}>
-      <Logo size={140} forceLight />
+      <div style={{
+        margin: 'auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 40, padding: '32px 24px', textAlign: 'center', width: '100%',
+        boxSizing: 'border-box',
+      }}>
+      <Logo size={280} forceLight />
 
       <p style={{
         maxWidth: '42ch',
@@ -4815,21 +4905,8 @@ function AgeGate({ onConfirm, data }) {
       }}>
         {entryMessage}
       </p>
-      {String(entryMessage || '').trim() !== ADULT_CONTENT_LINE ? (
-        <p data-adult-line="gate" style={{
-          maxWidth: '42ch',
-          fontFamily: 'var(--font-family-mono)',
-          fontSize: 'var(--font-ui-size)',
-          lineHeight: 1.55,
-          color: '#5C5C66',
-          margin: '-24px 0 0',
-          textWrap: 'pretty',
-        }}>
-          {ADULT_CONTENT_LINE}
-        </p>
-      ) : null}
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div data-gate-buttons style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
           onClick={onConfirm}
           onMouseEnter={(e) => { e.currentTarget.style.background = '#E85A1A'; }}
@@ -4851,6 +4928,26 @@ function AgeGate({ onConfirm, data }) {
         >
           {exitLabel}
         </button>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 32,
+        width: '100%',
+        maxWidth: 720,
+      }}>
+        <div data-gate-presented>Presented by</div>
+        <div data-gate-logos style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
+          <img data-gate-logo="abdick" src="/assets/menu-abdick.svg" alt="AB Dick" width={104} height={88} />
+          <img data-gate-logo="load" src="/assets/menu-load.svg" alt="LOAD Magazine" width={162} height={88} />
+        </div>
+        <div data-gate-sponsor>
+          <div><strong>AB DICK PRINTING</strong> | Proud sponsor of Free Fest.</div>
+          <div data-gate-tagline>If you’re getting fucked sideways, at least get it on paper.</div>
+        </div>
+      </div>
       </div>
 
       {showExit && (

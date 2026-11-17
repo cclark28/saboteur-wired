@@ -471,8 +471,9 @@
      the comics lockup and the SABOTEUR wordmark (width 100 at viewBox 285.9x138).
      Invert in dark mode like the wordmark (--logo-filter). Hidden when the row
      cannot fit both plus the main logos and action icons without shrinking them.
-     Two marks are wider than the old woman, so the hide kicks in at 700px, not 400px.
-     Hover scale matches Logo and SaboteurComicsLogo: 1.05 over --duration-fast / --ease. */
+     Two marks plus the Back button do not fit at 900 or 820, so the hide
+     kicks in at 1023px. Hover scale matches Logo and SaboteurComicsLogo:
+     1.05 over --duration-fast / --ease. */
   [data-header-mark] {
     display: block;
     line-height: 0;
@@ -486,12 +487,66 @@
     transition: transform var(--duration-fast) var(--ease);
     filter: var(--logo-filter, none);
   }
-  @media (max-width: 700px) {
-    /* The 700px row cannot fit AB Dick and LOAD plus logo, comics mark, and
-       action icons (or the Back button) without shrinking the other marks. */
+  @media (max-width: 1023px) {
+    /* Below 1024px the marks collide with action icons (and Back on store
+       pages) and would shrink or cover the main logos. */
     [data-header-mark] { display: none !important; }
   }
 
+
+  /* Age gate: always on a white field. Sponsor block under the buttons
+     fades in in three beats; reduced motion shows the block statically. */
+  @keyframes gate-sponsor-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  [data-age-gate] {
+    overflow-y: auto;
+  }
+  [data-age-gate] img[alt="®Saboteur"] {
+    width: min(280px, 70vw) !important;
+  }
+  [data-gate-presented],
+  [data-gate-logos],
+  [data-gate-sponsor] {
+    opacity: 0;
+    animation: gate-sponsor-in 500ms var(--ease) forwards;
+  }
+  [data-gate-presented] { animation-delay: 0ms; }
+  [data-gate-logos] { animation-delay: 500ms; }
+  [data-gate-sponsor] { animation-delay: 1000ms; }
+  [data-gate-logos] img {
+    display: block;
+    height: 88px;
+    width: auto;
+  }
+  [data-gate-presented] {
+    font-family: var(--font-family-display);
+    font-size: 1.25rem;
+    line-height: 1.3;
+    color: #18181B;
+  }
+  [data-gate-sponsor] {
+    font-family: var(--font-family-display);
+    font-size: 1.125rem;
+    line-height: 1.4;
+    color: #18181B;
+  }
+  @media (max-width: 640px) {
+    [data-age-gate] > div { gap: 24px !important; padding: 24px 20px !important; }
+    [data-gate-logos] img { height: 56px; }
+    [data-gate-presented] { font-size: 1.125rem; }
+    [data-gate-sponsor] { font-size: 1rem; }
+    [data-gate-logos] { gap: 20px !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-gate-presented],
+    [data-gate-logos],
+    [data-gate-sponsor] {
+      animation: none !important;
+      opacity: 1 !important;
+    }
+  }
 
   @keyframes apparel-takeover-in {
     from { opacity: 0; transform: scale(0.985); }
@@ -4777,7 +4832,7 @@ function AgeGate({ onConfirm, data }) {
 
   const entryMessage = React.useMemo(() => {
     const list = (data && data.entryMessages) || [];
-    return list.length ? list[Math.floor(Math.random() * list.length)] : 'This site contains mature artistic content and is intended for viewers 18 years of age or older.';
+    return list.length ? list[Math.floor(Math.random() * list.length)] : 'You must be 18 or older to enter. This site contains artistic mature content.';
   }, [data]);
 
   const exitMessage = React.useMemo(() => {
@@ -4810,14 +4865,22 @@ function AgeGate({ onConfirm, data }) {
     transition: 'background var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease)',
   };
 
-  // Always white gate — ignore dark mode so labels stay readable
+  // Always white gate. Ignore dark mode so labels stay readable.
+  // Sponsor copy is locked to Charlie's mockup (17 Nov 2026) and lives in
+  // code, same pattern as ADULT_CONTENT_LINE. Button labels and the 18+
+  // entry line still come from the Sanity ageGate doc, with code fallbacks.
   return (
-    <div style={{
+    <div data-age-gate style={{
       position: 'fixed', inset: 0, zIndex: 200, background: '#FFFFFF',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 40, padding: '32px 24px', textAlign: 'center', color: '#18181B',
+      display: 'flex', flexDirection: 'column', color: '#18181B',
     }}>
-      <Logo size={140} forceLight />
+      <div style={{
+        margin: 'auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 40, padding: '32px 24px', textAlign: 'center', width: '100%',
+        boxSizing: 'border-box',
+      }}>
+      <Logo size={280} forceLight />
 
       <p style={{
         maxWidth: '42ch',
@@ -4830,21 +4893,8 @@ function AgeGate({ onConfirm, data }) {
       }}>
         {entryMessage}
       </p>
-      {String(entryMessage || '').trim() !== ADULT_CONTENT_LINE ? (
-        <p data-adult-line="gate" style={{
-          maxWidth: '42ch',
-          fontFamily: 'var(--font-family-mono)',
-          fontSize: 'var(--font-ui-size)',
-          lineHeight: 1.55,
-          color: '#5C5C66',
-          margin: '-24px 0 0',
-          textWrap: 'pretty',
-        }}>
-          {ADULT_CONTENT_LINE}
-        </p>
-      ) : null}
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div data-gate-buttons style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
           onClick={onConfirm}
           onMouseEnter={(e) => { e.currentTarget.style.background = '#E85A1A'; }}
@@ -4866,6 +4916,26 @@ function AgeGate({ onConfirm, data }) {
         >
           {exitLabel}
         </button>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 32,
+        width: '100%',
+        maxWidth: 720,
+      }}>
+        <div data-gate-presented>Presented by</div>
+        <div data-gate-logos style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
+          <img src="/assets/menu-abdick.svg" alt="AB Dick" width={104} height={88} />
+          <img src="/assets/menu-load.svg" alt="LOAD Magazine" width={162} height={88} />
+        </div>
+        <div data-gate-sponsor>
+          <div><strong>AB DICK PRINTING</strong> | Proud sponsor of Free Fest.</div>
+          <div>If you’re getting fucked sideways, at least get it on paper.</div>
+        </div>
+      </div>
       </div>
 
       {showExit && (

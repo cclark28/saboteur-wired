@@ -345,6 +345,19 @@
   }
 
 
+  @keyframes apparel-takeover-in {
+    from { opacity: 0; transform: scale(0.985); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  [data-apparel-media] {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    display: block;
+    object-fit: contain;
+    transform-origin: center center;
+    animation: apparel-takeover-in 2.4s var(--ease) both;
+  }
   @media (prefers-reduced-motion: reduce) {
     [style*="footerMarquee"] { animation: none !important; }
     *, *::before, *::after {
@@ -353,6 +366,7 @@
       animation-iteration-count: 1 !important;
     }
     .photo-parallax { transform: none !important; }
+    [data-apparel-media] { animation: none !important; }
   }
 
 
@@ -872,7 +886,111 @@ const ASSET_ALT = {
   'bd479d2f-411a-464f-8481-bba7d06203bd': 'Portrait of a model in a black \u00aeSaboteur tee',
   'ab8b2715-3e9b-45ab-b07d-780472109c8b': 'Printed phone case on a retail display',
   '31092f02-2e27-4e0d-b65d-0d60b7984450': 'Figure drawing on a wall behind caution tape',
+  'oksana-2021-22': 'Oksana in a black propaganda tee',
+  'inessa-prague': 'Inessa in a white \u00aeSaboteur super tee with an orange face print',
+  'flag-video': 'Camelia, black and white video of a woman in a \u00aeSaboteur tee',
 };
+
+// Poster frame and accessible name for post media, keyed by the Sanity CDN URL.
+// The site bundle only carries gallery URLs, so posters for gallery videos and per-image alt text live here.
+const SANITY_FILES = 'https://cdn.sanity.io/files/6td8xalf/production/';
+const SANITY_IMAGES = 'https://cdn.sanity.io/images/6td8xalf/production/';
+const OKSANA_VIDEO_1 = SANITY_FILES + 'c83090c31d058dc5fe3e548ecc1d51e08087ee4d.mp4';
+const OKSANA_VIDEO_2 = SANITY_FILES + '764c87370762d0ad8c693f87d6394feaa6e25c42.mp4';
+const CAMELIA_VIDEO = SANITY_FILES + '62244fc35848e79aa45df72b5e81124a4cae059e.mp4';
+const FLAG_IMAGE = SANITY_IMAGES + '9abd1dfd876f2cb120427d040655b4e2a8eca4b4-560x995.jpg';
+const OKSANA_VIDEO_3 = SANITY_FILES + '7881beece3e7d53d5d85f1772bec423404c9d3dc.mp4';
+const MEDIA_META = {
+  [OKSANA_VIDEO_1]: {
+    poster: SANITY_IMAGES + '85d712270a581166d60a935dec8c4f6a66f00933-720x406.jpg',
+    label: 'Oksana, video of a model in a black tiger tee, seated',
+  },
+  [OKSANA_VIDEO_2]: {
+    poster: SANITY_IMAGES + '9fba18e6041030157b7d70d53a47dcf6fdb947cb-406x720.jpg',
+    label: 'Oksana, video of a model in a black tiger tee, kneeling',
+  },
+  [OKSANA_VIDEO_3]: {
+    poster: SANITY_IMAGES + 'dbbacae877237b71a7dfb9cf92f4715249381940-406x720.jpg',
+    label: 'Oksana, video of her lying on a black fur rug in a lavender cropped sweatshirt and white sweatpants',
+  },
+  [CAMELIA_VIDEO]: {
+    poster: SANITY_IMAGES + '4f82f03388266d8ef84ea0d15fbc699cf8b0feaa-406x720.jpg',
+    label: 'Camelia, black and white video of a woman in a \u00aeSaboteur tee',
+  },
+  [FLAG_IMAGE]: {
+    label: 'Black and white crumpled American flag with \u00aeSaboteur branding at the lower left',
+  },
+  [SANITY_IMAGES + '956f315f3a778d657805b43ea8b8709f04aef7fa-1080x1449.jpg']: { label: 'Oksana in a black propaganda tee' },
+  [SANITY_IMAGES + 'a7bef2e79209ab178e5d8c9a4c0b91c575060f12-853x1280.jpg']: { label: 'Oksana holding a camouflage cap against her chest' },
+  [SANITY_IMAGES + '15de5b42c41072400c84c8d7a3869df555f6c9af-1080x1080.jpg']: { label: 'Oksana holding a camouflage cap, close up' },
+  [SANITY_IMAGES + 'e2effd3cfb7a71c23e4f8e00d8e48a6b170eda97-1280x1920.jpg']: { label: 'Oksana in a black \u00aeSaboteur hoodie and over-the-knee boots, seated' },
+  [SANITY_IMAGES + 'abfbd277bcd8d83e2f9f6deb749e137250c9cc8a-841x1200.jpg']: { label: 'Oksana pulling a black \u00aeSaboteur sweatshirt up over her mouth' },
+  [SANITY_IMAGES + '9eed03b51a7e9bed1c12d541f8f42265ca1d2ef4-745x708.jpg']: { label: 'Oksana in a black \u00aeSaboteur hoodie, kicking toward the camera' },
+  [SANITY_IMAGES + 'e4b69e789d02a4ec00cb1b686fee59029a1ec527-1200x1600.jpg']: { label: 'Inessa in a white \u00aeSaboteur super tee with an orange face print' },
+  [SANITY_IMAGES + '32a7208ab282b3e4ee0369e677d76c6163c163e0-1200x1600.jpg']: { label: 'Inessa holding an orange in front of her face, white \u00aeSaboteur tee' },
+  [SANITY_IMAGES + 'c40416cb15adedcd99de621dcc3e2f79dca84050-1200x1600.jpg']: { label: 'Inessa biting an orange, white \u00aeSaboteur tee' },
+};
+
+// Posts whose gallery uses rows: two verticals side by side, a lone vertical full width (one column on phones).
+const PAIRED_GALLERY_POSTS = ['inessa-prague', 'oksana-2021-22'];
+
+// Apparel store tab takeover: one full-viewport image and one line instead of the product grid.
+// Set on: false to bring the Apparel products back. Products, posts and tags are untouched.
+const APPAREL_TAKEOVER = {
+  on: true,
+  src960: SANITY_IMAGES + '3ebe1348bca0d5d3dc02c1336fc1745e7de32429-1920x1080.jpg?w=960&q=88',
+  src1920: SANITY_IMAGES + '3ebe1348bca0d5d3dc02c1336fc1745e7de32429-1920x1080.jpg',
+  alt: 'Collage of four \u00aeSaboteur tees in front of a woman in a cap, old city buildings and orange and blue paint strokes',
+  line: "Maybe soon. \u201927?",
+};
+
+// Home features as the first tiles in the home grid. Each one has its own on/off switch.
+// A post-backed feature renders only while its post is published and still holds that video.
+// productSlug: when that store product exists, the feature links to it; otherwise it opens its own post.
+// The flag image has no post, so it is clickable only through a product.
+const HOME_FEATURES = {
+  oksanaVideo: { on: true, assetId: 'oksana-2021-22', videoUrl: OKSANA_VIDEO_1, productSlug: null },
+  flagImage: { on: true, imageUrl: FLAG_IMAGE, productSlug: null },
+  cameliaVideo: { on: true, assetId: 'flag-video', videoUrl: CAMELIA_VIDEO, productSlug: 'camelia-arama' }, // Sanity id kept from the upload; the post is the Camelia video
+};
+
+function featureProduct(products, slug) {
+  if (!slug) return null;
+  return (products || []).find((p) => p && p.slug === slug && p.enabled !== false) || null;
+}
+
+// Any Camelia post, tile or gallery should open the store book, not the post.
+// Match on title, headline, subhead, tags, or the flag-video document (the Camelia video),
+// including its draft id. Do not key off a single Sanity document id.
+const CAMELIA_PRODUCT_SLUG = 'camelia-arama';
+function cameliaStorePath() {
+  return '/store/' + encodeURIComponent(CAMELIA_PRODUCT_SLUG);
+}
+function isCameliaAssetId(id) {
+  return String(id || '').replace(/^drafts\./, '') === 'flag-video';
+}
+function isCameliaItem(s) {
+  if (!s) return false;
+  // The store product page stays as it is; product tiles already open that page.
+  if (s.isProduct) return false;
+  if (isCameliaAssetId(s.id)) return true;
+  const bits = [s.title, s.headline, s.subhead, s.alt];
+  (s.tags || []).forEach((tag) => {
+    if (!tag) return;
+    if (typeof tag === 'string') bits.push(tag);
+    else {
+      bits.push(tag.title, tag.slug);
+    }
+  });
+  return bits.some((b) => b && String(b).toLowerCase().indexOf('camelia') >= 0);
+}
+function wrapCameliaMedia(series, child) {
+  if (!isCameliaItem(series)) return child;
+  return (
+    <a href={cameliaStorePath()} aria-label="Open the Camelia store item" data-camelia-link="product"
+      style={{ display: 'block', lineHeight: 0, color: 'inherit' }}>{child}</a>
+  );
+}
 
 const KNOWN_VIEW_PAGES = {
   home: 1, store: 1, product: 1, about: 1, info: 1, contact: 1,
@@ -1200,6 +1318,16 @@ function postVideoLabel(s) {
 }
 
 function Placeholder({ size, label, imageUrl, videoUrl, posterUrl, videoLabel }) {
+  // Sets the muted attribute on the element (React's muted prop alone may not appear in the HTML).
+  const videoRef = React.useCallback((el) => {
+    if (!el) return;
+    el.muted = true;
+    el.defaultMuted = true;
+    el.setAttribute('muted', '');
+    el.setAttribute('playsinline', '');
+    const p = el.play && el.play();
+    if (p && p.catch) p.catch(() => {});
+  }, []);
   if (!imageUrl && !videoUrl) return null;
 
   // Wrapper gives us the static grain + desktop parallax target
@@ -1211,7 +1339,7 @@ function Placeholder({ size, label, imageUrl, videoUrl, posterUrl, videoLabel })
 
   if (videoUrl) {
     return wrap(
-      <video src={videoUrl} muted playsInline autoPlay loop aria-label={videoLabel || 'Video'} poster={posterUrl ? posterUrl + '?w=900&auto=format' : undefined}
+      <video ref={videoRef} src={videoUrl} muted playsInline autoPlay loop aria-label={videoLabel || 'Video'} poster={posterUrl ? posterUrl + '?w=900&auto=format' : undefined}
         style={{ width: '100%', height: 'auto', display: 'block', background: 'transparent' }} />
     );
   }
@@ -1783,7 +1911,7 @@ function sanityImageRatio(url) {
   return m && +m[1] > 0 && +m[2] > 0 ? m[1] + ' / ' + m[2] : null;
 }
 
-function MasonryGrid({ items, onOpen, dense = false }) {
+function MasonryGrid({ items, onOpen, onOpenProduct, dense = false }) {
   const isMobile = useIsMobile(700);
   const columns = isMobile
     ? '1'
@@ -1801,21 +1929,14 @@ function MasonryGrid({ items, onOpen, dense = false }) {
       columnGap: 0,
     }}>
       {items.map((s) => {
+        const isFeature = !!s.homeFeature;
         const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
         const showSoldOut = isFlaggedSoldOut(s) && isStoreItem; // guarded: digital downloads never show Sold out
         const mr = sanityImageRatio(s.videoUrl ? s.posterUrl : s.imageUrl);
-        return (
-          <div
-            key={s.id}
-            className="grid-frame-cell"
-            onClick={() => onOpen(s)}
-            style={{
-              breakInside: 'avoid',
-              cursor: 'pointer',
-            }}
-          >
+        const clickable = !isFeature || s.featureKind === 'post' || s.featureKind === 'product';
+        const media = (
             <div className={'grid-frame-media' + (mr ? ' is-sized' : '')} style={mr ? { aspectRatio: mr } : undefined}>
-              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
+              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={s.alt || postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
               {showSoldOut && (
                 <span
                   style={{
@@ -1842,6 +1963,56 @@ function MasonryGrid({ items, onOpen, dense = false }) {
                 </span>
               )}
             </div>
+        );
+        const onFeatureClick = (e) => {
+          if (!isPlainLeftClick(e)) return;
+          e.preventDefault();
+          if (s.featureKind === 'product' && onOpenProduct && s.featureProduct) onOpenProduct(s.featureProduct);
+          else if (s.featureKind === 'post' && onOpen && s.featurePost) onOpen(s.featurePost);
+        };
+        if (isFeature && s.href && clickable) {
+          return (
+            <a
+              key={s.id}
+              className="grid-frame-cell"
+              data-home-feature={s.homeFeature}
+              data-feature-link={s.featureKind}
+              href={s.href}
+              aria-label={s.alt || undefined}
+              onClick={onFeatureClick}
+              style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
+            >
+              {media}
+            </a>
+          );
+        }
+        if (isCameliaItem(s)) {
+          return (
+            <a
+              key={s.id}
+              className="grid-frame-cell"
+              href={cameliaStorePath()}
+              aria-label={s.alt || s.headline || s.title || 'Open the Camelia store item'}
+              data-camelia-link="product"
+              onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpen) onOpen(s); }}
+              style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
+            >
+              {media}
+            </a>
+          );
+        }
+        return (
+          <div
+            key={s.id}
+            className="grid-frame-cell"
+            data-home-feature={isFeature ? s.homeFeature : undefined}
+            onClick={clickable ? () => onOpen(s) : undefined}
+            style={{
+              breakInside: 'avoid',
+              cursor: clickable ? 'pointer' : 'default',
+            }}
+          >
+            {media}
           </div>
         );
       })}
@@ -1869,7 +2040,7 @@ function useIsMobile(bp) {
   return m;
 }
 
-function InfiniteGrid({ baseItems, onOpen }) {
+function InfiniteGrid({ baseItems, onOpen, onOpenProduct }) {
   const [items, setItems] = useState(baseItems);
   const [loading, setLoading] = useState(false);
   const sentinelRef = React.useRef(null);
@@ -1904,7 +2075,7 @@ function InfiniteGrid({ baseItems, onOpen }) {
 
   return (
     <div>
-      <MasonryGrid items={items} onOpen={onOpen} />
+      <MasonryGrid items={items} onOpen={onOpen} onOpenProduct={onOpenProduct} />
       <div ref={sentinelRef} style={{ height: 1 }} />
       {loading && (
         <div style={{ textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-ui-size)', color: 'var(--color-ink-55)' }}>Loading more…</div>
@@ -2288,7 +2459,73 @@ function HeroTagline() {
   );
 }
 
-function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
+function featurePost(items, f) {
+  if (!f || !f.on) return null;
+  const series = (items || []).find((s) => s && s.id === f.assetId);
+  if (!series) return null;
+  const has = (series.galleryUrls || []).indexOf(f.videoUrl) >= 0 || series.videoUrl === f.videoUrl;
+  return has ? series : null;
+}
+
+// Asset ids the home features already show, so the grid below does not repeat them.
+function homeFeatureIds(items) {
+  const f = HOME_FEATURES.cameliaVideo;
+  return featurePost(items, f) ? [f.assetId] : [];
+}
+
+// First tiles in the home grid, in this order: Oksana video, Camelia video, flag.
+function homeFeatureItems(items, products) {
+  const tiles = [];
+  const linkFor = (f, post) => {
+    const prod = featureProduct(products, f && f.productSlug);
+    if (prod) return { href: '/store/' + encodeURIComponent(prod.slug), kind: 'product', product: prod };
+    if (post) return { href: '/', kind: 'post', product: null };
+    return null;
+  };
+  const pushVideo = (key, post, f) => {
+    const url = f.videoUrl;
+    const meta = MEDIA_META[url] || {};
+    const link = linkFor(f, post);
+    tiles.push({
+      id: 'home-feature-' + key,
+      homeFeature: key,
+      videoUrl: url,
+      posterUrl: meta.poster || (post && post.posterUrl),
+      alt: meta.label || postVideoLabel(post),
+      href: link ? link.href : null,
+      featureKind: link ? link.kind : null,
+      featurePost: post,
+      featureProduct: link && link.product,
+    });
+  };
+  const oksana = featurePost(items, HOME_FEATURES.oksanaVideo);
+  if (oksana) pushVideo('oksana-video', oksana, HOME_FEATURES.oksanaVideo);
+  const camelia = featurePost(items, HOME_FEATURES.cameliaVideo);
+  if (camelia) pushVideo('camelia-video', camelia, HOME_FEATURES.cameliaVideo);
+  if (HOME_FEATURES.flagImage.on && HOME_FEATURES.flagImage.imageUrl) {
+    const url = HOME_FEATURES.flagImage.imageUrl;
+    const meta = MEDIA_META[url] || {};
+    const link = linkFor(HOME_FEATURES.flagImage, null);
+    tiles.push({
+      id: 'home-feature-flag-image',
+      homeFeature: 'flag-image',
+      imageUrl: url,
+      alt: meta.label || '',
+      href: link ? link.href : null,
+      featureKind: link ? link.kind : null,
+      featurePost: null,
+      featureProduct: link && link.product,
+    });
+  }
+  return tiles;
+}
+
+function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, products, onOpenProduct, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
+  const gridItems = React.useMemo(() => {
+    const shown = homeFeatureIds(items);
+    const rest = shown.length ? (items || []).filter((s) => shown.indexOf(s.id) < 0) : (items || []);
+    return homeFeatureItems(items, products).concat(rest);
+  }, [items, products]);
   return (
     <div>
       <TopBar onMenu={onMenu} hero onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
@@ -2318,7 +2555,7 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, dark
         </p>
       </div>
       <div style={{ padding: '0 clamp(16px,4vw,48px) 64px' }}>
-        <InfiniteGrid baseItems={items} onOpen={onOpen} />
+        <InfiniteGrid baseItems={gridItems} onOpen={onOpen} onOpenProduct={onOpenProduct} />
       </div>
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
@@ -2502,6 +2739,34 @@ function productImageUrl(p) {
   return null;
 }
 
+// Full-viewport Apparel image: fills the screen on desktop, shows the whole image on phones.
+function ApparelTakeover() {
+  const t = APPAREL_TAKEOVER;
+  return (
+    <section data-apparel-takeover aria-labelledby="apparel-takeover-title" style={{ width: '100%' }}>
+      <h1 id="apparel-takeover-title" className="sr-only">Apparel</h1>
+      <img
+        data-apparel-media
+        src={t.src1920}
+        srcSet={t.src960 + ' 960w, ' + t.src1920 + ' 1920w'}
+        sizes="100vw"
+        alt={t.alt}
+        fetchpriority="high"
+      />
+      <p data-apparel-line style={{
+        fontFamily: 'var(--font-family-display)',
+        fontWeight: 700,
+        fontSize: 'clamp(2.5rem, 8vw, 6rem)',
+        lineHeight: 1.05,
+        letterSpacing: '-0.02em',
+        color: 'var(--color-ink)',
+        textAlign: 'center',
+        margin: '32px 24px 64px',
+      }}>{t.line}</p>
+    </section>
+  );
+}
+
 function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
@@ -2513,15 +2778,18 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
     const next = (initialCategory && STORE_CATEGORIES.some((c) => c.id === initialCategory)) ? initialCategory : firstUnlocked;
     setFilter(next);
   }, [initialCategory, firstUnlocked, products, physicalOrdersEnabled]);
-  const list = (products || []).filter((p) => filter === 'all' || p.category === filter);
+  // While the Apparel takeover is on, clothing stays out of the All tab too.
+  const list = (products || []).filter((p) => (filter === 'all' ? !(APPAREL_TAKEOVER.on && p.category === 'clothing') : p.category === filter));
   const isEmpty = list.length === 0;
   const shippingPaused = !arePhysicalOrdersLive(physicalOrdersEnabled);
+  const takeover = APPAREL_TAKEOVER.on && filter === 'clothing';
 
   const mutedCats = {};
   const lockedCats = {};
   STORE_CATEGORIES.forEach((c) => {
     if (c.id === 'all') return;
-    const locked = isStoreCategoryLocked(products, c.id, physicalOrdersEnabled);
+    // The Apparel tab stays clickable while the takeover is on, even when every apparel product is sold out.
+    const locked = (APPAREL_TAKEOVER.on && c.id === 'clothing') ? false : isStoreCategoryLocked(products, c.id, physicalOrdersEnabled);
     lockedCats[c.id] = locked;
     mutedCats[c.id] = locked;
   });
@@ -2529,12 +2797,12 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
   return (
     <div>
       <TopBar onMenu={onMenu} showBack onBack={onBack} onHome={onHome} dark={dark} onToggleDark={onToggleDark} onTag={onTag} cartCount={cartCount} onCartOpen={onCartOpen} hidden={cartOpen || menuOpen} />
-      <div style={{ padding: '128px clamp(20px,5vw,64px) 96px' }}>
-        <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>{(initialCategory && initialCategory !== 'all' && (STORE_CATEGORIES.find((c) => c.id === initialCategory) || {}).label) || 'Store'}</h1>
-        {shippingPaused ? (
+      <div style={{ padding: '128px clamp(20px,5vw,64px) 0' }}>
+        {takeover ? null : <h1 style={{ fontFamily: 'var(--font-family-display)', fontWeight: 700, fontSize: 'var(--font-h1-size)', margin: '0 0 40px', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>{(initialCategory && initialCategory !== 'all' && (STORE_CATEGORIES.find((c) => c.id === initialCategory) || {}).label) || 'Store'}</h1>}
+        {shippingPaused && !takeover ? (
           <PhysicalPauseNotice message={physicalOrdersPausedMessage} />
         ) : null}
-        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: 64, borderBottom: '1px solid var(--color-stroke)' }}>
+        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: takeover ? 24 : 64, borderBottom: '1px solid var(--color-stroke)' }}>
           {STORE_CATEGORIES.map((c) => {
             const active = filter === c.id;
             const muted = mutedCats[c.id];
@@ -2559,6 +2827,10 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             );
           })}
         </div>
+      </div>
+      {takeover ? <ApparelTakeover /> : null}
+      {takeover ? null : (
+      <div style={{ padding: '0 clamp(20px,5vw,64px) 96px' }}>
         {isEmpty ? (
           <div style={{ padding: '80px 0', textAlign: 'center' }}>
             <p style={{ fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink-55)', margin: '0 0 8px' }}>
@@ -2656,6 +2928,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
           </div>
         )}
       </div>
+      )}
       <Footer onContact={onContact} onTag={onTag} onHome={onHome} />
     </div>
   );
@@ -3892,7 +4165,7 @@ function GalleryPanel({ series }) {
   };
   if (series.galleryUrls && series.galleryUrls.length) {
     series.galleryUrls.forEach((u) => {
-      if (/\.(mp4|webm|mov)(\?|$)/i.test(String(u))) push('video', u);
+      if (/\.(mp4|webm|mov)(\?|$)/i.test(String(u))) push('video', u, MEDIA_META[u] && MEDIA_META[u].poster);
       else push('image', u);
     });
   }
@@ -3919,6 +4192,10 @@ function GalleryPanel({ series }) {
   // Single column stack so every photo gets equal vertical spacing. No 2-col uneven rows.
   const gap = 'clamp(24px, 2.8vw, 32px)';
 
+  if (PAIRED_GALLERY_POSTS.indexOf(String(series.id)) >= 0) {
+    return <PairedGallery series={series} items={items} gap={gap} />;
+  }
+
   return (
     <div style={{
       width: '100%',
@@ -3941,7 +4218,7 @@ function GalleryPanel({ series }) {
         return (
           <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
             <div className="photo-wrap photo-parallax" data-parallax style={{ width: '100%', maxWidth: style.maxWidth }}>
-              {item.type === 'video' ? (
+              {wrapCameliaMedia(series, item.type === 'video' ? (
                 <video
                   src={item.src}
                   muted
@@ -3950,19 +4227,19 @@ function GalleryPanel({ series }) {
                   loop
                   poster={item.poster || undefined}
                   controls={!!item.poster}
-                  aria-label={postVideoLabel(series)}
+                  aria-label={(MEDIA_META[item.src] && MEDIA_META[item.src].label) || postVideoLabel(series)}
                   style={{ ...style, margin: 0, maxWidth: '100%' }}
                   onLoadedMetadata={(e) => setDims(item.src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
                 />
               ) : (
                 <img
                   src={item.src}
-                  alt={series.alt || series.title || series.headline || ''}
+                  alt={(MEDIA_META[item.src] && MEDIA_META[item.src].label) || series.alt || series.title || series.headline || ''}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   style={{ ...style, margin: 0, maxWidth: '100%' }}
                   onLoad={(e) => setDims(item.src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
                 />
-              )}
+              ))}
             </div>
           </div>
         );
@@ -3971,6 +4248,47 @@ function GalleryPanel({ series }) {
   );
 }
 
+
+// Rows for PAIRED_GALLERY_POSTS. Orientation comes from the Sanity size in the image URL (...-1200x1600.jpg),
+// so the layout is fixed before images load. Same rule as the store product gallery.
+function PairedGallery({ series, items, gap }) {
+  const isMobile = useIsMobile(900);
+  const cells = items.map((item, i) => {
+    const dm = /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(item.src).split('?')[0]);
+    const pm = item.type === 'video' && item.poster ? /-(\d+)x(\d+)\.[a-z]+$/i.exec(String(item.poster)) : null;
+    const ar = dm ? Number(dm[1]) / Number(dm[2]) : (pm ? Number(pm[1]) / Number(pm[2]) : 0);
+    return { ...item, i, ar, portrait: item.type === 'image' && ar > 0 && ar < 1 };
+  });
+  const rows = [];
+  for (let k = 0; k < cells.length; k++) {
+    const a = cells[k], b = cells[k + 1];
+    if (!isMobile && a.portrait && b && b.portrait) { rows.push([a, b]); k++; }
+    else rows.push([a]);
+  }
+  const media = (c) => c.type === 'video' ? (
+    <video src={c.src} muted playsInline autoPlay loop poster={c.poster || undefined} controls={!!c.poster}
+      aria-label={(MEDIA_META[c.src] && MEDIA_META[c.src].label) || postVideoLabel(series)}
+      style={{ width: '100%', maxWidth: c.ar && c.ar < 1 ? 520 : undefined, margin: '0 auto', height: 'auto', display: 'block', borderRadius: '2px' }} />
+  ) : (
+    <img src={c.src + (c.src.includes('cdn.sanity.io') ? '?w=1400&auto=format' : '')}
+      alt={(MEDIA_META[c.src] && MEDIA_META[c.src].label) || series.alt || series.headline || ''}
+      loading={c.i === 0 ? 'eager' : 'lazy'}
+      style={{ width: '100%', height: 'auto', aspectRatio: c.ar ? String(c.ar) : undefined, display: 'block', objectFit: 'contain', borderRadius: '2px' }} />
+  );
+  return (
+    <div data-paired-gallery style={{ width: '100%', display: 'flex', flexDirection: 'column', gap }}>
+      {rows.map((row, r) => (
+        <div key={r} style={{ display: 'flex', gap, width: '100%', alignItems: 'flex-start' }}>
+          {row.map((c) => (
+            <div key={c.src} className="photo-wrap photo-parallax" data-parallax style={{ flex: row.length === 2 ? (c.ar || 1) + ' 1 0' : '1 1 100%', minWidth: 0, lineHeight: 0 }}>
+              {wrapCameliaMedia(series, media(c))}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function SingleItem({ series, onMenu, onBack, onOpen, allItems, onContact, onTag, onHome, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen }) {
   const more = (allItems || []).filter((s) => s.id !== series.id).sort(() => 0.5 - Math.random()).slice(0, 9);
@@ -4449,7 +4767,7 @@ function labelForView(view) {
   if (view.page === 'home') return 'Home';
   if (view.page === 'store') return 'Store';
   if (view.page === 'product') return (view.product && view.product.title) || 'Product';
-  if (view.page === 'item') return (view.series && (view.series.headline || view.series.title)) || 'Item';
+  if (view.page === 'item') return (view.series && (view.series.headline || view.series.alt)) || 'Item';
   if (view.page === 'tag') return 'Tag: ' + (view.tag || '');
   if (view.page === 'info' || view.page === 'contact') return 'About';
   if (view.page === 'checkout') return 'Checkout';
@@ -5541,7 +5859,8 @@ function App() {
     // Post overlays live at '/' (no server route): rating follows the post's own images.
     if (view.page === 'item' && !aboutOpen) {
       const s = view.series || {};
-      document.title = (s.headline || s.title ? (s.headline || s.title) + ' | ' : '') + '\u00aeSaboteur';
+      // Internal titles are Studio-only, so a post with no headline gets the plain site title.
+      document.title = (s.headline ? s.headline + ' | ' : '') + '\u00aeSaboteur';
       setRating(isAdultAsset(s.id));
       setHead(HOME_CANONICAL, HOME_DESC);
       return;
@@ -5867,6 +6186,13 @@ function App() {
       navigate({ page: 'product', product: series.product });
       return;
     }
+    if (isCameliaItem(series)) {
+      const prod = featureProduct(products, CAMELIA_PRODUCT_SLUG);
+      if (prod) navigate({ page: 'product', product: prod });
+      else navigate({ page: 'product', productSlug: CAMELIA_PRODUCT_SLUG });
+      window.scrollTo(0, 0);
+      return;
+    }
     navigate({ page: 'item', series, from: from || view.page });
   };
 
@@ -6147,7 +6473,7 @@ function App() {
       {!showNotFound && view.page === 'home' && !aboutOpen && <h1 className="sr-only">®Saboteur: comics, photography and art</h1>}
 
       {showNotFound && <Messenger404 />}
-      {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
+      {!loading && !showNotFound && view.page === 'home' && <Home onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onOpen={(s) => openItem(s, 'home')} onContact={goContact} onTag={goTag} onHome={goHome} onRefresh={refreshHome} items={items.home} products={products} onOpenProduct={(p) => { navigate({ page: 'product', product: p }); window.scrollTo(0, 0); }} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />}
       {!loading && navSections.filter((sec) => !sec.isInfoPage && sec.slug !== 'store').map((sec) => view.page === sec.slug && (<SectionGrid key={sec.slug} title={sec.title} items={items[sec.slug] || []} onMenu={() => { setCartOpen(false); setMenuOpen(true); }} onBack={goHome} onOpen={(s) => openItem(s, sec.slug)} onContact={goContact} onTag={goTag} onHome={goHome} dark={dark} onToggleDark={toggleDark} cartCount={cartCount} onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }} cartOpen={cartOpen} menuOpen={menuOpen} />))}
       {!loading && view.page === 'store' && (
         <StoreGrid

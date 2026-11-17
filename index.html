@@ -495,10 +495,11 @@
 
 
   /* Age gate: always on a white field. Sponsor block under the buttons
-     fades in in three beats; reduced motion shows the block statically. */
+     fades in with a soft overlapping stagger (Presented by, then each logo,
+     then copy). Buttons are not animated. Reduced motion is static. */
   @keyframes gate-sponsor-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   [data-age-gate] {
     overflow-y: auto;
@@ -507,15 +508,18 @@
     width: min(280px, 70vw) !important;
   }
   [data-gate-presented],
-  [data-gate-logos],
+  [data-gate-logo],
   [data-gate-sponsor] {
     opacity: 0;
-    animation: gate-sponsor-in 500ms var(--ease) forwards;
+    transform: translateY(8px);
+    animation: gate-sponsor-in 1.1s cubic-bezier(.22, 1, .36, 1) both;
   }
   [data-gate-presented] { animation-delay: 0ms; }
-  [data-gate-logos] { animation-delay: 500ms; }
-  [data-gate-sponsor] { animation-delay: 1000ms; }
-  [data-gate-logos] img {
+  [data-gate-logo="abdick"] { animation-delay: 300ms; }
+  [data-gate-logo="load"] { animation-delay: 450ms; }
+  [data-gate-sponsor] { animation-delay: 700ms; }
+  [data-gate-logos] img,
+  [data-gate-logo] {
     display: block;
     height: 88px;
     width: auto;
@@ -532,19 +536,27 @@
     line-height: 1.4;
     color: #18181B;
   }
+  [data-gate-tagline] {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    margin-top: 0.4em;
+  }
   @media (max-width: 640px) {
     [data-age-gate] > div { gap: 24px !important; padding: 24px 20px !important; }
-    [data-gate-logos] img { height: 56px; }
+    [data-gate-logos] img,
+    [data-gate-logo] { height: 56px; }
     [data-gate-presented] { font-size: 1.125rem; }
     [data-gate-sponsor] { font-size: 1rem; }
+    [data-gate-tagline] { font-size: 0.75rem; }
     [data-gate-logos] { gap: 20px !important; }
   }
   @media (prefers-reduced-motion: reduce) {
     [data-gate-presented],
-    [data-gate-logos],
+    [data-gate-logo],
     [data-gate-sponsor] {
       animation: none !important;
       opacity: 1 !important;
+      transform: none !important;
     }
   }
 
@@ -4928,12 +4940,12 @@ function AgeGate({ onConfirm, data }) {
       }}>
         <div data-gate-presented>Presented by</div>
         <div data-gate-logos style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
-          <img src="/assets/menu-abdick.svg" alt="AB Dick" width={104} height={88} />
-          <img src="/assets/menu-load.svg" alt="LOAD Magazine" width={162} height={88} />
+          <img data-gate-logo="abdick" src="/assets/menu-abdick.svg" alt="AB Dick" width={104} height={88} />
+          <img data-gate-logo="load" src="/assets/menu-load.svg" alt="LOAD Magazine" width={162} height={88} />
         </div>
         <div data-gate-sponsor>
           <div><strong>AB DICK PRINTING</strong> | Proud sponsor of Free Fest.</div>
-          <div>If you’re getting fucked sideways, at least get it on paper.</div>
+          <div data-gate-tagline>If you’re getting fucked sideways, at least get it on paper.</div>
         </div>
       </div>
       </div>

@@ -467,18 +467,21 @@
     [data-topbar-back-label] { display: none; }
   }
 
-  /* Header marks: AB Dick and LOAD Magazine. Decorative, same 48px height as
-     the comics lockup and the SABOTEUR wordmark (width 100 at viewBox 285.9x138).
-     Invert in dark mode like the wordmark (--logo-filter). Hidden when the row
-     cannot fit both plus the main logos and action icons without shrinking them.
-     Two marks plus the Back button do not fit at 900 or 820, so the hide
-     kicks in at 1023px. Hover scale matches Logo and SaboteurComicsLogo:
+  /* Header marks: AB Dick and LOAD Magazine, linking to Books & Zines.
+     Same 48px height as the comics lockup and the SABOTEUR wordmark
+     (width 100 at viewBox 285.9x138). Invert in dark mode like the
+     wordmark (--logo-filter). Hidden when the row cannot fit both plus
+     the main logos and action icons without shrinking them. Two marks
+     plus the Back button do not fit at 900 or 820, so the hide kicks
+     in at 1023px. Hover scale matches Logo and SaboteurComicsLogo:
      1.05 over --duration-fast / --ease. */
   [data-header-mark] {
     display: block;
     line-height: 0;
-    cursor: default;
+    cursor: pointer;
     flex-shrink: 0;
+    text-decoration: none;
+    color: inherit;
   }
   [data-header-mark] img {
     display: block;
@@ -1752,14 +1755,24 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
   );
 }
 
+function goHeaderStoreBooks() {
+  if (FOOTER_NAV && typeof FOOTER_NAV.store === 'function') FOOTER_NAV.store('prints-and-books');
+}
+
 function HeaderMark({ src, title, width, height = 48 }) {
+  const handleClick = (e) => {
+    if (!isPlainLeftClick(e)) return;
+    e.preventDefault();
+    goHeaderStoreBooks();
+  };
   return (
-    <span
+    <a
+      href="/store/books"
       data-header-mark
-      role="img"
-      aria-label={title}
-      title={title}
-      style={{ display: 'block', lineHeight: 0, cursor: 'default', flexShrink: 0 }}
+      aria-label="Books & Zines"
+      title="Books & Zines"
+      style={{ display: 'block', lineHeight: 0, cursor: 'pointer', flexShrink: 0, textDecoration: 'none', color: 'inherit' }}
+      onClick={handleClick}
       onMouseEnter={(e) => { const el = e.currentTarget.querySelector('img'); if (el) el.style.transform = 'scale(1.05)'; }}
       onMouseLeave={(e) => { const el = e.currentTarget.querySelector('img'); if (el) el.style.transform = 'scale(1)'; }}
     >
@@ -1778,7 +1791,7 @@ function HeaderMark({ src, title, width, height = 48 }) {
           filter: 'var(--logo-filter, none)',
         }}
       />
-    </span>
+    </a>
   );
 }
 

@@ -479,6 +479,9 @@
     line-height: 0;
     cursor: default;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
   }
   [data-header-mark] img {
     display: block;
@@ -1753,13 +1756,16 @@ function SaboteurComicsLogo({ onClick, height = 40 }) {
 }
 
 function HeaderMark({ src, title, width, height = 48 }) {
+  const ignoreClick = (e) => { e.preventDefault(); e.stopPropagation(); };
   return (
     <span
       data-header-mark
       role="img"
       aria-label={title}
       title={title}
-      style={{ display: 'block', lineHeight: 0, cursor: 'default', flexShrink: 0 }}
+      style={{ display: 'block', lineHeight: 0, cursor: 'default', flexShrink: 0, position: 'relative', zIndex: 1, pointerEvents: 'auto' }}
+      onClick={ignoreClick}
+      onMouseDown={ignoreClick}
       onMouseEnter={(e) => { const el = e.currentTarget.querySelector('img'); if (el) el.style.transform = 'scale(1.05)'; }}
       onMouseLeave={(e) => { const el = e.currentTarget.querySelector('img'); if (el) el.style.transform = 'scale(1)'; }}
     >
@@ -2024,7 +2030,7 @@ function FullMenu({ activeSection, onSelect, onClose, onHome, onTag, isLanding =
 
   return (
     <div className={'fullmenu' + (isLanding ? ' is-landing' : '') + (exiting ? ' is-exiting' : '')} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--color-paper)', display: 'flex', flexDirection: 'column', padding: '16px clamp(16px, 4vw, 48px)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 40, position: 'relative', zIndex: 2, background: 'var(--color-paper)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(24px, 2.8vw, 36px)' }}>
           <Logo size={100} onClick={onHome} />
           <SaboteurComicsLogo height={48} />
@@ -4940,8 +4946,8 @@ function AgeGate({ onConfirm, data }) {
       }}>
         <div data-gate-presented>Presented by</div>
         <div data-gate-logos style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 30 }}>
-          <img data-gate-logo="abdick" src="/assets/menu-abdick.svg" alt="AB Dick" width={104} height={88} />
-          <img data-gate-logo="load" src="/assets/menu-load.svg" alt="LOAD Magazine" width={162} height={88} />
+          <img data-gate-logo="abdick" src="/assets/menu-abdick.svg" alt="AB Dick" width={104} height={88} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} />
+          <img data-gate-logo="load" src="/assets/menu-load.svg" alt="LOAD Magazine" width={162} height={88} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} />
         </div>
         <div data-gate-sponsor>
           <div><strong>AB DICK PRINTING</strong> | Proud sponsor of Free Fest.</div>

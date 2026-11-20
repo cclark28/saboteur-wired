@@ -1554,8 +1554,22 @@ function isNotFoundView(view, navSections, loading) {
 
 // ---------- Sanity ----------
 const SANITY_PROJECT = '6td8xalf';
-// Staging store talks to the saboteur-api staging preview, not production. No trailing slash.
-const CHECKOUT_API_BASE = 'https://saboteur-api-git-staging-cclark28s-projects.vercel.app';
+// Production hosts talk to the live API. Staging and preview hosts talk to the
+// saboteur-api staging preview. Evaluated at load from the page's host so the
+// same file, once on main, points at production. No trailing slash.
+const CHECKOUT_API_PRODUCTION = 'https://saboteur-api.vercel.app';
+const CHECKOUT_API_STAGING = 'https://saboteur-api-git-staging-cclark28s-projects.vercel.app';
+function checkoutApiBase() {
+  try {
+    const host = String(location.hostname || '').toLowerCase();
+    if (host === 'saboteur.one' || host === 'www.saboteur.one' || host === 'saboteur-wired.vercel.app') {
+      return CHECKOUT_API_PRODUCTION;
+    }
+    if (host.endsWith('.vercel.app')) return CHECKOUT_API_STAGING;
+  } catch (e) {}
+  return CHECKOUT_API_PRODUCTION;
+}
+const CHECKOUT_API_BASE = checkoutApiBase();
 
 function trackPageHit(pathOverride) {
   const apiBase = String(CHECKOUT_API_BASE || '').replace(/\/$/, '');
@@ -1585,7 +1599,7 @@ function trackPageHit(pathOverride) {
 function saveShopEmail(email, source, product) {
   const apiBase = String(CHECKOUT_API_BASE || '').replace(/\/$/, '');
   const value = String(email || '').trim();
-  if (!apiBase || !value) return Promise.resolve();
+  if (!apiBase || !value) return Promise.resolve({});
   const payload = { email: value, source: source || 'shop' };
   if (source === 'download' && product) {
     if (product._id) payload.productId = product._id;
@@ -1596,9 +1610,16 @@ function saveShopEmail(email, source, product) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }).then((res) => {
-    if (!res.ok) console.error('Email list save failed', res.status);
+    return res.json().then((data) => {
+      if (!res.ok) console.error('Email list save failed', res.status);
+      return data || {};
+    }).catch(() => {
+      if (!res.ok) console.error('Email list save failed', res.status);
+      return {};
+    });
   }).catch((err) => {
     console.error('Email list save failed', err);
+    return { ok: false, emailed: false };
   });
 }
 
@@ -4089,6 +4110,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
   });
   const [dlError, setDlError] = useState('');
   const [dlDone, setDlDone] = useState(false);
+  const [dlEmailed, setDlEmailed] = useState(false);
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(dlEmail || '').trim());
 
   const handlePrimary = () => {
@@ -4106,13 +4128,16 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
         log.push({ email: email, productId: p._id, title: p.title, digitalFileUrl: p.digitalFileUrl || null, at: new Date().toISOString() });
         localStorage.setItem('saboteur-download-log', JSON.stringify(log.slice(-50)));
       } catch (e) {}
-      saveShopEmail(email, 'download', p);
       if (p.digitalFileUrl) {
         window.open(p.digitalFileUrl, '_blank', 'noopener,noreferrer');
-        setDlDone(true);
       } else {
         setDlError('Download link not set yet.');
+        return;
       }
+      saveShopEmail(email, 'download', p).then((data) => {
+        setDlEmailed(!!(data && data.emailed === true));
+        setDlDone(true);
+      });
       return;
     }
     if (needsSize && !selectedSize) {
@@ -4422,7 +4447,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             <p style={{
               fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-success)',
               margin: '12px 0 0',
-            }}>Your download is starting. We also emailed you the link.</p>
+            }}>{dlEmailed ? 'Your download is starting. We also emailed you the link.' : 'Your download is starting.'}</p>
           ) : null}
           {isFree && !comingSoon && !p.digitalFileUrl ? (
             <p style={{

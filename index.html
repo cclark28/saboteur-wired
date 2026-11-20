@@ -769,9 +769,12 @@
       transform: none !important;
     }
   }
-  /* Titles and any card copy: 2-line clamp with a reserved height so price and actions stay in line. */
+  /* Titles and any card copy: 2-line clamp with a reserved height so price and actions stay in line.
+     Cards keep their natural height. Do not stretch to 100% of the grid row: that undersizes the row
+     and the next row's covers paint over the button row. */
   .store-card {
-    height: 100%;
+    height: auto;
+    overflow: visible;
     display: flex;
     flex-direction: column;
   }
@@ -802,8 +805,7 @@
     justify-content: flex-end;
     align-items: center;
     gap: 10px;
-    margin-top: auto;
-    padding-top: 12px;
+    margin-top: 12px;
     width: 100%;
   }
   .store-card-add {

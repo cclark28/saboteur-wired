@@ -3499,16 +3499,15 @@ function BooksIntro({ text }) {
   const typeStyle = {
     fontFamily: 'var(--font-family-display)',
     fontWeight: 400,
-    fontSize: 'clamp(20px, 4.5vw, 32px)',
-    lineHeight: 1.45,
+    fontSize: 'clamp(18px, 4.2vw, 24px)',
+    lineHeight: 1.4,
     letterSpacing: '-0.015em',
     color: 'var(--color-ink)',
     margin: 0,
-    maxWidth: '42rem',
   };
 
   return (
-    <div data-books-intro style={{ position: 'relative', margin: '0 0 64px', maxWidth: '42rem' }}>
+    <div data-books-intro style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
       <p className="sr-only">{full}</p>
       <p aria-hidden="true" style={Object.assign({}, typeStyle, { visibility: 'hidden' })}>{full}</p>
       <p aria-hidden="true" data-books-intro-typed style={Object.assign({}, typeStyle, { position: 'absolute', left: 0, right: 0, top: 0, margin: 0 })}>

@@ -1132,7 +1132,7 @@ let FOOTER_DATA = null;
 let FOOTER_NAV = { home: null, contact: null, section: null, store: null, comics: null, resend: null, policies: null };
 let SECTION_META = [];
 
-// Owner-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the product 18+ checkbox.
+// Owner-approved 18+ line (21 Oct 2026). Shown on the age gate and next to the checkout 18+ checkbox.
 const ADULT_CONTENT_LINE = 'This work contains nudity, violence and other adult material. You must be 18 or older to view or buy it.';
 const CONTACT_EMAIL = 'store@saboteur.one';
 
@@ -1315,7 +1315,7 @@ const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing h
 const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts","monika-may-vienna-2026","nora-budapest-2026"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4","1f73a1c1-af60-45e0-9a08-3c515d97a914","e95f7a44-bdfe-4714-a90e-d09879fd9389","dab05577-0ce2-4338-9cf4-d736bafe36f8","157a06af-fa37-4473-8ced-6ee8b94ae6e1"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
-// Cart and checkout use both signals: the product 18+ checkbox (requiresAgeConfirm) and ADULT_CONTENT.
+// Cart and checkout use both signals: requiresAgeConfirm and ADULT_CONTENT.
 function isAdultCartItem(p) { return !!(p && (p.requiresAgeConfirm === true || isAdultProduct(p))); }
 function cartLineIsAdult(line, products) {
   if (line && line.adult) return true;
@@ -4007,8 +4007,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
   const needsSize = p.fulfillmentType === 'paid_physical_variant' || sizeVariants.length > 0;
   const [selectedSize, setSelectedSize] = useState('');
   const sizeOk = !needsSize || !!selectedSize;
-  const needsAge = p.requiresAgeConfirm === true;
-  const [ageOk, setAgeOk] = useState(false);
 
   const [dlEmail, setDlEmail] = useState(() => {
     try { return localStorage.getItem('saboteur-download-email') || ''; } catch { return ''; }
@@ -4020,10 +4018,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
   const handlePrimary = () => {
     if (isSoldOut || comingSoon) return;
     if (isFree) {
-      if (needsAge && !ageOk) {
-        setDlError('Confirm you are 18 or older to continue.');
-        return;
-      }
       const email = String(dlEmail || '').trim();
       if (!emailOk) {
         setDlError('Enter a valid email to download.');
@@ -4043,10 +4037,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
       } else {
         setDlError('Download link not set yet.');
       }
-      return;
-    }
-    if (needsAge && !ageOk) {
-      setDlError('Confirm you are 18 or older to continue.');
       return;
     }
     if (needsSize && !selectedSize) {
@@ -4245,9 +4235,6 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
             </p>
           ) : null}
 
-          {!isSoldOut && needsAge ? (
-            <AgeConfirm checked={ageOk} onChange={(ok) => { setAgeOk(ok); setDlError(''); }} lineId="product" />
-          ) : null}
           {!isSoldOut && needsSize ? (
             <div style={{ marginBottom: 32 }}>
               <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)', marginBottom: 14 }}>Size</div>
@@ -4318,26 +4305,26 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           ) : (
           <button
             onClick={handlePrimary}
-            disabled={isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)}
+            disabled={isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)}
             style={{
               width: '100%', minHeight: 48, padding: '14px 28px',
-              background: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-card)' : 'var(--color-ink)',
-              color: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
+              background: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)) ? 'var(--color-card)' : 'var(--color-ink)',
+              color: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
               border: 'none',
               borderRadius: 'var(--radius-sm)',
-              cursor: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 'not-allowed' : 'pointer',
+              cursor: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)) ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
               letterSpacing: '0.02em',
-              opacity: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) ? 0.9 : 1,
+              opacity: (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)) ? 0.9 : 1,
               transition: 'background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease)',
             }}
             onMouseEnter={(e) => {
-              if (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) return;
+              if (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)) return;
               e.currentTarget.style.background = 'var(--color-accent)';
               e.currentTarget.style.color = '#FFFFFF';
             }}
             onMouseLeave={(e) => {
-              if (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk)) {
+              if (isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk)) {
                 e.currentTarget.style.background = 'var(--color-card)';
                 e.currentTarget.style.color = 'var(--color-ink-55)';
                 return;
@@ -4345,7 +4332,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               e.currentTarget.style.background = 'var(--color-ink)';
               e.currentTarget.style.color = 'var(--color-paper)';
             }}
-            onMouseDown={(e) => { if (!(isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk) || (needsAge && !ageOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onMouseDown={(e) => { if (!(isSoldOut || comingSoon || (isFree && !emailOk) || (!isFree && needsSize && !sizeOk))) e.currentTarget.style.transform = 'scale(0.98)'; }}
             onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             {comingSoon

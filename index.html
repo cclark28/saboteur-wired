@@ -1308,6 +1308,13 @@ const HOME_DESC = '\u00aeSaboteur is an experimental art studio and publishing h
 const ADULT_CONTENT = {"productSlugs":["pinup-issue-2-tommy-s","free-fest-75-contestant","free-fest-75-contestant-2","tommy","this-book-is-anonymous","the-romania-hotel-series-anato","camelia-arama","shitty-hotel-series-grace","talia-mint","kika-krakow-2026","belgrade-serbia-with-safari","tommys-issue-1","tommys-issue-1-bts","monika-may-vienna-2026","nora-budapest-2026"],"assetIds":["c3b3368f-d9ce-426b-96b2-35226b0e9ba4","1f73a1c1-af60-45e0-9a08-3c515d97a914","e95f7a44-bdfe-4714-a90e-d09879fd9389","dab05577-0ce2-4338-9cf4-d736bafe36f8"]};
 function isAdultProduct(p) { return !!(p && p.slug && ADULT_CONTENT.productSlugs.indexOf(String(p.slug)) >= 0); }
 function isAdultAsset(id) { return !!(id && ADULT_CONTENT.assetIds.indexOf(String(id)) >= 0); }
+// Cart and checkout use both signals: the product 18+ checkbox (requiresAgeConfirm) and ADULT_CONTENT.
+function isAdultCartItem(p) { return !!(p && (p.requiresAgeConfirm === true || isAdultProduct(p))); }
+function cartLineIsAdult(line, products) {
+  if (line && line.adult) return true;
+  const match = (products || []).find((p) => p && line && p._id === line.productId);
+  return !!(match && isAdultCartItem(match));
+}
 // "18+" label (owner 13:51). Brand source: Brain/Saboteur.one/"Claude Design Prompt - saboteur.one Design System.md",
 // section "Tags / Badges": 4px radius, 4px 8px padding, --font-label (IBM Plex Mono 500, 0.8125rem, 0.02em tracking),
 // no uppercase transform. Colors: black #18181B / white #FFFFFF (inverted in dark mode), see --color-adult-*. Below the copy, not on the image.
@@ -1322,6 +1329,29 @@ function AdultLabel() {
       fontWeight: 'var(--font-label-weight, 500)', letterSpacing: 'var(--font-label-tracking, 0.02em)',
       lineHeight: 1.4, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
     }}>{ADULT_LABEL}</span>
+  );
+}
+
+function AgeConfirm({ checked, onChange, lineId }) {
+  return (
+    <div data-age-confirm={lineId || 'checkout'} style={{ marginBottom: 28 }}>
+      <label style={{
+        display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, cursor: 'pointer',
+        fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.45,
+      }}>
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={(e) => onChange && onChange(e.target.checked)}
+          style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, accentColor: 'var(--color-ink)', cursor: 'pointer' }}
+        />
+        <span>I confirm I am 18 years of age or older. This product may contain artistic adult content.</span>
+      </label>
+      <p data-adult-line={lineId || 'checkout'} style={{
+        fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
+        margin: '0 0 0 30px', lineHeight: 1.5,
+      }}>{ADULT_CONTENT_LINE}</p>
+    </div>
   );
 }
 
@@ -3816,6 +3846,7 @@ function quickAddAction(p, physicalOrdersEnabled) {
   if (comingSoon) return { mode: 'disabled', label: 'Add to cart', reason: 'comingSoon' };
   if (sold) return { mode: 'disabled', label: 'Sold out', reason: 'soldOut' };
   if (paused) return { mode: 'disabled', label: 'Add to cart', reason: 'paused' };
+  if (isProductUnavailable(p, physicalOrdersEnabled)) return { mode: 'disabled', label: 'Sold out', reason: 'soldOut' };
   if (isFree) return { mode: 'link', label: 'Download', reason: 'free' };
   if (needsSize) return { mode: 'link', label: 'Add to cart', reason: 'needsSize' };
   return { mode: 'add', label: 'Add to cart', reason: 'add' };
@@ -4327,24 +4358,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
           ) : null}
 
           {!isSoldOut && needsAge ? (
-            <div style={{ marginBottom: 28 }}>
-            <label style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, cursor: 'pointer',
-              fontFamily: 'var(--font-family-mono)', fontSize: '13px', color: 'var(--color-ink)', lineHeight: 1.45,
-            }}>
-              <input
-                type="checkbox"
-                checked={ageOk}
-                onChange={(e) => { setAgeOk(e.target.checked); setDlError(''); }}
-                style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, accentColor: 'var(--color-ink)', cursor: 'pointer' }}
-              />
-              <span>I confirm I am 18 years of age or older. This product may contain artistic adult content.</span>
-            </label>
-            <p data-adult-line="product" style={{
-              fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-ink-55)',
-              margin: '0 0 0 30px', lineHeight: 1.5,
-            }}>{ADULT_CONTENT_LINE}</p>
-            </div>
+            <AgeConfirm checked={ageOk} onChange={(ok) => { setAgeOk(ok); setDlError(''); }} lineId="product" />
           ) : null}
           {!isSoldOut && needsSize ? (
             <div style={{ marginBottom: 32 }}>
@@ -4731,12 +4745,15 @@ function PoliciesPage({ onMenu, onBack, onHome, onContact, onTag, dark, onToggle
   );
 }
 
-function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping, onUpdateQty, onRemoveLine }) {
+function CheckoutPage({ cart, products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onContinueShopping, onUpdateQty, onRemoveLine }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [checkoutEmail, setCheckoutEmail] = useState(() => { try { return localStorage.getItem('saboteur_checkout_email') || ''; } catch (e) { return ''; } });
   const [emailError, setEmailError] = useState(false);
+  const [ageOk, setAgeOk] = useState(false);
+  const hasAdult = (cart || []).some((l) => cartLineIsAdult(l, products));
+  useEffect(() => { if (!hasAdult) setAgeOk(false); }, [hasAdult]);
   const newCheckoutId = () => { try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {} return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2); };
   const cartSig = (cart || []).map((l) => (l.productId || l.id) + ':' + (l.variant || '') + ':' + (l.qty || 1)).join('|');
   const checkoutIdRef = React.useRef(null);
@@ -4769,6 +4786,10 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
     if (!emailValid) {
       setEmailError(true);
       setCheckoutError('Enter a valid email so we can send your order.');
+      return;
+    }
+    if (hasAdult && !ageOk) {
+      setCheckoutError('Confirm you are 18 or older to continue.');
       return;
     }
     try { localStorage.setItem('saboteur_checkout_email', checkoutEmail.trim()); } catch (e) {}
@@ -4936,27 +4957,30 @@ function CheckoutPage({ cart, physicalOrdersEnabled, physicalOrdersPausedMessage
         {checkoutError ? (
           <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '12px', color: 'var(--color-error)', marginBottom: 12, lineHeight: 1.45 }}>{checkoutError}</div>
         ) : null}
+        {hasAdult ? (
+          <AgeConfirm checked={ageOk} onChange={(ok) => { setAgeOk(ok); setCheckoutError(''); }} lineId="checkout" />
+        ) : null}
         <button
           type="button"
-          onClick={(e) => { if (checkoutBusy) return; const btn = e.currentTarget; btn.disabled = true; placeOrder().finally(() => { if (btn.isConnected && !redirectingRef.current) btn.disabled = false; }); }}
-          disabled={checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked}
+          onClick={(e) => { if (checkoutBusy || (hasAdult && !ageOk)) return; const btn = e.currentTarget; btn.disabled = true; placeOrder().finally(() => { if (btn.isConnected && !redirectingRef.current) btn.disabled = false; }); }}
+          disabled={checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked || (hasAdult && !ageOk)}
           style={{
             width: '100%', minHeight: 52, padding: '14px 28px', marginBottom: 10,
-            background: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) ? 'var(--color-card)' : 'var(--color-ink)',
-            color: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) ? 'var(--color-ink-55)' : 'var(--color-paper)',
+            background: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked || (hasAdult && !ageOk)) ? 'var(--color-card)' : 'var(--color-ink)',
+            color: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked || (hasAdult && !ageOk)) ? 'var(--color-ink-55)' : 'var(--color-paper)',
             border: 'none',
             borderRadius: 'var(--radius-sm)',
-            cursor: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) ? 'not-allowed' : 'pointer',
+            cursor: (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked || (hasAdult && !ageOk)) ? 'not-allowed' : 'pointer',
             fontFamily: 'var(--font-family-mono)', fontSize: '13px', fontWeight: 500,
             letterSpacing: '0.02em',
           }}
           onMouseEnter={(e) => {
-            if (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) return;
+            if (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked || (hasAdult && !ageOk)) return;
             e.currentTarget.style.background = 'var(--color-accent)';
             e.currentTarget.style.color = '#fff';
           }}
           onMouseLeave={(e) => {
-            if (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked) {
+            if (checkoutBusy || !(cart || []).length || totalCents <= 0 || shippingBlocked || (hasAdult && !ageOk)) {
               e.currentTarget.style.background = 'var(--color-card)';
               e.currentTarget.style.color = 'var(--color-ink-55)';
               return;
@@ -6862,12 +6886,23 @@ function App() {
   useEffect(() => {
     if (!products || !products.length) return;
     setCart((prev) => {
-      const next = (prev || []).filter((line) => {
+      let changed = false;
+      const next = [];
+      (prev || []).forEach((line) => {
         const match = products.find((p) => p && line && p._id === line.productId);
-        if (!match) return true;
-        return !isComingSoon(match) && !isFlaggedSoldOut(match);
+        if (match && (isComingSoon(match) || isFlaggedSoldOut(match))) {
+          changed = true;
+          return;
+        }
+        const adult = !!(line && line.adult) || !!(match && isAdultCartItem(match));
+        if (adult && !line.adult) {
+          changed = true;
+          next.push({ ...line, adult: true });
+        } else {
+          next.push(line);
+        }
       });
-      if (next.length === (prev || []).length) return prev;
+      if (!changed) return prev;
       try { localStorage.setItem('saboteur-cart', JSON.stringify(next)); } catch (e) {}
       return next;
     });
@@ -7311,9 +7346,10 @@ function App() {
     setCart((prev) => {
       const lineId = String(product._id || product.slug || product.title) + (variant ? '::' + variant : '');
       const existing = prev.find((l) => l.id === lineId);
+      const adult = isAdultCartItem(product);
       let next;
       if (existing) {
-        next = prev.map((l) => l.id === lineId ? { ...l, qty: (l.qty || 1) + 1 } : l);
+        next = prev.map((l) => l.id === lineId ? { ...l, qty: (l.qty || 1) + 1, adult: !!(l.adult || adult) } : l);
       } else {
         const ft = product.fulfillmentType || 'free_digital';
         const isPhysical = ft === 'paid_physical' || ft === 'paid_physical_variant';
@@ -7341,6 +7377,7 @@ function App() {
           productDetails: details,
           qty: 1,
           digitalFileUrl: product.digitalFileUrl || null,
+          adult: adult,
         }];
       }
       try { localStorage.setItem('saboteur-cart', JSON.stringify(next)); } catch {}
@@ -7688,6 +7725,7 @@ function App() {
       {!loading && view.page === 'checkout' && (
         <CheckoutPage
           cart={cart}
+          products={products}
           physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}

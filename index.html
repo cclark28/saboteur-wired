@@ -681,6 +681,10 @@
     transform-origin: center center;
     transition: transform 350ms var(--ease, ease-out), opacity var(--duration-fast, 150ms) var(--ease, ease-out);
   }
+  [data-adult-label] {
+    background: var(--color-adult-bg);
+    color: var(--color-adult-text);
+  }
   .store-card [data-adult-label] {
     transition: background-color 350ms var(--ease, ease-out), color 350ms var(--ease, ease-out);
   }
@@ -1152,7 +1156,6 @@ function AdultLabel() {
   return (
     <span data-adult-label role="img" aria-label={ADULT_LABEL_ARIA} style={{
       display: 'inline-block', alignSelf: 'flex-start',
-      background: 'var(--color-adult-bg)', color: 'var(--color-adult-text)',
       borderRadius: 'var(--radius-sm, 4px)', padding: '4px 8px',
       fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size, 0.8125rem)',
       fontWeight: 'var(--font-label-weight, 500)', letterSpacing: 'var(--font-label-tracking, 0.02em)',

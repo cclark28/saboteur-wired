@@ -1330,21 +1330,23 @@ function featureProduct(products, slug) {
   return (products || []).find((p) => p && p.slug === slug && p.enabled !== false) || null;
 }
 
-// Any Camelia post, tile or gallery should open the store book, not the post.
-// Match on title, headline, subhead, tags, or the flag-video document (the Camelia video),
-// including its draft id. Do not key off a single Sanity document id.
-const CAMELIA_PRODUCT_SLUG = 'camelia-arama';
-function cameliaStorePath() {
-  return '/store/' + encodeURIComponent(CAMELIA_PRODUCT_SLUG);
+// Posts that should open a store product instead of the post itself.
+// Keys are Sanity asset ids (drafts. prefix is ignored). Camelia also still
+// matches on title, headline, subhead, alt, and tags so existing tiles keep working.
+const POST_PRODUCT_LINKS = {
+  'flag-video': 'camelia-arama',
+  '6994ef54-f2e7-45af-9b76-8ea90a06e425': 'katherine-krakow-2026',
+};
+function bareDocumentId(id) {
+  return String(id || '').replace(/^drafts\./, '');
 }
-function isCameliaAssetId(id) {
-  return String(id || '').replace(/^drafts\./, '') === 'flag-video';
+function postProductPath(slug) {
+  return slug ? '/store/' + encodeURIComponent(slug) : '/store';
 }
-function isCameliaItem(s) {
-  if (!s) return false;
-  // The store product page stays as it is; product tiles already open that page.
-  if (s.isProduct) return false;
-  if (isCameliaAssetId(s.id)) return true;
+function productSlugForPost(s) {
+  if (!s || s.isProduct) return null;
+  const fromId = POST_PRODUCT_LINKS[bareDocumentId(s.id)];
+  if (fromId) return fromId;
   const bits = [s.title, s.headline, s.subhead, s.alt];
   (s.tags || []).forEach((tag) => {
     if (!tag) return;
@@ -1353,12 +1355,17 @@ function isCameliaItem(s) {
       bits.push(tag.title, tag.slug);
     }
   });
-  return bits.some((b) => b && String(b).toLowerCase().indexOf('camelia') >= 0);
+  if (bits.some((b) => b && String(b).toLowerCase().indexOf('camelia') >= 0)) {
+    return POST_PRODUCT_LINKS['flag-video'] || 'camelia-arama';
+  }
+  return null;
 }
-function wrapCameliaMedia(series, child) {
-  if (!isCameliaItem(series)) return child;
+function wrapPostProductMedia(series, child) {
+  const slug = productSlugForPost(series);
+  if (!slug) return child;
+  const isCamelia = slug === 'camelia-arama';
   return (
-    <a href={cameliaStorePath()} aria-label="Open the Camelia store item" data-camelia-link="product"
+    <a href={postProductPath(slug)} aria-label={isCamelia ? 'Open the Camelia store item' : ('Open the ' + (series.headline || series.title || 'store') + ' store item')} data-product-link={slug} data-camelia-link={isCamelia ? 'product' : undefined}
       style={{ display: 'block', lineHeight: 0, color: 'inherit' }}>{child}</a>
   );
 }
@@ -2489,14 +2496,16 @@ function MasonryTile({ s, onOpen, onOpenProduct, fadingOut, takeStagger }) {
       </a>
     );
   }
-  if (isCameliaItem(s)) {
+  const linkedSlug = productSlugForPost(s);
+  if (linkedSlug) {
     return (
       <a
         ref={cellRef}
         className="grid-frame-cell"
-        href={cameliaStorePath()}
-        aria-label={s.alt || s.headline || s.title || 'Open the Camelia store item'}
-        data-camelia-link="product"
+        href={postProductPath(linkedSlug)}
+        aria-label={s.alt || s.headline || s.title || (linkedSlug === 'camelia-arama' ? 'Open the Camelia store item' : 'Open the store item')}
+        data-product-link={linkedSlug}
+        data-camelia-link={linkedSlug === 'camelia-arama' ? 'product' : undefined}
         onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpen) onOpen(s); }}
         style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
       >
@@ -5102,7 +5111,7 @@ function GalleryPanel({ series }) {
         return (
           <div key={item.src || i} style={{ width: '100%', display: 'flex', justifyContent: isPort ? 'center' : 'stretch' }}>
             <div className="photo-wrap photo-parallax" data-parallax style={{ width: '100%', maxWidth: style.maxWidth }}>
-              {wrapCameliaMedia(series, item.type === 'video' ? (
+              {wrapPostProductMedia(series, item.type === 'video' ? (
                 <video
                   src={item.src}
                   muted
@@ -5165,7 +5174,7 @@ function PairedGallery({ series, items, gap }) {
         <div key={r} style={{ display: 'flex', gap, width: '100%', alignItems: 'flex-start' }}>
           {row.map((c) => (
             <div key={c.src} className="photo-wrap photo-parallax" data-parallax style={{ flex: row.length === 2 ? (c.ar || 1) + ' 1 0' : '1 1 100%', minWidth: 0, lineHeight: 0 }}>
-              {wrapCameliaMedia(series, media(c))}
+              {wrapPostProductMedia(series, media(c))}
             </div>
           ))}
         </div>
@@ -7085,10 +7094,11 @@ function App() {
       navigate({ page: 'product', product: series.product });
       return;
     }
-    if (isCameliaItem(series)) {
-      const prod = featureProduct(products, CAMELIA_PRODUCT_SLUG);
+    const linkedSlug = productSlugForPost(series);
+    if (linkedSlug) {
+      const prod = featureProduct(products, linkedSlug);
       if (prod) navigate({ page: 'product', product: prod });
-      else navigate({ page: 'product', productSlug: CAMELIA_PRODUCT_SLUG });
+      else navigate({ page: 'product', productSlug: linkedSlug });
       window.scrollTo(0, 0);
       return;
     }

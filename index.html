@@ -772,12 +772,41 @@
       transform: none !important;
     }
   }
+  /* Titles and any card copy: 2-line clamp with a reserved height so price and actions stay in line. */
+  .store-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .store-card-title,
+  .store-card-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+    min-height: calc(2 * 1.3em);
+    max-height: calc(2 * 1.3em);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  .store-card-meta {
+    min-width: 0;
+  }
+  .store-card-meta > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
   .store-card-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 10px;
-    margin-top: 12px;
+    margin-top: auto;
+    padding-top: 12px;
     width: 100%;
   }
   .store-card-add {
@@ -3885,12 +3914,15 @@ function StoreCard({ product, physicalOrdersEnabled, onOpenProduct, onAddToCart,
           ) : null}
         </div>
         <div style={{ paddingTop: compact ? 0 : 2 }}>
-          <div style={{
+          <div
+            className="store-card-title"
+            title={p.title || undefined}
+            style={{
             fontFamily: 'var(--font-family-display)', fontWeight: 500, fontSize: compact ? '15px' : '16px', marginBottom: compact ? 6 : 8, lineHeight: 1.3,
             color: (unavailable && !comingSoon) ? 'var(--color-ink-55)' : 'var(--color-ink)',
             textDecoration: sold ? 'line-through' : 'none',
           }}>{p.title}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+          <div className="store-card-meta" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
             <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: compact ? '10px' : '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{catLabel}</span>
             <span style={{
               fontFamily: 'var(--font-family-mono)',

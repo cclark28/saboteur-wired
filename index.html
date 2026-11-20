@@ -351,20 +351,32 @@
   @media (prefers-reduced-motion: reduce) {
     .books-intro-caret { display: none; }
   }
-  [data-books-intro] .books-intro-text {
+  [data-books-intro] .books-intro-lead,
+  [data-books-intro] .books-intro-body {
     font-family: var(--font-family-display);
     font-weight: 400;
-    font-size: 18px;
-    line-height: 1.45;
-    letter-spacing: -0.015em;
     color: var(--color-ink);
     margin: 0;
   }
+  [data-books-intro] .books-intro-lead {
+    font-size: 18px;
+    line-height: 1.45;
+    letter-spacing: -0.015em;
+  }
+  [data-books-intro] .books-intro-body {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 12px;
+  }
   @media (max-width: 640px) {
-    [data-books-intro] .books-intro-text {
+    [data-books-intro] .books-intro-lead {
       font-size: var(--font-body-sm-size);
       line-height: 1.55;
       letter-spacing: normal;
+    }
+    [data-books-intro] .books-intro-body {
+      font-size: 14px;
+      line-height: 1.5;
     }
   }
   /* Full menu — solid block hover/active (Monolog-style), desktop */
@@ -1480,7 +1492,10 @@ async function fetchSanityBundle() {
       socialLinks,
       physicalOrdersEnabled,
       physicalOrdersPausedMessage,
-      booksIntro
+      booksIntro,
+      comicsIntro,
+      texturesIntro,
+      originalArtIntro
     },
     "footer": *[_type == "footer"][0]{
       marqueeText,
@@ -3421,26 +3436,67 @@ function ApparelTakeover() {
 }
 
 
-function BooksIntro({ text }) {
-  const full = String(text || '').trim();
-  const reducedStart = (typeof window !== 'undefined' && prefersReducedMotion());
-  const [chars, setChars] = useState(reducedStart ? full.length : 0);
+const STORE_INTRO_FIELDS = {
+  comics: 'comicsIntro',
+  'prints-and-books': 'booksIntro',
+  textures: 'texturesIntro',
+  'original-art': 'originalArtIntro',
+};
+const STORE_INTRO_TYPED = Object.create(null);
+
+function introTextForFilter(intros, filter) {
+  const key = STORE_INTRO_FIELDS[filter];
+  return key ? String((intros && intros[key]) || '').trim() : '';
+}
+
+function splitIntroParagraphs(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return { lead: '', body: '' };
+  const parts = raw.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length > 1) return { lead: parts[0], body: parts.slice(1).join('\n\n') };
+  const booksMark = 'A city I don\'t know yet.';
+  const at = raw.indexOf(booksMark);
+  if (at > 0) return { lead: raw.slice(0, at).trim(), body: raw.slice(at).trim() };
+  const m = raw.match(/^(.+?[.!?])(?:\s+)([\s\S]+)$/);
+  if (m && m[2]) return { lead: m[1].trim(), body: m[2].trim() };
+  return { lead: raw, body: '' };
+}
+
+function StoreIntro({ text, tabKey }) {
+  const raw = String(text || '').trim();
+  const { lead, body } = splitIntroParagraphs(raw);
+  const total = lead.length + body.length;
+  const key = tabKey || 'intro';
+  const already = STORE_INTRO_TYPED[key] === 'done';
+  const reducedStart = already || (typeof window !== 'undefined' && prefersReducedMotion());
+  const [chars, setChars] = useState(reducedStart ? total : 0);
   const [started, setStarted] = useState(!!reducedStart);
   const [done, setDone] = useState(!!reducedStart);
-  const [staticFallback, setStaticFallback] = useState(false);
+  const [staticFallback, setStaticFallback] = useState(!!already);
   const startedRef = React.useRef(!!reducedStart);
-  const charsRef = React.useRef(reducedStart ? (full.length) : 0);
+  const charsRef = React.useRef(reducedStart ? total : 0);
   const rootRef = React.useRef(null);
 
   useEffect(() => { charsRef.current = chars; }, [chars]);
 
   useEffect(() => {
-    if (!full) return undefined;
-    if (prefersReducedMotion()) {
+    if (done) STORE_INTRO_TYPED[key] = 'done';
+  }, [done, key]);
+
+  useEffect(() => {
+    return () => {
+      if (startedRef.current) STORE_INTRO_TYPED[key] = 'done';
+    };
+  }, [key]);
+
+  useEffect(() => {
+    if (!total) return undefined;
+    if (already || prefersReducedMotion()) {
       startedRef.current = true;
       setStarted(true);
-      setChars(full.length);
+      setChars(total);
       setDone(true);
+      STORE_INTRO_TYPED[key] = 'done';
       return undefined;
     }
     if (startedRef.current) return undefined;
@@ -3454,15 +3510,13 @@ function BooksIntro({ text }) {
     const showFull = () => {
       startedRef.current = true;
       setStarted(true);
-      setChars(full.length);
+      setChars(total);
       setDone(true);
       setStaticFallback(true);
+      STORE_INTRO_TYPED[key] = 'done';
     };
 
-    // Start on its own shortly after mount. Do not wait for a scroll.
     const startTimer = window.setTimeout(start, 300);
-
-    // Safety net: if typing never starts, or the overlay never paints text, show the full copy.
     const safetyTimer = window.setTimeout(() => {
       if (!startedRef.current || charsRef.current === 0) {
         showFull();
@@ -3477,34 +3531,46 @@ function BooksIntro({ text }) {
       window.clearTimeout(startTimer);
       window.clearTimeout(safetyTimer);
     };
-  }, [full]);
+  }, [total, already, key]);
 
   useEffect(() => {
-    if (!full || !started || done) return undefined;
-    if (chars >= full.length) {
+    if (!total || !started || done) return undefined;
+    if (chars >= total) {
       setDone(true);
       return undefined;
     }
-    const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(full.length, 1))));
-    const t = window.setTimeout(() => setChars((n) => Math.min(full.length, n + 1)), delay);
+    const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(total, 1))));
+    const t = window.setTimeout(() => setChars((n) => Math.min(total, n + 1)), delay);
     return () => window.clearTimeout(t);
-  }, [full, started, chars, done]);
+  }, [total, started, chars, done]);
 
-  if (!full) return null;
+  if (!lead) return null;
+
+  const leadTyped = lead.slice(0, Math.min(chars, lead.length));
+  const bodyTyped = chars > lead.length ? body.slice(0, chars - lead.length) : '';
+  const caret = (started && !done) ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null;
+  const caretOnLead = !!caret && chars < lead.length;
+  const caretOnBody = !!caret && chars >= lead.length;
 
   return (
-    <div ref={rootRef} data-books-intro style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
-      <p className="sr-only">{full}</p>
-      <p className="books-intro-text" aria-hidden="true" style={{ visibility: staticFallback ? 'visible' : 'hidden' }}>{full}</p>
-      <p className="books-intro-text" aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0, visibility: staticFallback ? 'hidden' : 'visible' }}>
-        {full.slice(0, chars)}
-        {started && !done ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null}
-      </p>
+    <div ref={rootRef} data-books-intro data-store-intro={key} style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
+      <div className="sr-only">
+        <p>{lead}</p>
+        {body ? <p>{body}</p> : null}
+      </div>
+      <div aria-hidden="true" style={{ visibility: staticFallback ? 'visible' : 'hidden' }}>
+        <p className="books-intro-lead">{lead}</p>
+        {body ? <p className="books-intro-body">{body}</p> : null}
+      </div>
+      <div aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0, visibility: staticFallback ? 'hidden' : 'visible' }}>
+        <p className="books-intro-lead">{leadTyped}{caretOnLead ? caret : null}</p>
+        {body ? <p className="books-intro-body">{bodyTyped}{caretOnBody ? caret : null}</p> : null}
+      </div>
     </div>
   );
 }
 
-function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, booksIntro, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, storeIntros, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
   // Honor an explicit deep link (?tab=comics) even if that tab is locked (travel pause).
@@ -3520,6 +3586,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
   const isEmpty = list.length === 0;
   const shippingPaused = !arePhysicalOrdersLive(physicalOrdersEnabled);
   const takeover = APPAREL_TAKEOVER.on && filter === 'clothing';
+  const tabIntro = introTextForFilter(storeIntros, filter);
 
   const mutedCats = {};
   const lockedCats = {};
@@ -3539,7 +3606,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
         {shippingPaused && !takeover ? (
           <PhysicalPauseNotice message={physicalOrdersPausedMessage} />
         ) : null}
-        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: takeover ? 24 : (filter === 'prints-and-books' && String(booksIntro || '').trim() ? 28 : 64), borderBottom: '1px solid var(--color-stroke)' }}>
+        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: takeover ? 24 : (tabIntro ? 28 : 64), borderBottom: '1px solid var(--color-stroke)' }}>
           {STORE_CATEGORIES.map((c) => {
             const active = filter === c.id;
             const muted = mutedCats[c.id];
@@ -3564,8 +3631,8 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             );
           })}
         </div>
-        {(!takeover && filter === 'prints-and-books' && String(booksIntro || '').trim()) ? (
-          <BooksIntro text={booksIntro} />
+        {(!takeover && tabIntro) ? (
+          <StoreIntro text={tabIntro} tabKey={filter} />
         ) : null}
       </div>
       {takeover ? <ApparelTakeover /> : null}
@@ -7252,7 +7319,7 @@ function App() {
           initialCategory={view.storeCategory}
           physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
-          booksIntro={siteSettings && siteSettings.booksIntro}
+          storeIntros={siteSettings}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={goHome}
           onHome={goHome}

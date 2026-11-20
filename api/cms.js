@@ -25,7 +25,10 @@ const SITE_BUNDLE_QUERY = `{
       socialLinks,
       physicalOrdersEnabled,
       physicalOrdersPausedMessage,
-      booksIntro
+      booksIntro,
+      comicsIntro,
+      texturesIntro,
+      originalArtIntro
     },
     "footer": *[_type == "footer"][0]{
       marqueeText,

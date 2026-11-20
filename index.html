@@ -3464,7 +3464,12 @@ function BooksIntro({ text }) {
   const [chars, setChars] = useState(reducedStart ? full.length : 0);
   const [started, setStarted] = useState(!!reducedStart);
   const [done, setDone] = useState(!!reducedStart);
+  const [staticFallback, setStaticFallback] = useState(false);
   const startedRef = React.useRef(!!reducedStart);
+  const charsRef = React.useRef(reducedStart ? (full.length) : 0);
+  const rootRef = React.useRef(null);
+
+  useEffect(() => { charsRef.current = chars; }, [chars]);
 
   useEffect(() => {
     if (!full) return undefined;
@@ -3483,18 +3488,31 @@ function BooksIntro({ text }) {
       setStarted(true);
     };
 
-    const onScroll = () => {
-      if (window.scrollY >= 60) start();
+    const showFull = () => {
+      startedRef.current = true;
+      setStarted(true);
+      setChars(full.length);
+      setDone(true);
+      setStaticFallback(true);
     };
 
-    const canScroll = document.documentElement.scrollHeight > (window.innerHeight + 8);
-    let delayTimer = 0;
-    if (!canScroll) delayTimer = window.setTimeout(start, 700);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    // Start on its own shortly after mount. Do not wait for a scroll.
+    const startTimer = window.setTimeout(start, 300);
+
+    // Safety net: if typing never starts, or the overlay never paints text, show the full copy.
+    const safetyTimer = window.setTimeout(() => {
+      if (!startedRef.current || charsRef.current === 0) {
+        showFull();
+        return;
+      }
+      const overlay = rootRef.current && rootRef.current.querySelector('[data-books-intro-typed]');
+      const painted = overlay && String(overlay.textContent || '').trim();
+      if (!painted) showFull();
+    }, 2000);
+
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (delayTimer) window.clearTimeout(delayTimer);
+      window.clearTimeout(startTimer);
+      window.clearTimeout(safetyTimer);
     };
   }, [full]);
 
@@ -3504,7 +3522,6 @@ function BooksIntro({ text }) {
       setDone(true);
       return undefined;
     }
-    // Keep the total under 10s even on this long paragraph; otherwise ~18-28ms per character.
     const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(full.length, 1))));
     const t = window.setTimeout(() => setChars((n) => Math.min(full.length, n + 1)), delay);
     return () => window.clearTimeout(t);
@@ -3513,10 +3530,10 @@ function BooksIntro({ text }) {
   if (!full) return null;
 
   return (
-    <div data-books-intro style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
+    <div ref={rootRef} data-books-intro style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
       <p className="sr-only">{full}</p>
-      <p className="books-intro-text" aria-hidden="true" style={{ visibility: 'hidden' }}>{full}</p>
-      <p className="books-intro-text" aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
+      <p className="books-intro-text" aria-hidden="true" style={{ visibility: staticFallback ? 'visible' : 'hidden' }}>{full}</p>
+      <p className="books-intro-text" aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0, visibility: staticFallback ? 'hidden' : 'visible' }}>
         {full.slice(0, chars)}
         {started && !done ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null}
       </p>

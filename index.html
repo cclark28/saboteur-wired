@@ -473,6 +473,45 @@
   }
 
 
+  [data-topbar-back] {
+    box-sizing: border-box;
+    width: 69px;
+    height: 31px;
+    padding: 0 0 0 12px;
+    gap: 12.912px;
+    border: none;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    font-family: var(--font-family-display);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
+    color: #fff;
+    background: var(--back-btn-bg, var(--color-ink));
+    transition: background var(--duration-fast) var(--ease);
+  }
+  [data-topbar-back] svg {
+    display: block;
+    width: 4px;
+    height: 8px;
+    overflow: visible;
+    flex-shrink: 0;
+  }
+  [data-topbar-back-label] {
+    display: block;
+    font: inherit;
+    color: inherit;
+    line-height: 1;
+  }
+  [data-topbar-back]:hover,
+  [data-topbar-back]:focus-visible {
+    background: var(--back-btn-bg-hover, #2A2A2E);
+  }
+
   /* Phone header: keep cart + menu inside 375–430px viewports. Desktop unchanged. */
   [data-topbar] {
     box-sizing: border-box;
@@ -503,11 +542,6 @@
       min-width: 44px;
       min-height: 44px;
     }
-    [data-topbar-back] {
-      padding: 8px !important;
-      gap: 0 !important;
-    }
-    [data-topbar-back-label] { display: none; }
   }
 
   /* Header marks: AB Dick and LOAD Magazine, linking to Books & Zines.
@@ -2039,8 +2073,11 @@ function TopBar({ onMenu, showBack, onBack, hero, onHome, dark, onToggleDark, on
           )}
         </div>
         {showBack && (
-          <button data-topbar-back aria-label="Back" onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'} style={{ background: 'var(--back-btn-bg, var(--color-ink))', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-family-mono)', fontSize: 'var(--font-label-size)', fontWeight: 500, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', transition: 'background var(--duration-fast) var(--ease)' }}>
-            <img src="/assets/icons/chevron-left.svg" style={{ width: 16, height: 16, filter: 'invert(1)' }} alt="" /> <span data-topbar-back-label>Back</span>
+          <button data-topbar-back aria-label="Back" onClick={onBack} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--back-btn-bg-hover, #2A2A2E)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--back-btn-bg, var(--color-ink))'}>
+            <svg width="4" height="8" viewBox="12 11.5 4 8" fill="none" aria-hidden="true" focusable="false">
+              <path d="M16 11.5L12 15.5L16 19.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            </svg>
+            <span data-topbar-back-label>Back</span>
           </button>
         )}
         <button aria-label="Toggle dark mode" className="icon-btn" onClick={onToggleDark} onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(25deg)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', padding: 0, transition: 'transform var(--duration-fast) var(--ease)' }}>

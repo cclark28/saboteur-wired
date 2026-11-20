@@ -355,28 +355,21 @@
   [data-books-intro] .books-intro-body {
     font-family: var(--font-family-display);
     font-weight: 400;
-    color: var(--color-ink);
-    margin: 0;
-  }
-  [data-books-intro] .books-intro-lead {
     font-size: 18px;
     line-height: 1.45;
     letter-spacing: -0.015em;
+    color: var(--color-ink);
+    margin: 0;
   }
   [data-books-intro] .books-intro-body {
-    font-size: 14px;
-    line-height: 1.5;
     margin-top: 12px;
   }
   @media (max-width: 640px) {
-    [data-books-intro] .books-intro-lead {
+    [data-books-intro] .books-intro-lead,
+    [data-books-intro] .books-intro-body {
       font-size: var(--font-body-sm-size);
       line-height: 1.55;
       letter-spacing: normal;
-    }
-    [data-books-intro] .books-intro-body {
-      font-size: 14px;
-      line-height: 1.5;
     }
   }
   /* Full menu — solid block hover/active (Monolog-style), desktop */
@@ -3513,15 +3506,28 @@ function StoreIntro({ text, tabKey }) {
   const startedRef = React.useRef(!!reducedStart);
   const charsRef = React.useRef(reducedStart ? total : 0);
   const rootRef = React.useRef(null);
+  const totalRef = React.useRef(total);
+  totalRef.current = total;
+
+  const showFull = React.useCallback(() => {
+    startedRef.current = true;
+    charsRef.current = totalRef.current;
+    setStarted(true);
+    setChars(totalRef.current);
+    setDone(true);
+    setStaticFallback(true);
+    STORE_INTRO_TYPED[key] = 'done';
+  }, [key]);
 
   useEffect(() => { charsRef.current = chars; }, [chars]);
 
   useEffect(() => {
-    if (done) STORE_INTRO_TYPED[key] = 'done';
+    if (done && charsRef.current >= totalRef.current) STORE_INTRO_TYPED[key] = 'done';
   }, [done, key]);
 
   useEffect(() => {
     return () => {
+      // If the visitor leaves mid-type, show the finished copy on return.
       if (startedRef.current) STORE_INTRO_TYPED[key] = 'done';
     };
   }, [key]);
@@ -3529,14 +3535,9 @@ function StoreIntro({ text, tabKey }) {
   useEffect(() => {
     if (!total) return undefined;
     if (already || prefersReducedMotion()) {
-      startedRef.current = true;
-      setStarted(true);
-      setChars(total);
-      setDone(true);
-      STORE_INTRO_TYPED[key] = 'done';
+      showFull();
       return undefined;
     }
-    if (startedRef.current) return undefined;
 
     const start = () => {
       if (startedRef.current) return;
@@ -3544,16 +3545,10 @@ function StoreIntro({ text, tabKey }) {
       setStarted(true);
     };
 
-    const showFull = () => {
-      startedRef.current = true;
-      setStarted(true);
-      setChars(total);
-      setDone(true);
-      setStaticFallback(true);
-      STORE_INTRO_TYPED[key] = 'done';
-    };
-
+    const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(total, 1))));
     const startTimer = window.setTimeout(start, 300);
+    // Always finish: snap to the full string if typing stalls or lags.
+    const finishTimer = window.setTimeout(showFull, 300 + delay * total + 500);
     const safetyTimer = window.setTimeout(() => {
       if (!startedRef.current || charsRef.current === 0) {
         showFull();
@@ -3566,20 +3561,26 @@ function StoreIntro({ text, tabKey }) {
 
     return () => {
       window.clearTimeout(startTimer);
+      window.clearTimeout(finishTimer);
       window.clearTimeout(safetyTimer);
     };
-  }, [total, already, key]);
+  }, [total, already, key, showFull]);
 
   useEffect(() => {
     if (!total || !started || done) return undefined;
     if (chars >= total) {
       setDone(true);
+      STORE_INTRO_TYPED[key] = 'done';
       return undefined;
     }
     const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(total, 1))));
-    const t = window.setTimeout(() => setChars((n) => Math.min(total, n + 1)), delay);
+    const t = window.setTimeout(() => setChars((n) => {
+      const next = Math.min(total, n + 1);
+      charsRef.current = next;
+      return next;
+    }), delay);
     return () => window.clearTimeout(t);
-  }, [total, started, chars, done]);
+  }, [total, started, chars, done, key]);
 
   if (!lead) return null;
 
@@ -3588,9 +3589,18 @@ function StoreIntro({ text, tabKey }) {
   const caret = (started && !done) ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null;
   const caretOnLead = !!caret && chars < lead.length;
   const caretOnBody = !!caret && chars >= lead.length;
+  const complete = done && chars >= total;
 
   return (
-    <div ref={rootRef} data-books-intro data-store-intro={key} style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
+    <div
+      ref={rootRef}
+      data-books-intro
+      data-store-intro={key}
+      data-intro-done={complete ? 'true' : 'false'}
+      data-intro-chars={chars}
+      data-intro-total={total}
+      style={{ position: 'relative', margin: '0 0 64px', width: '100%', overflow: 'visible' }}
+    >
       <div className="sr-only">
         <p>{lead}</p>
         {body ? <p>{body}</p> : null}
@@ -3669,7 +3679,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
           })}
         </div>
         {(!takeover && tabIntro) ? (
-          <StoreIntro text={tabIntro} tabKey={filter} />
+          <StoreIntro key={filter} text={tabIntro} tabKey={filter} />
         ) : null}
       </div>
       {takeover ? <ApparelTakeover /> : null}

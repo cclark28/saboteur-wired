@@ -2452,19 +2452,41 @@ function MasonryTile({ s, onOpen, onOpenProduct, fadingOut, takeStagger }) {
     let started = false;
     let delayTimer = 0;
     let fallbackTimer = 0;
+    let pollTimer = 0;
     let io = null;
     const reduced = prefersReducedMotion();
+    const margin = 200;
 
     const tryReveal = () => {
       if (started || !visible || !ready) return;
       started = true;
       const wait = reduced ? 0 : (takeStagger ? takeStagger() : 0);
       delayTimer = window.setTimeout(() => setRevealed(true), wait);
+      if (io) { io.disconnect(); io = null; }
+      if (pollTimer) { window.clearInterval(pollTimer); pollTimer = 0; }
+    };
+
+    const markVisible = () => {
+      if (visible) return;
+      visible = true;
+      tryReveal();
+    };
+
+    const isInView = (node) => {
+      const r = node.getBoundingClientRect();
+      if (r.width <= 0 && r.height <= 0) return false;
+      return r.bottom >= -margin && r.top <= ((window.innerHeight || 0) + margin)
+        && r.right >= -margin && r.left <= ((window.innerWidth || 0) + margin);
+    };
+
+    const recheckVisibility = () => {
+      if (!started && el && isInView(el)) markVisible();
     };
 
     const markReady = () => {
       if (ready) return;
       ready = true;
+      recheckVisibility();
       tryReveal();
     };
 
@@ -2472,7 +2494,10 @@ function MasonryTile({ s, onOpen, onOpenProduct, fadingOut, takeStagger }) {
     if (!media) {
       markReady();
     } else {
-      fallbackTimer = window.setTimeout(markReady, 1500);
+      fallbackTimer = window.setTimeout(() => {
+        markReady();
+        recheckVisibility();
+      }, 1500);
       if (media.tagName === 'IMG') {
         const finish = () => {
           if (typeof media.decode === 'function') {
@@ -2495,22 +2520,39 @@ function MasonryTile({ s, onOpen, onOpenProduct, fadingOut, takeStagger }) {
       }
     }
 
+    // Keep observing until the tile actually reveals. CSS columns can miss
+    // the first intersection for tiles at the top of later columns.
     io = new IntersectionObserver((entries) => {
       for (let i = 0; i < entries.length; i++) {
         if (entries[i].isIntersecting) {
-          visible = true;
-          if (io) { io.disconnect(); io = null; }
-          tryReveal();
+          markVisible();
           break;
         }
       }
-    }, { rootMargin: '200px' });
+    }, { rootMargin: margin + 'px' });
     io.observe(el);
+
+    recheckVisibility();
+    window.requestAnimationFrame(recheckVisibility);
+    let polls = 0;
+    pollTimer = window.setInterval(() => {
+      recheckVisibility();
+      polls += 1;
+      if (started || polls >= 20) {
+        window.clearInterval(pollTimer);
+        pollTimer = 0;
+      }
+    }, 250);
+    window.addEventListener('scroll', recheckVisibility, { passive: true });
+    window.addEventListener('resize', recheckVisibility);
 
     return () => {
       if (io) io.disconnect();
       if (delayTimer) window.clearTimeout(delayTimer);
       if (fallbackTimer) window.clearTimeout(fallbackTimer);
+      if (pollTimer) window.clearInterval(pollTimer);
+      window.removeEventListener('scroll', recheckVisibility);
+      window.removeEventListener('resize', recheckVisibility);
     };
   }, [s.id, s.imageUrl, s.videoUrl, takeStagger]);
 

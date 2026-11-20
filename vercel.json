@@ -47,7 +47,7 @@
   "rewrites": [
     {
       "source": "/cms",
-      "destination": "https://saboteur-api.vercel.app/api/cms"
+      "destination": "/api/cms"
     },
     {
       "source": "/facts",

@@ -636,6 +636,35 @@
   .grid-frame-media { position: relative; overflow: hidden; }
   .grid-frame-media.is-sized > .photo-wrap { height: 100%; }
   .grid-frame-media.is-sized > .photo-wrap > img, .grid-frame-media.is-sized > .photo-wrap > video { height: 100% !important; object-fit: cover; }
+  /* Home/section grid: tiles start hidden and fade in when they enter view, after
+     their image or video is ready. A shuffle fades the old order out first so the
+     new order does not pop in all at once. */
+  .grid-frame-media.is-pending,
+  .grid-frame-media.is-revealed,
+  .grid-frame-media.is-fading-out {
+    transition: opacity 420ms var(--ease), transform 420ms var(--ease);
+  }
+  .grid-frame-media.is-pending {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .grid-frame-media.is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+  .grid-frame-media.is-fading-out {
+    opacity: 0;
+    transform: none;
+    transition: opacity 280ms var(--ease);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .grid-frame-media.is-pending,
+    .grid-frame-media.is-revealed,
+    .grid-frame-media.is-fading-out {
+      transform: none;
+      transition: opacity 150ms var(--ease);
+    }
+  }
   .photo-wrap img,
   .photo-wrap video {
     display: block;
@@ -1570,6 +1599,7 @@ function Placeholder({ size, label, imageUrl, videoUrl, posterUrl, videoLabel })
         src={imageUrl + (imageUrl.includes('cdn.sanity.io') ? '?w=900&auto=format' : '')}
         alt={label || ''}
         loading="lazy"
+        decoding="async"
         style={{ width: '100%', height: 'auto', display: 'block', background: 'transparent' }}
       />
     );
@@ -2184,6 +2214,184 @@ function sanityImageRatio(url) {
   return m && +m[1] > 0 && +m[2] > 0 ? m[1] + ' / ' + m[2] : null;
 }
 
+function prefersReducedMotion() {
+  try {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) {
+    return false;
+  }
+}
+
+function itemsOrderKey(items) {
+  let s = '';
+  for (let i = 0; i < (items || []).length; i++) s += ((items[i] && items[i].id) || i) + ',';
+  return s;
+}
+
+function MasonryTile({ s, onOpen, onOpenProduct, fadingOut, takeStagger }) {
+  const cellRef = React.useRef(null);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const el = cellRef.current;
+    if (!el) return undefined;
+
+    let visible = false;
+    let ready = false;
+    let started = false;
+    let delayTimer = 0;
+    let fallbackTimer = 0;
+    let io = null;
+    const reduced = prefersReducedMotion();
+
+    const tryReveal = () => {
+      if (started || !visible || !ready) return;
+      started = true;
+      const wait = reduced ? 0 : (takeStagger ? takeStagger() : 0);
+      delayTimer = window.setTimeout(() => setRevealed(true), wait);
+    };
+
+    const markReady = () => {
+      if (ready) return;
+      ready = true;
+      tryReveal();
+    };
+
+    const media = el.querySelector('img, video');
+    if (!media) {
+      markReady();
+    } else {
+      fallbackTimer = window.setTimeout(markReady, 1500);
+      if (media.tagName === 'IMG') {
+        const finish = () => {
+          if (typeof media.decode === 'function') {
+            Promise.resolve(media.decode()).then(markReady, markReady);
+          } else {
+            markReady();
+          }
+        };
+        if (media.complete && media.naturalWidth > 0) {
+          finish();
+        } else {
+          media.addEventListener('load', finish, { once: true });
+          media.addEventListener('error', markReady, { once: true });
+        }
+      } else if (media.readyState >= 2) {
+        markReady();
+      } else {
+        media.addEventListener('loadeddata', markReady, { once: true });
+        media.addEventListener('error', markReady, { once: true });
+      }
+    }
+
+    io = new IntersectionObserver((entries) => {
+      for (let i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) {
+          visible = true;
+          if (io) { io.disconnect(); io = null; }
+          tryReveal();
+          break;
+        }
+      }
+    }, { rootMargin: '200px' });
+    io.observe(el);
+
+    return () => {
+      if (io) io.disconnect();
+      if (delayTimer) window.clearTimeout(delayTimer);
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
+    };
+  }, [s.id, s.imageUrl, s.videoUrl, takeStagger]);
+
+  const isFeature = !!s.homeFeature;
+  const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
+  const showSoldOut = isFlaggedSoldOut(s) && isStoreItem; // guarded: digital downloads never show Sold out
+  const mr = sanityImageRatio(s.videoUrl ? s.posterUrl : s.imageUrl);
+  const clickable = !isFeature || s.featureKind === 'post' || s.featureKind === 'product';
+  const mediaState = fadingOut ? ' is-fading-out' : (revealed ? ' is-revealed' : ' is-pending');
+  const media = (
+      <div className={'grid-frame-media' + (mr ? ' is-sized' : '') + mediaState} style={mr ? { aspectRatio: mr } : undefined}>
+        <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={s.alt || postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
+        {showSoldOut && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              fontFamily: 'var(--font-family-mono)',
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              padding: '7px 12px',
+              borderRadius: 9999,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              zIndex: 2,
+              background: 'var(--color-accent)',
+              color: '#18181B',
+            }}
+          >
+            Sold out
+          </span>
+        )}
+      </div>
+  );
+  const onFeatureClick = (e) => {
+    if (!isPlainLeftClick(e)) return;
+    e.preventDefault();
+    if (s.featureKind === 'product' && onOpenProduct && s.featureProduct) onOpenProduct(s.featureProduct);
+    else if (s.featureKind === 'post' && onOpen && s.featurePost) onOpen(s.featurePost);
+  };
+  if (isFeature && s.href && clickable) {
+    return (
+      <a
+        ref={cellRef}
+        className="grid-frame-cell"
+        data-home-feature={s.homeFeature}
+        data-feature-link={s.featureKind}
+        href={s.href}
+        aria-label={s.alt || undefined}
+        onClick={onFeatureClick}
+        style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
+      >
+        {media}
+      </a>
+    );
+  }
+  if (isCameliaItem(s)) {
+    return (
+      <a
+        ref={cellRef}
+        className="grid-frame-cell"
+        href={cameliaStorePath()}
+        aria-label={s.alt || s.headline || s.title || 'Open the Camelia store item'}
+        data-camelia-link="product"
+        onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpen) onOpen(s); }}
+        style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
+      >
+        {media}
+      </a>
+    );
+  }
+  return (
+    <div
+      ref={cellRef}
+      className="grid-frame-cell"
+      data-home-feature={isFeature ? s.homeFeature : undefined}
+      onClick={clickable ? () => onOpen(s) : undefined}
+      style={{
+        breakInside: 'avoid',
+        cursor: clickable ? 'pointer' : 'default',
+      }}
+    >
+      {media}
+    </div>
+  );
+}
+
 function MasonryGrid({ items, onOpen, onOpenProduct, dense = false }) {
   const isMobile = useIsMobile(700);
   const columns = isMobile
@@ -2191,6 +2399,50 @@ function MasonryGrid({ items, onOpen, onOpenProduct, dense = false }) {
     : dense
       ? '2 280px'
       : 'clamp(2, 3, 4) clamp(220px, 26vw, 320px)';
+
+  const incomingKey = itemsOrderKey(items);
+  const [shown, setShown] = useState(items);
+  const [fadingOut, setFadingOut] = useState(false);
+  const [revealGen, setRevealGen] = useState(0);
+  const shownRef = React.useRef(items);
+  shownRef.current = shown;
+
+  const staggerRef = React.useRef(null);
+  if (!staggerRef.current) {
+    let nextAt = 0;
+    staggerRef.current = {
+      reset() { nextAt = 0; },
+      next() {
+        const now = performance.now();
+        const delay = Math.min(Math.max(0, nextAt - now), 600);
+        nextAt = now + delay + 60;
+        return delay;
+      }
+    };
+  }
+  const takeStagger = React.useCallback(() => staggerRef.current.next(), []);
+
+  useEffect(() => {
+    if (incomingKey === itemsOrderKey(shownRef.current)) {
+      setShown(items);
+      return undefined;
+    }
+    const hasCurrent = shownRef.current && shownRef.current.length;
+    const swapIn = () => {
+      staggerRef.current.reset();
+      setShown(items);
+      setRevealGen((g) => g + 1);
+      setFadingOut(false);
+    };
+    if (!hasCurrent) {
+      swapIn();
+      return undefined;
+    }
+    const reduced = prefersReducedMotion();
+    setFadingOut(true);
+    const t = window.setTimeout(swapIn, reduced ? 150 : 280);
+    return () => window.clearTimeout(t);
+  }, [items, incomingKey]);
 
   // Fluid equal gap — 24px floor / 32px ceiling on 8px scale. columnGap (H) + marginBottom (V).
   // Container negative margin cancels trailing space so last items sit clean. No padding that can collapse.
@@ -2201,94 +2453,16 @@ function MasonryGrid({ items, onOpen, onOpenProduct, dense = false }) {
       columns,
       columnGap: 0,
     }}>
-      {items.map((s) => {
-        const isFeature = !!s.homeFeature;
-        const isStoreItem = (s.sections || []).some((sec) => sec === 'store' || sec === 'shop');
-        const showSoldOut = isFlaggedSoldOut(s) && isStoreItem; // guarded: digital downloads never show Sold out
-        const mr = sanityImageRatio(s.videoUrl ? s.posterUrl : s.imageUrl);
-        const clickable = !isFeature || s.featureKind === 'post' || s.featureKind === 'product';
-        const media = (
-            <div className={'grid-frame-media' + (mr ? ' is-sized' : '')} style={mr ? { aspectRatio: mr } : undefined}>
-              <Placeholder size={s.size} imageUrl={s.imageUrl} videoUrl={s.videoUrl} posterUrl={s.posterUrl} videoLabel={s.alt || postVideoLabel(s)} label={s.alt || s.title || s.headline || s.subhead || ''} />
-              {showSoldOut && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 12,
-                    right: 12,
-                    fontFamily: 'var(--font-family-mono)',
-                    fontSize: 11,
-                    fontWeight: 500,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    padding: '7px 12px',
-                    borderRadius: 9999,
-                    lineHeight: 1,
-                    whiteSpace: 'nowrap',
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                    zIndex: 2,
-                    background: 'var(--color-accent)',
-                    color: '#18181B',
-                  }}
-                >
-                  Sold out
-                </span>
-              )}
-            </div>
-        );
-        const onFeatureClick = (e) => {
-          if (!isPlainLeftClick(e)) return;
-          e.preventDefault();
-          if (s.featureKind === 'product' && onOpenProduct && s.featureProduct) onOpenProduct(s.featureProduct);
-          else if (s.featureKind === 'post' && onOpen && s.featurePost) onOpen(s.featurePost);
-        };
-        if (isFeature && s.href && clickable) {
-          return (
-            <a
-              key={s.id}
-              className="grid-frame-cell"
-              data-home-feature={s.homeFeature}
-              data-feature-link={s.featureKind}
-              href={s.href}
-              aria-label={s.alt || undefined}
-              onClick={onFeatureClick}
-              style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
-            >
-              {media}
-            </a>
-          );
-        }
-        if (isCameliaItem(s)) {
-          return (
-            <a
-              key={s.id}
-              className="grid-frame-cell"
-              href={cameliaStorePath()}
-              aria-label={s.alt || s.headline || s.title || 'Open the Camelia store item'}
-              data-camelia-link="product"
-              onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpen) onOpen(s); }}
-              style={{ breakInside: 'avoid', cursor: 'pointer', display: 'block', textDecoration: 'none', color: 'inherit' }}
-            >
-              {media}
-            </a>
-          );
-        }
-        return (
-          <div
-            key={s.id}
-            className="grid-frame-cell"
-            data-home-feature={isFeature ? s.homeFeature : undefined}
-            onClick={clickable ? () => onOpen(s) : undefined}
-            style={{
-              breakInside: 'avoid',
-              cursor: clickable ? 'pointer' : 'default',
-            }}
-          >
-            {media}
-          </div>
-        );
-      })}
+      {shown.map((s) => (
+        <MasonryTile
+          key={(s.id || '') + ':' + revealGen}
+          s={s}
+          onOpen={onOpen}
+          onOpenProduct={onOpenProduct}
+          fadingOut={fadingOut}
+          takeStagger={takeStagger}
+        />
+      ))}
     </div>
   );
 }

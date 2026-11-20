@@ -841,6 +841,38 @@
       align-items: center;
     }
   }
+  /* Coming soon cover pill: 98x31, fully rounded, #FF3300 only (not the site accent). */
+  .coming-soon-pill {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 98px;
+    height: 31px;
+    padding: 0 12px;
+    border-radius: 15.5px;
+    background: #FF3300;
+    color: #FFFFFF;
+    font-family: var(--font-family-display);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    z-index: 2;
+  }
+  .store-card-cover {
+    container-type: inline-size;
+  }
+  @container (max-width: 150px) {
+    .coming-soon-pill {
+      transform: scale(0.8);
+      transform-origin: right bottom;
+    }
+  }
   /* Grain removed — was causing grey haze on photos */
   /* Desktop-only subtle parallax class */
   @media (min-width: 1024px) {
@@ -3722,6 +3754,16 @@ function StoreIntro({ text, tabKey }) {
   );
 }
 
+function ComingSoonPill({ compact }) {
+  return (
+    <span
+      className="coming-soon-pill"
+      data-coming-soon-pill
+      style={{ position: 'absolute', bottom: compact ? 10 : 12, right: compact ? 10 : 12 }}
+    >Coming soon</span>
+  );
+}
+
 function quickAddAction(p, physicalOrdersEnabled) {
   const comingSoon = isComingSoon(p);
   const isFree = p.fulfillmentType === 'free_digital' || !Number(p.priceCents);
@@ -3818,12 +3860,13 @@ function StoreCard({ product, physicalOrdersEnabled, onOpenProduct, onAddToCart,
               </span>
             )
           )}
-          {badge ? (
+          {comingSoon ? (
+            <ComingSoonPill compact={compact} />
+          ) : badge ? (
             <span
-              className={badge === 'Coming soon' ? 'coming-soon-pill' : undefined}
               style={{
                 position: 'absolute',
-                ...(comingSoon ? { bottom: compact ? 10 : 12 } : { top: compact ? 10 : 12 }),
+                top: compact ? 10 : 12,
                 right: compact ? 10 : 12,
                 fontFamily: 'var(--font-family-mono)',
                 fontSize: compact ? 10 : 11,
@@ -4120,11 +4163,13 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                         borderRadius: '2px',
                       }}
                     />
-                    {((comingSoon && i === 0) || soldOnly) ? (
+                    {comingSoon && i === 0 ? (
+                      <ComingSoonPill />
+                    ) : soldOnly ? (
                       <span
                         style={{
                           position: 'absolute',
-                          ...(comingSoon ? { bottom: 12 } : { top: 12 }),
+                          top: 12,
                           right: 12,
                           fontFamily: 'var(--font-family-mono)',
                           fontSize: 11,
@@ -4142,7 +4187,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                           color: '#18181B',
                         }}
                       >
-                        {comingSoon ? 'Coming soon' : 'Sold out'}
+                        Sold out
                       </span>
                     ) : null}
                   </div>

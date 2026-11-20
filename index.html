@@ -329,6 +329,28 @@
     }
   }
 
+
+  .books-intro-caret {
+    display: inline-block;
+    width: 0;
+    overflow: visible;
+    vertical-align: baseline;
+  }
+  .books-intro-caret > span {
+    display: inline-block;
+    width: 0.08em;
+    height: 0.85em;
+    margin-left: 0.04em;
+    background: currentColor;
+    vertical-align: -0.08em;
+    animation: booksIntroCaret 1s steps(1) infinite;
+  }
+  @keyframes booksIntroCaret {
+    50% { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .books-intro-caret { display: none; }
+  }
   /* Full menu — solid block hover/active (Monolog-style), desktop */
   .fullmenu-link {
     font-family: var(--font-family-display);
@@ -1441,7 +1463,8 @@ async function fetchSanityBundle() {
       "infoMediaMime": infoMedia.asset->mimeType,
       socialLinks,
       physicalOrdersEnabled,
-      physicalOrdersPausedMessage
+      physicalOrdersPausedMessage,
+      booksIntro
     },
     "footer": *[_type == "footer"][0]{
       marqueeText,
@@ -3381,7 +3404,85 @@ function ApparelTakeover() {
   );
 }
 
-function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
+
+function BooksIntro({ text }) {
+  const full = String(text || '').trim();
+  const reducedStart = (typeof window !== 'undefined' && prefersReducedMotion());
+  const [chars, setChars] = useState(reducedStart ? full.length : 0);
+  const [started, setStarted] = useState(!!reducedStart);
+  const [done, setDone] = useState(!!reducedStart);
+  const startedRef = React.useRef(!!reducedStart);
+
+  useEffect(() => {
+    if (!full) return undefined;
+    if (prefersReducedMotion()) {
+      startedRef.current = true;
+      setStarted(true);
+      setChars(full.length);
+      setDone(true);
+      return undefined;
+    }
+    if (startedRef.current) return undefined;
+
+    const start = () => {
+      if (startedRef.current) return;
+      startedRef.current = true;
+      setStarted(true);
+    };
+
+    const onScroll = () => {
+      if (window.scrollY >= 60) start();
+    };
+
+    const canScroll = document.documentElement.scrollHeight > (window.innerHeight + 8);
+    let delayTimer = 0;
+    if (!canScroll) delayTimer = window.setTimeout(start, 700);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (delayTimer) window.clearTimeout(delayTimer);
+    };
+  }, [full]);
+
+  useEffect(() => {
+    if (!full || !started || done) return undefined;
+    if (chars >= full.length) {
+      setDone(true);
+      return undefined;
+    }
+    // Keep the total under 10s even on this long paragraph; otherwise ~18-28ms per character.
+    const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(full.length, 1))));
+    const t = window.setTimeout(() => setChars((n) => Math.min(full.length, n + 1)), delay);
+    return () => window.clearTimeout(t);
+  }, [full, started, chars, done]);
+
+  if (!full) return null;
+
+  const typeStyle = {
+    fontFamily: 'var(--font-family-display)',
+    fontWeight: 400,
+    fontSize: 'clamp(20px, 4.5vw, 32px)',
+    lineHeight: 1.45,
+    letterSpacing: '-0.015em',
+    color: 'var(--color-ink)',
+    margin: 0,
+    maxWidth: '42rem',
+  };
+
+  return (
+    <div data-books-intro style={{ position: 'relative', margin: '0 0 64px', maxWidth: '42rem' }}>
+      <p className="sr-only">{full}</p>
+      <p aria-hidden="true" style={Object.assign({}, typeStyle, { visibility: 'hidden' })}>{full}</p>
+      <p aria-hidden="true" data-books-intro-typed style={Object.assign({}, typeStyle, { position: 'absolute', left: 0, right: 0, top: 0, margin: 0 })}>
+        {full.slice(0, chars)}
+        {started && !done ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null}
+      </p>
+    </div>
+  );
+}
+
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, booksIntro, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, initialCategory, onSelectCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
   // Honor an explicit deep link (?tab=comics) even if that tab is locked (travel pause).
@@ -3416,7 +3517,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
         {shippingPaused && !takeover ? (
           <PhysicalPauseNotice message={physicalOrdersPausedMessage} />
         ) : null}
-        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: takeover ? 24 : 64, borderBottom: '1px solid var(--color-stroke)' }}>
+        <div className="store-cat-nav" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 20, marginBottom: takeover ? 24 : (filter === 'prints-and-books' && String(booksIntro || '').trim() ? 28 : 64), borderBottom: '1px solid var(--color-stroke)' }}>
           {STORE_CATEGORIES.map((c) => {
             const active = filter === c.id;
             const muted = mutedCats[c.id];
@@ -3441,6 +3542,9 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
             );
           })}
         </div>
+        {(!takeover && filter === 'prints-and-books' && String(booksIntro || '').trim()) ? (
+          <BooksIntro text={booksIntro} />
+        ) : null}
       </div>
       {takeover ? <ApparelTakeover /> : null}
       {takeover ? null : (
@@ -7126,6 +7230,7 @@ function App() {
           initialCategory={view.storeCategory}
           physicalOrdersEnabled={siteSettings && siteSettings.physicalOrdersEnabled}
           physicalOrdersPausedMessage={siteSettings && siteSettings.physicalOrdersPausedMessage}
+          booksIntro={siteSettings && siteSettings.booksIntro}
           onMenu={() => { setCartOpen(false); setMenuOpen(true); }}
           onBack={goHome}
           onHome={goHome}

@@ -669,6 +669,42 @@
     height: auto;
     /* No hover zoom — photography stays still; parallax is scroll-only on desktop */
   }
+  /* Store cards: cover zooms slightly on hover/focus; 18+ pill turns brand orange. Overflow is clipped so layout does not shift. */
+  .store-card .store-card-cover {
+    overflow: hidden;
+  }
+  .store-card .store-card-cover img {
+    transform: scale(1);
+    transform-origin: center center;
+    transition: transform 350ms var(--ease, ease-out), opacity var(--duration-fast, 150ms) var(--ease, ease-out);
+  }
+  .store-card [data-adult-label] {
+    transition: background-color 350ms var(--ease, ease-out), color 350ms var(--ease, ease-out);
+  }
+  @media (hover: hover) {
+    .store-card:hover .store-card-cover img {
+      transform: scale(1.04);
+    }
+    .store-card:hover [data-adult-label] {
+      background: var(--color-accent);
+      color: #18181B;
+    }
+  }
+  .store-card:focus-visible .store-card-cover img {
+    transform: scale(1.04);
+  }
+  .store-card:focus-visible [data-adult-label] {
+    background: var(--color-accent);
+    color: #18181B;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .store-card .store-card-cover img,
+    .store-card:hover .store-card-cover img,
+    .store-card:focus-visible .store-card-cover img {
+      transition: opacity var(--duration-fast, 150ms) var(--ease, ease-out);
+      transform: none !important;
+    }
+  }
   /* Grain removed — was causing grey haze on photos */
   /* Desktop-only subtle parallax class */
   @media (min-width: 1024px) {
@@ -3433,7 +3469,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
               return (
                 <a
                   key={p._id || p.slug}
-                  className="grid-frame-cell"
+                  className="grid-frame-cell store-card"
                   href={'/store/' + encodeURIComponent(String(p.slug || ''))}
                   onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(p); }}
                   style={{
@@ -3441,13 +3477,13 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                     display: 'flex', flexDirection: 'column', gap: 16, textDecoration: 'none', color: 'inherit',
                   }}
                 >
-                  <div style={{
+                  <div className="store-card-cover" style={{
                     width: '100%', aspectRatio: '4 / 5', background: 'var(--color-paper)',
                     borderRadius: 'var(--radius-sm, 4px)', overflow: 'hidden', position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {img ? (
-                      <img src={img + (img.includes('cdn.sanity.io') ? '?w=800&h=1000&fit=crop&auto=format' : '')} alt={p.title || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: paused ? 0.4 : 1, transition: 'opacity var(--duration-fast) var(--ease)' }} />
+                      <img src={img + (img.includes('cdn.sanity.io') ? '?w=800&h=1000&fit=crop&auto=format' : '')} alt={p.title || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: 'transparent', opacity: paused ? 0.4 : 1 }} />
                     ) : (
                       <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '11px', color: 'var(--color-ink-55)', letterSpacing: '0.04em', textTransform: 'uppercase', padding: 16, textAlign: 'center' }}>
                         {p.title || 'Product'}
@@ -3961,6 +3997,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
               return (
                 <a
                   key={rp._id || rp.slug}
+                  className="store-card"
                   href={'/store/' + encodeURIComponent(String(rp.slug || ''))}
                   onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); if (onOpenProduct) onOpenProduct(rp); }}
                   style={{
@@ -3968,7 +4005,7 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                     display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', color: 'inherit',
                   }}
                 >
-                  <div style={{
+                  <div className="store-card-cover" style={{
                     width: '100%', aspectRatio: '4 / 5', background: 'var(--color-paper)',
                     borderRadius: '2px', overflow: 'hidden', position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',

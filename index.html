@@ -1310,7 +1310,7 @@ function saveShopEmail(email, source) {
   });
 }
 
-const WEB3FORMS_KEY = '8fb4c260-014b-491e-bb90-e6cb6e25ca52';
+const WEB3FORMS_KEY = 'f41a9da8-5e7f-4be1-8fd8-8ba08266be3f';
 
 function extractEmailAddress(text) {
   const m = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
@@ -5262,7 +5262,7 @@ function ContactForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
-          access_key: '8fb4c260-014b-491e-bb90-e6cb6e25ca52',
+          access_key: WEB3FORMS_KEY,
           subject: 'Saboteur site, contact',
           from_name: name,
           name: name,

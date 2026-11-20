@@ -336,27 +336,6 @@
   }
 
 
-  .books-intro-caret {
-    display: inline-block;
-    width: 0;
-    overflow: visible;
-    vertical-align: baseline;
-  }
-  .books-intro-caret > span {
-    display: inline-block;
-    width: 0.08em;
-    height: 0.85em;
-    margin-left: 0.04em;
-    background: currentColor;
-    vertical-align: -0.08em;
-    animation: booksIntroCaret 1s steps(1) infinite;
-  }
-  @keyframes booksIntroCaret {
-    50% { opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .books-intro-caret { display: none; }
-  }
   /* 9 of 12 columns, 24px gutters: 9*col + 8*gutter = 75% of the content width minus 6px. */
   [data-books-intro] {
     max-width: calc((100% - 11 * 24px) * 9 / 12 + 8 * 24px);
@@ -381,7 +360,7 @@
       max-width: none;
     }
     [data-books-intro] .store-intro-copy {
-      font-size: var(--font-body-sm-size);
+      font-size: 16px;
       line-height: 1.55;
       letter-spacing: normal;
     }
@@ -830,15 +809,46 @@
     cursor: not-allowed;
     opacity: 0.55;
   }
+  .store-card-add[data-in-bag="true"] {
+    opacity: 0.4;
+  }
+  .store-card-add[data-in-bag="true"]:hover,
+  .store-card-add[data-in-bag="true"]:focus-visible {
+    background: var(--color-cta);
+    opacity: 0.4;
+  }
+  /* 18+ square matches the add button height; colors stay static. */
+  .store-card-actions [data-adult-label] {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    min-width: 31px;
+    min-height: 31px;
+    padding: 0;
+    border-radius: 4px;
+    font-family: var(--font-family-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background: var(--color-adult-bg);
+    color: var(--color-adult-text);
+  }
   @media (max-width: 640px) {
     .store-card-add {
       height: 32px;
       min-height: 32px;
     }
     .store-card-actions [data-adult-label] {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
       min-height: 32px;
-      display: inline-flex;
-      align-items: center;
     }
   }
   /* Coming soon cover pill: 98x31, fully rounded, #FF3300 only (not the site accent). */
@@ -1320,7 +1330,12 @@ function cartLineIsAdult(line, products) {
 // no uppercase transform. Colors: black #18181B / white #FFFFFF (inverted in dark mode), see --color-adult-*. Below the copy, not on the image.
 const ADULT_LABEL = '18+';
 const ADULT_LABEL_ARIA = 'Adult content, 18+';
-function AdultLabel() {
+function AdultLabel({ square }) {
+  if (square) {
+    return (
+      <span data-adult-label data-adult-square="true" role="img" aria-label={ADULT_LABEL_ARIA}>{ADULT_LABEL}</span>
+    );
+  }
   return (
     <span data-adult-label role="img" aria-label={ADULT_LABEL_ARIA} style={{
       display: 'inline-block', alignSelf: 'flex-start',
@@ -3674,8 +3689,6 @@ const STORE_INTRO_FIELDS = {
   textures: 'texturesIntro',
   'original-art': 'originalArtIntro',
 };
-const STORE_INTRO_TYPED = Object.create(null);
-
 function introTextForFilter(intros, filter) {
   const key = STORE_INTRO_FIELDS[filter];
   return key ? String((intros && intros[key]) || '').trim() : '';
@@ -3697,131 +3710,25 @@ function splitIntroParagraphs(text) {
 function StoreIntro({ text, tabKey }) {
   const raw = String(text || '').trim();
   const { lead, body } = splitIntroParagraphs(raw);
-  const join = body ? ' ' : '';
-  const total = lead.length + join.length + body.length;
-  const key = tabKey || 'intro';
-  const already = STORE_INTRO_TYPED[key] === 'done';
-  const reducedStart = already || (typeof window !== 'undefined' && prefersReducedMotion());
-  const [chars, setChars] = useState(reducedStart ? total : 0);
-  const [started, setStarted] = useState(!!reducedStart);
-  const [done, setDone] = useState(!!reducedStart);
-  const [staticFallback, setStaticFallback] = useState(!!already);
-  const startedRef = React.useRef(!!reducedStart);
-  const charsRef = React.useRef(reducedStart ? total : 0);
-  const rootRef = React.useRef(null);
-  const totalRef = React.useRef(total);
-  totalRef.current = total;
-
-  const showFull = React.useCallback(() => {
-    startedRef.current = true;
-    charsRef.current = totalRef.current;
-    setStarted(true);
-    setChars(totalRef.current);
-    setDone(true);
-    setStaticFallback(true);
-    STORE_INTRO_TYPED[key] = 'done';
-  }, [key]);
-
-  useEffect(() => { charsRef.current = chars; }, [chars]);
-
-  useEffect(() => {
-    if (done && charsRef.current >= totalRef.current) STORE_INTRO_TYPED[key] = 'done';
-  }, [done, key]);
-
-  useEffect(() => {
-    return () => {
-      // If the visitor leaves mid-type, show the finished copy on return.
-      if (startedRef.current) STORE_INTRO_TYPED[key] = 'done';
-    };
-  }, [key]);
-
-  useEffect(() => {
-    if (!total) return undefined;
-    if (already || prefersReducedMotion()) {
-      showFull();
-      return undefined;
-    }
-
-    const start = () => {
-      if (startedRef.current) return;
-      startedRef.current = true;
-      setStarted(true);
-    };
-
-    const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(total, 1))));
-    const startTimer = window.setTimeout(start, 300);
-    // Always finish: snap to the full string if typing stalls or lags.
-    const finishTimer = window.setTimeout(showFull, 300 + delay * total + 500);
-    const safetyTimer = window.setTimeout(() => {
-      if (!startedRef.current || charsRef.current === 0) {
-        showFull();
-        return;
-      }
-      const overlay = rootRef.current && rootRef.current.querySelector('[data-books-intro-typed]');
-      const painted = overlay && String(overlay.textContent || '').trim();
-      if (!painted) showFull();
-    }, 2000);
-
-    return () => {
-      window.clearTimeout(startTimer);
-      window.clearTimeout(finishTimer);
-      window.clearTimeout(safetyTimer);
-    };
-  }, [total, already, key, showFull]);
-
-  useEffect(() => {
-    if (!total || !started || done) return undefined;
-    if (chars >= total) {
-      setDone(true);
-      STORE_INTRO_TYPED[key] = 'done';
-      return undefined;
-    }
-    const delay = Math.min(28, Math.max(16, Math.floor(9000 / Math.max(total, 1))));
-    const t = window.setTimeout(() => setChars((n) => {
-      const next = Math.min(total, n + 1);
-      charsRef.current = next;
-      return next;
-    }), delay);
-    return () => window.clearTimeout(t);
-  }, [total, started, chars, done, key]);
-
   if (!lead) return null;
-
-  const leadTyped = lead.slice(0, Math.min(chars, lead.length));
-  const afterLead = Math.max(0, chars - lead.length);
-  const spaceTyped = body && afterLead > 0 ? ' ' : '';
-  const bodyTyped = body && afterLead > 1 ? body.slice(0, afterLead - 1) : '';
-  const caret = (started && !done) ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null;
-  const complete = done && chars >= total;
-
-  const introCopy = (leadText, spaceText, bodyText, showCaret) => (
-    <p className="store-intro-copy">
-      <span className="books-intro-lead">{leadText}</span>
-      {spaceText}
-      {bodyText ? <span className="books-intro-body">{bodyText}</span> : null}
-      {showCaret ? caret : null}
-    </p>
-  );
+  const full = body ? (lead + ' ' + body) : lead;
+  const key = tabKey || 'intro';
 
   return (
     <div
-      ref={rootRef}
       data-books-intro
       data-store-intro={key}
-      data-intro-done={complete ? 'true' : 'false'}
-      data-intro-chars={chars}
-      data-intro-total={total}
+      data-intro-done="true"
       style={{ position: 'relative', margin: '0 0 64px', width: '100%', overflow: 'visible' }}
     >
       <div className="sr-only">
-        <p>{body ? (lead + ' ' + body) : lead}</p>
+        <p>{full}</p>
       </div>
-      <div aria-hidden="true" style={{ visibility: staticFallback ? 'visible' : 'hidden' }}>
-        {introCopy(lead, body ? ' ' : '', body, false)}
-      </div>
-      <div aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0, visibility: staticFallback ? 'hidden' : 'visible' }}>
-        {introCopy(leadTyped, spaceTyped, bodyTyped, !!caret)}
-      </div>
+      <p className="store-intro-copy" aria-hidden="true">
+        <span className="books-intro-lead">{lead}</span>
+        {body ? ' ' : ''}
+        {body ? <span className="books-intro-body">{body}</span> : null}
+      </p>
     </div>
   );
 }
@@ -3852,45 +3759,57 @@ function quickAddAction(p, physicalOrdersEnabled) {
   return { mode: 'add', label: 'Add to cart', reason: 'add' };
 }
 
-function StoreCardActions({ product, physicalOrdersEnabled, onAddToCart, onOpenProduct }) {
-  const [added, setAdded] = useState(false);
-  const addedTimer = React.useRef(0);
-  useEffect(() => () => { if (addedTimer.current) window.clearTimeout(addedTimer.current); }, []);
+function productIsInCart(cart, product) {
+  if (!product || !Array.isArray(cart) || !cart.length) return false;
+  const pid = product._id;
+  const fallback = String(pid || product.slug || product.title || '');
+  return cart.some((l) => {
+    if (!l) return false;
+    if (pid && l.productId === pid) return true;
+    if (fallback && l.id && String(l.id).split('::')[0] === fallback) return true;
+    return false;
+  });
+}
+
+function StoreCardActions({ product, physicalOrdersEnabled, onAddToCart, onOpenProduct, cart, onCartOpen }) {
   const action = quickAddAction(product, physicalOrdersEnabled);
+  const inBag = action.mode !== 'disabled' && action.reason !== 'free' && productIsInCart(cart, product);
   const title = product.title || 'item';
   const onClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (action.mode === 'disabled') return;
+    if (inBag) {
+      if (onCartOpen) onCartOpen();
+      return;
+    }
     if (action.mode === 'link') {
       if (onOpenProduct) onOpenProduct(product);
       return;
     }
     if (onAddToCart) onAddToCart(product, null, { silent: true });
-    setAdded(true);
-    if (addedTimer.current) window.clearTimeout(addedTimer.current);
-    addedTimer.current = window.setTimeout(() => setAdded(false), 1200);
   };
   let aria = 'Add ' + title + ' to cart';
   if (action.reason === 'soldOut') aria = title + ' is sold out';
   else if (action.reason === 'free') aria = 'Download ' + title;
-  else if (added) aria = title + ' added to cart';
+  else if (inBag) aria = title + ' is in the bag, open bag';
   return (
     <div className="store-card-actions">
-      {isAdultProduct(product) ? <AdultLabel /> : null}
+      {isAdultProduct(product) ? <AdultLabel square /> : null}
       <button
         type="button"
         className="store-card-add"
         disabled={action.mode === 'disabled'}
         aria-label={aria}
         data-add-mode={action.reason}
+        data-in-bag={inBag ? 'true' : undefined}
         onClick={onClick}
-      >{added ? 'Added' : action.label}</button>
+      >{inBag ? 'In bag' : action.label}</button>
     </div>
   );
 }
 
-function StoreCard({ product, physicalOrdersEnabled, onOpenProduct, onAddToCart, compact }) {
+function StoreCard({ product, physicalOrdersEnabled, onOpenProduct, onAddToCart, cart, onCartOpen, compact }) {
   const p = product || {};
   const img = productImageUrl(p);
   const comingSoon = isComingSoon(p);
@@ -3979,12 +3898,12 @@ function StoreCard({ product, physicalOrdersEnabled, onOpenProduct, onAddToCart,
           </div>
         </div>
       </a>
-      <StoreCardActions product={p} physicalOrdersEnabled={physicalOrdersEnabled} onAddToCart={onAddToCart} onOpenProduct={onOpenProduct} />
+      <StoreCardActions product={p} physicalOrdersEnabled={physicalOrdersEnabled} onAddToCart={onAddToCart} onOpenProduct={onOpenProduct} cart={cart} onCartOpen={onCartOpen} />
     </article>
   );
 }
 
-function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, storeIntros, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, onAddToCart, initialCategory, onSelectCategory }) {
+function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessage, storeIntros, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cart, cartCount, onCartOpen, cartOpen, menuOpen, onOpenProduct, onAddToCart, initialCategory, onSelectCategory }) {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const firstUnlocked = (STORE_CATEGORIES.find((c) => c.id !== 'all' && !isStoreCategoryLocked(products, c.id, physicalOrdersEnabled)) || {}).id || 'comics';
   // Honor an explicit deep link (?tab=comics) even if that tab is locked (travel pause).
@@ -4074,6 +3993,8 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
                 physicalOrdersEnabled={physicalOrdersEnabled}
                 onOpenProduct={onOpenProduct}
                 onAddToCart={onAddToCart}
+                cart={cart}
+                onCartOpen={onCartOpen}
               />
             ))}
           </div>
@@ -4086,7 +4007,7 @@ function StoreGrid({ products, physicalOrdersEnabled, physicalOrdersPausedMessag
 }
 
 
-function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cartCount, onCartOpen, cartOpen, menuOpen, onAddToCart, onOpenProduct }) {
+function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOrdersPausedMessage, onMenu, onBack, onHome, onContact, onTag, dark, onToggleDark, cart, cartCount, onCartOpen, cartOpen, menuOpen, onAddToCart, onOpenProduct }) {
   useEffect(() => { window.scrollTo(0, 0); }, [product && product._id]);
   const isMobile = useIsMobile(900);
   const p = product || {};
@@ -4519,6 +4440,8 @@ function ProductDetail({ product, allProducts, physicalOrdersEnabled, physicalOr
                 physicalOrdersEnabled={physicalOrdersEnabled}
                 onOpenProduct={onOpenProduct}
                 onAddToCart={onAddToCart}
+                cart={cart}
+                onCartOpen={onCartOpen}
                 compact
               />
             ))}
@@ -7636,6 +7559,7 @@ function App() {
           onTag={goTag}
           dark={dark}
           onToggleDark={toggleDark}
+          cart={cart}
           cartCount={cartCount}
           onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }}
           cartOpen={cartOpen}
@@ -7663,6 +7587,7 @@ function App() {
           onTag={goTag}
           dark={dark}
           onToggleDark={toggleDark}
+          cart={cart}
           cartCount={cartCount}
           onCartOpen={() => { setMenuOpen(false); setLandingMenu(false); setLandingDone(true); setCartOpen(true); }}
           cartOpen={cartOpen}

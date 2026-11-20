@@ -351,6 +351,22 @@
   @media (prefers-reduced-motion: reduce) {
     .books-intro-caret { display: none; }
   }
+  [data-books-intro] .books-intro-text {
+    font-family: var(--font-family-display);
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 1.4;
+    letter-spacing: -0.015em;
+    color: var(--color-ink);
+    margin: 0;
+  }
+  @media (max-width: 640px) {
+    [data-books-intro] .books-intro-text {
+      font-size: var(--font-body-sm-size);
+      line-height: 1.55;
+      letter-spacing: normal;
+    }
+  }
   /* Full menu — solid block hover/active (Monolog-style), desktop */
   .fullmenu-link {
     font-family: var(--font-family-display);
@@ -3459,21 +3475,11 @@ function BooksIntro({ text }) {
 
   if (!full) return null;
 
-  const typeStyle = {
-    fontFamily: 'var(--font-family-display)',
-    fontWeight: 400,
-    fontSize: 'clamp(18px, 4.2vw, 24px)',
-    lineHeight: 1.4,
-    letterSpacing: '-0.015em',
-    color: 'var(--color-ink)',
-    margin: 0,
-  };
-
   return (
     <div data-books-intro style={{ position: 'relative', margin: '0 0 64px', width: '100%' }}>
       <p className="sr-only">{full}</p>
-      <p aria-hidden="true" style={Object.assign({}, typeStyle, { visibility: 'hidden' })}>{full}</p>
-      <p aria-hidden="true" data-books-intro-typed style={Object.assign({}, typeStyle, { position: 'absolute', left: 0, right: 0, top: 0, margin: 0 })}>
+      <p className="books-intro-text" aria-hidden="true" style={{ visibility: 'hidden' }}>{full}</p>
+      <p className="books-intro-text" aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
         {full.slice(0, chars)}
         {started && !done ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null}
       </p>

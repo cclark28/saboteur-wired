@@ -351,22 +351,30 @@
   @media (prefers-reduced-motion: reduce) {
     .books-intro-caret { display: none; }
   }
-  [data-books-intro] .books-intro-lead,
-  [data-books-intro] .books-intro-body {
+  /* 9 of 12 columns, 24px gutters: 9*col + 8*gutter = 75% of the content width minus 6px. */
+  [data-books-intro] {
+    max-width: calc((100% - 11 * 24px) * 9 / 12 + 8 * 24px);
+  }
+  [data-books-intro] .store-intro-copy {
+    margin: 0;
     font-family: var(--font-family-display);
-    font-weight: 400;
     font-size: 18px;
+    font-weight: 400;
     line-height: 1.45;
     letter-spacing: -0.015em;
     color: var(--color-ink);
-    margin: 0;
+  }
+  [data-books-intro] .books-intro-lead {
+    font-weight: 600;
   }
   [data-books-intro] .books-intro-body {
-    margin-top: 12px;
+    font-weight: 400;
   }
   @media (max-width: 640px) {
-    [data-books-intro] .books-intro-lead,
-    [data-books-intro] .books-intro-body {
+    [data-books-intro] {
+      max-width: none;
+    }
+    [data-books-intro] .store-intro-copy {
       font-size: var(--font-body-sm-size);
       line-height: 1.55;
       letter-spacing: normal;
@@ -3532,7 +3540,8 @@ function splitIntroParagraphs(text) {
 function StoreIntro({ text, tabKey }) {
   const raw = String(text || '').trim();
   const { lead, body } = splitIntroParagraphs(raw);
-  const total = lead.length + body.length;
+  const join = body ? ' ' : '';
+  const total = lead.length + join.length + body.length;
   const key = tabKey || 'intro';
   const already = STORE_INTRO_TYPED[key] === 'done';
   const reducedStart = already || (typeof window !== 'undefined' && prefersReducedMotion());
@@ -3622,11 +3631,20 @@ function StoreIntro({ text, tabKey }) {
   if (!lead) return null;
 
   const leadTyped = lead.slice(0, Math.min(chars, lead.length));
-  const bodyTyped = chars > lead.length ? body.slice(0, chars - lead.length) : '';
+  const afterLead = Math.max(0, chars - lead.length);
+  const spaceTyped = body && afterLead > 0 ? ' ' : '';
+  const bodyTyped = body && afterLead > 1 ? body.slice(0, afterLead - 1) : '';
   const caret = (started && !done) ? <span className="books-intro-caret" aria-hidden="true"><span /></span> : null;
-  const caretOnLead = !!caret && chars < lead.length;
-  const caretOnBody = !!caret && chars >= lead.length;
   const complete = done && chars >= total;
+
+  const introCopy = (leadText, spaceText, bodyText, showCaret) => (
+    <p className="store-intro-copy">
+      <span className="books-intro-lead">{leadText}</span>
+      {spaceText}
+      {bodyText ? <span className="books-intro-body">{bodyText}</span> : null}
+      {showCaret ? caret : null}
+    </p>
+  );
 
   return (
     <div
@@ -3639,16 +3657,13 @@ function StoreIntro({ text, tabKey }) {
       style={{ position: 'relative', margin: '0 0 64px', width: '100%', overflow: 'visible' }}
     >
       <div className="sr-only">
-        <p>{lead}</p>
-        {body ? <p>{body}</p> : null}
+        <p>{body ? (lead + ' ' + body) : lead}</p>
       </div>
       <div aria-hidden="true" style={{ visibility: staticFallback ? 'visible' : 'hidden' }}>
-        <p className="books-intro-lead">{lead}</p>
-        {body ? <p className="books-intro-body">{body}</p> : null}
+        {introCopy(lead, body ? ' ' : '', body, false)}
       </div>
       <div aria-hidden="true" data-books-intro-typed style={{ position: 'absolute', left: 0, right: 0, top: 0, visibility: staticFallback ? 'hidden' : 'visible' }}>
-        <p className="books-intro-lead">{leadTyped}{caretOnLead ? caret : null}</p>
-        {body ? <p className="books-intro-body">{bodyTyped}{caretOnBody ? caret : null}</p> : null}
+        {introCopy(leadTyped, spaceTyped, bodyTyped, !!caret)}
       </div>
     </div>
   );

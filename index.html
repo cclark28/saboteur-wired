@@ -2586,6 +2586,40 @@ function ClockBlock({ label, clock, local }) {
   );
 }
 
+// Marquee: a trailing "Say hello" becomes a same-tab link to Info/Contact (/about).
+// Plain text is used in Sanity so live (which does not yet have this helper) never shows raw markup.
+function renderMarqueeCopy(text, key, onHello) {
+  const s = String(text || '');
+  const needle = 'Say hello';
+  if (!s.endsWith(needle)) return s;
+  const before = s.slice(0, -needle.length);
+  return (
+    <>
+      {before}
+      <a
+        key={key}
+        href="/about"
+        onClick={(e) => { if (!isPlainLeftClick(e)) return; onHello(e); }}
+        style={{
+          font: 'inherit',
+          letterSpacing: 'inherit',
+          textTransform: 'inherit',
+          color: 'inherit',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          margin: 0,
+          cursor: 'pointer',
+          textDecoration: 'underline',
+          textUnderlineOffset: '2px',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-link)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'inherit'; }}
+      >{needle}</a>
+    </>
+  );
+}
+
 function Footer({ onContact, onTag, onHome, onStore, onResend }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -2743,7 +2777,7 @@ const colBox = {
             color: 'var(--color-ink)',
             textTransform: 'uppercase',
           }}>
-            {marquee} · {marquee} ·
+            {renderMarqueeCopy(marquee, 'm1', goContact)} · {renderMarqueeCopy(marquee, 'm2', goContact)} ·
           </div>
           <style>{'@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}'}</style>
         </div>

@@ -2937,7 +2937,8 @@ function Home({ onMenu, onOpen, onContact, onTag, onHome, onRefresh, items, prod
   const gridItems = React.useMemo(() => {
     const shown = homeFeatureIds(items);
     const rest = shown.length ? (items || []).filter((s) => shown.indexOf(s.id) < 0) : (items || []);
-    return homeFeatureItems(items, products).concat(rest);
+    // Charlie 2026-11-20: home images randomize every visit, features included.
+    return shuffle(homeFeatureItems(items, products).concat(rest));
   }, [items, products]);
   return (
     <div>
